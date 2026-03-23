@@ -15,15 +15,15 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="max-w-4xl mx-auto px-4 py-24 text-center">
         <span className="inline-block bg-blue-50 text-blue-700 text-sm font-medium px-3 py-1 rounded-full mb-6">
-          Professional Certification Platform
+          Aircraft Maintenance Recency
         </span>
         <h1 className="text-5xl font-bold text-gray-900 leading-tight mb-6">
-          Learn. Pass the exam.
+          Free Continuation Training.
           <br />
-          Earn your certificate.
+          Human Factors. Electrical Wiring. Fuel Tank Safety.
         </h1>
         <p className="text-xl text-gray-500 mb-10 max-w-2xl mx-auto">
-          Study industry-relevant courses, prove your knowledge with a proctored exam,
+          Study our courses, test your knowledge with our exam,
           and receive a verifiable certificate you can share with employers.
         </p>
         <div className="flex items-center justify-center gap-4">
@@ -47,12 +47,12 @@ export default async function HomePage() {
               {
                 icon: '📚',
                 title: 'Expert-written courses',
-                description: 'Text-based modules written by professionals, structured for real learning.',
+                description: 'Text-based modules written by aviation professionals.',
               },
               {
                 icon: '📝',
-                title: 'Rigorous MCQ exams',
-                description: 'Timed multiple-choice exams with a minimum pass score to ensure you\'ve mastered the material.',
+                title: 'Multiple-Choice Exams',
+                description: 'A minimum pass score of 75% to ensure you\'ve understood the material.',
               },
               {
                 icon: '🏆',
