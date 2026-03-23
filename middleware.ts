@@ -34,6 +34,7 @@ export async function middleware(request: NextRequest) {
   if (
     !user &&
     (request.nextUrl.pathname.startsWith('/dashboard') ||
+      request.nextUrl.pathname.startsWith('/logbook') ||
       request.nextUrl.pathname.startsWith('/profile'))
   ) {
     return NextResponse.redirect(new URL('/login', request.url))
