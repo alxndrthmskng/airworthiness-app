@@ -21,13 +21,12 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { progressId, status, rejection_reason } = body as {
+  const { progressId, status } = body as {
     progressId: string
-    status: 'verified' | 'rejected'
-    rejection_reason?: string
+    status: 'verified' | 'unverified'
   }
 
-  if (!progressId || !['verified', 'rejected'].includes(status)) {
+  if (!progressId || !['verified', 'unverified'].includes(status)) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
 
@@ -35,9 +34,8 @@ export async function POST(request: Request) {
     .from('module_exam_progress')
     .update({
       verification_status: status,
-      verified_by: user.id,
-      verified_at: new Date().toISOString(),
-      rejection_reason: status === 'rejected' ? (rejection_reason || null) : null,
+      verified_by: status === 'verified' ? user.id : null,
+      verified_at: status === 'verified' ? new Date().toISOString() : null,
     })
     .eq('id', progressId)
 

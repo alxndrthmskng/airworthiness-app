@@ -282,51 +282,59 @@ export function ProgressTracker({ examRows, selectedCategory, userId }: Progress
           }
         }
 
+        // Expired entries override passed status
+        if (row.isExpired) examPassed = false
+
+        // Verification: treat legacy 'pending'/'rejected' as 'unverified'
+        const displayVerification = verificationStatus === 'verified' ? 'verified' : 'unverified'
+        const statusInfo2 = VERIFICATION_STATUSES[displayVerification]
+
         return (
           <Card
             key={cardKey}
             className={`${
-              examPassed
-                ? 'border-green-200 bg-green-50/30'
-                : isEquivalent
-                  ? 'border-blue-200 bg-blue-50/30'
-                  : ''
+              row.isExpired
+                ? 'border-red-200 bg-red-50/30'
+                : examPassed
+                  ? 'border-green-200 bg-green-50/30'
+                  : isEquivalent
+                    ? 'border-blue-200 bg-blue-50/30'
+                    : ''
             }`}
           >
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CardTitle className="text-base">
-                    Module {row.moduleId}: {row.title}
-                  </CardTitle>
-                  <Badge variant="secondary" className="text-xs">
-                    {isMcq ? 'Multiple Choice Question' : 'Essay'}
+              <CardTitle className="text-base">
+                Module {row.moduleId}: {row.title}
+              </CardTitle>
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                <Badge variant="secondary" className="text-xs">
+                  {isMcq ? 'Multiple Choice Question' : 'Essay'}
+                </Badge>
+                {row.isExpired && (
+                  <Badge variant="destructive">Expired</Badge>
+                )}
+                {examPassed && !row.isExpired && (
+                  <Badge variant="default" className="bg-green-600">Passed</Badge>
+                )}
+                {isEquivalent && !row.isExpired && (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                    Equivalent
                   </Badge>
-                </div>
-                <div className="flex items-center gap-2">
-                  {examPassed && (
-                    <Badge variant="default" className="bg-green-600">Passed</Badge>
-                  )}
-                  {isEquivalent && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-                      Equivalent
-                    </Badge>
-                  )}
-                  {statusInfo && row.progress && isMcq && (
-                    <Badge variant={statusInfo.color as 'outline' | 'default' | 'destructive'}>
-                      {statusInfo.label}
-                    </Badge>
-                  )}
-                </div>
+                )}
+                {row.progress && isMcq && (
+                  <Badge variant={statusInfo2.color as 'outline' | 'default'}>
+                    {statusInfo2.label}
+                  </Badge>
+                )}
               </div>
               {isEquivalent && row.equivalentFrom && (
-                <p className="text-xs text-blue-600 mt-1">
+                <p className={`text-xs mt-1 ${row.isExpired ? 'text-red-600' : 'text-blue-600'}`}>
                   {row.equivalentFrom.description}
                 </p>
               )}
-              {verificationStatus === 'rejected' && row.progress?.rejection_reason && isMcq && (
+              {row.isExpired && row.progress?.issue_date && (
                 <p className="text-xs text-red-600 mt-1">
-                  Rejection reason: {row.progress.rejection_reason}
+                  This exam result expired on {new Date(new Date(row.progress.issue_date).setFullYear(new Date(row.progress.issue_date).getFullYear() + 10)).toLocaleDateString('en-GB')}
                 </p>
               )}
             </CardHeader>

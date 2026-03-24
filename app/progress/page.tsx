@@ -8,6 +8,7 @@ import {
   PROGRESS_CATEGORIES,
   ESSAY_MODULES,
   PASS_MARK,
+  PASS_VALIDITY_YEARS,
   getCrossModuleEquivalency,
   isSameModuleEquivalent,
 } from '@/lib/progress/constants'
@@ -34,6 +35,15 @@ export default async function ProgressPage({
 
   const progressRecords = (allProgress ?? []) as ModuleExamProgress[]
 
+  // Check if an issue date is more than 10 years old
+  function checkExpired(issueDate: string | null): boolean {
+    if (!issueDate) return false
+    const issue = new Date(issueDate)
+    const expiryDate = new Date(issue)
+    expiryDate.setFullYear(expiryDate.getFullYear() + PASS_VALIDITY_YEARS)
+    return new Date() > expiryDate
+  }
+
   // Get required modules for the selected category
   const requiredModuleIds = MODULE_REQUIREMENTS[selectedCategory] ?? []
 
@@ -50,6 +60,7 @@ export default async function ProgressPage({
     ) ?? null
 
     let equivalentFrom: ExamRow['equivalentFrom'] = null
+    let equivalentSourceRecord: ModuleExamProgress | null = null
 
     if (!progress) {
       // Check same-module equivalency from other categories
@@ -66,6 +77,7 @@ export default async function ProgressPage({
             sourceCategory: record.target_category,
             description: `Passed at ${record.target_category} level (higher or equal)`,
           }
+          equivalentSourceRecord = record
           break
         }
       }
@@ -86,12 +98,20 @@ export default async function ProgressPage({
                 sourceCategory: record.target_category,
                 description: crossRule.description,
               }
+              equivalentSourceRecord = record
               break
             }
           }
         }
       }
     }
+
+    // Check expiry: direct progress or equivalent source record
+    const isExpired = progress
+      ? checkExpired(progress.issue_date)
+      : equivalentSourceRecord
+        ? checkExpired(equivalentSourceRecord.issue_date)
+        : false
 
     // MCQ row (always)
     examRows.push({
@@ -101,6 +121,7 @@ export default async function ProgressPage({
       canSplitEssay: false,
       progress,
       equivalentFrom,
+      isExpired,
     })
 
     // Essay row (only for essay modules)
@@ -112,12 +133,14 @@ export default async function ProgressPage({
         canSplitEssay: moduleId === '7A' || moduleId === '7B',
         progress,
         equivalentFrom,
+        isExpired,
       })
     }
   }
 
-  // Calculate progress: count passed exams out of total exam rows
+  // Calculate progress: count passed exams out of total exam rows (expired entries do not count)
   const passedCount = examRows.filter(row => {
+    if (row.isExpired) return false
     if (row.equivalentFrom) return true
     if (!row.progress) return false
 

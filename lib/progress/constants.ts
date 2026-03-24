@@ -193,12 +193,14 @@ export function getCrossModuleEquivalency(
 
 // Verification statuses
 export const VERIFICATION_STATUSES = {
-  pending: { label: 'Pending Review', color: 'outline' },
+  unverified: { label: 'Unverified', color: 'outline' },
   verified: { label: 'Verified', color: 'default' },
-  rejected: { label: 'Rejected', color: 'destructive' },
 } as const
 
 export type VerificationStatus = keyof typeof VERIFICATION_STATUSES
+
+// Module passes are valid for 10 years from issue date
+export const PASS_VALIDITY_YEARS = 10
 
 // Experience requirements (years) per category — with and without Basic Training Course
 export const EXPERIENCE_REQUIREMENTS: Record<string, { withBtc: number; withoutBtc: number }> = {

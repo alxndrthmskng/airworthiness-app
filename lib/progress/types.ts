@@ -11,10 +11,9 @@ export interface ModuleExamProgress {
   essay_score_2: number | null
   essay_split: boolean
   certificate_photo_path: string | null
-  verification_status: 'pending' | 'verified' | 'rejected'
+  verification_status: 'unverified' | 'verified'
   verified_by: string | null
   verified_at: string | null
-  rejection_reason: string | null
   is_btc: boolean
   is_equivalent: boolean
   equivalency_source: string | null
@@ -36,4 +35,5 @@ export interface ExamRow {
     sourceCategory: string
     description: string
   } | null
+  isExpired: boolean
 }
