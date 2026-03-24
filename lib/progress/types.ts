@@ -8,6 +8,8 @@ export interface ModuleExamProgress {
   certificate_number: string | null
   mcq_score: number | null
   essay_score: number | null
+  essay_score_2: number | null
+  essay_split: boolean
   certificate_photo_path: string | null
   verification_status: 'pending' | 'verified' | 'rejected'
   verified_by: string | null
@@ -20,11 +22,14 @@ export interface ModuleExamProgress {
   updated_at: string
 }
 
-export interface ModuleProgressRow {
+// An exam row is either an MCQ exam or an Essay exam
+// Essay modules produce two exam rows (one MCQ, one Essay)
+export interface ExamRow {
   moduleId: string
   title: string
-  knowledgeLevel: number
-  hasEssay: boolean
+  examType: 'mcq' | 'essay'
+  // Module 7A/7B essays can be split into two marks
+  canSplitEssay: boolean
   progress: ModuleExamProgress | null
   equivalentFrom: {
     sourceModule: string

@@ -8,37 +8,33 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  ESSAY_MODULES,
   PASS_MARK,
   VERIFICATION_STATUSES,
 } from '@/lib/progress/constants'
-import type { ModuleProgressRow } from '@/lib/progress/types'
+import type { ExamRow } from '@/lib/progress/types'
 
 interface ProgressTrackerProps {
-  moduleRows: ModuleProgressRow[]
+  examRows: ExamRow[]
   selectedCategory: string
   userId: string
 }
 
-interface ModuleFormState {
+// MCQ form state
+interface McqFormState {
   issue_date: string
   part_147_approval_number: string
   certificate_number: string
-  mcq_score: string
-  essay_score: string
-  is_btc: boolean
+  score: string
 }
 
-function getInitialFormState(row: ModuleProgressRow): ModuleFormState {
-  const p = row.progress
-  return {
-    issue_date: p?.issue_date ?? '',
-    part_147_approval_number: p?.part_147_approval_number ?? '',
-    certificate_number: p?.certificate_number ?? '',
-    mcq_score: p?.mcq_score !== null && p?.mcq_score !== undefined ? String(p.mcq_score) : '',
-    essay_score: p?.essay_score !== null && p?.essay_score !== undefined ? String(p.essay_score) : '',
-    is_btc: p?.is_btc ?? false,
-  }
+// Essay form state
+interface EssayFormState {
+  issue_date: string
+  part_147_approval_number: string
+  certificate_number: string
+  score: string
+  essay_split: boolean
+  score_2: string
 }
 
 function scoreColor(score: string): string {
@@ -47,40 +43,75 @@ function scoreColor(score: string): string {
   return num >= PASS_MARK ? 'bg-green-50 border-green-300 text-green-900' : 'bg-red-50 border-red-300 text-red-900'
 }
 
-export function ProgressTracker({ moduleRows, selectedCategory, userId }: ProgressTrackerProps) {
+function initMcqForm(row: ExamRow): McqFormState {
+  const p = row.progress
+  return {
+    issue_date: p?.issue_date ?? '',
+    part_147_approval_number: p?.part_147_approval_number ?? '',
+    certificate_number: p?.certificate_number ?? '',
+    score: p?.mcq_score !== null && p?.mcq_score !== undefined ? String(p.mcq_score) : '',
+  }
+}
+
+function initEssayForm(row: ExamRow): EssayFormState {
+  const p = row.progress
+  return {
+    issue_date: p?.issue_date ?? '',
+    part_147_approval_number: p?.part_147_approval_number ?? '',
+    certificate_number: p?.certificate_number ?? '',
+    score: p?.essay_score !== null && p?.essay_score !== undefined ? String(p.essay_score) : '',
+    essay_split: p?.essay_split ?? false,
+    score_2: p?.essay_score_2 !== null && p?.essay_score_2 !== undefined ? String(p.essay_score_2) : '',
+  }
+}
+
+export function ProgressTracker({ examRows, selectedCategory, userId }: ProgressTrackerProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  // Form state per module
-  const [forms, setForms] = useState<Record<string, ModuleFormState>>(() => {
-    const initial: Record<string, ModuleFormState> = {}
-    for (const row of moduleRows) {
-      initial[row.moduleId] = getInitialFormState(row)
+  const [mcqForms, setMcqForms] = useState<Record<string, McqFormState>>(() => {
+    const init: Record<string, McqFormState> = {}
+    for (const row of examRows) {
+      if (row.examType === 'mcq') init[row.moduleId] = initMcqForm(row)
     }
-    return initial
+    return init
+  })
+
+  const [essayForms, setEssayForms] = useState<Record<string, EssayFormState>>(() => {
+    const init: Record<string, EssayFormState> = {}
+    for (const row of examRows) {
+      if (row.examType === 'essay') init[row.moduleId] = initEssayForm(row)
+    }
+    return init
   })
 
   const [saving, setSaving] = useState<Record<string, boolean>>({})
   const [savedMsg, setSavedMsg] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState<Record<string, boolean>>({})
 
-  function updateField(moduleId: string, field: keyof ModuleFormState, value: string | boolean) {
-    setForms(prev => ({
+  function updateMcqField(moduleId: string, field: keyof McqFormState, value: string) {
+    setMcqForms(prev => ({
       ...prev,
       [moduleId]: { ...prev[moduleId], [field]: value },
     }))
-    setSavedMsg(prev => ({ ...prev, [moduleId]: '' }))
+    setSavedMsg(prev => ({ ...prev, [`mcq-${moduleId}`]: '' }))
   }
 
-  async function handleSave(moduleId: string) {
-    setSaving(prev => ({ ...prev, [moduleId]: true }))
-    setSavedMsg(prev => ({ ...prev, [moduleId]: '' }))
+  function updateEssayField(moduleId: string, field: keyof EssayFormState, value: string | boolean) {
+    setEssayForms(prev => ({
+      ...prev,
+      [moduleId]: { ...prev[moduleId], [field]: value },
+    }))
+    setSavedMsg(prev => ({ ...prev, [`essay-${moduleId}`]: '' }))
+  }
 
-    const form = forms[moduleId]
+  async function handleSaveMcq(moduleId: string) {
+    const key = `mcq-${moduleId}`
+    setSaving(prev => ({ ...prev, [key]: true }))
+    setSavedMsg(prev => ({ ...prev, [key]: '' }))
+
+    const form = mcqForms[moduleId]
     const supabase = createClient()
-
-    const mcqScore = form.mcq_score ? parseInt(form.mcq_score, 10) : null
-    const essayScore = form.essay_score ? parseInt(form.essay_score, 10) : null
 
     const { error } = await supabase
       .from('module_exam_progress')
@@ -92,24 +123,83 @@ export function ProgressTracker({ moduleRows, selectedCategory, userId }: Progre
           issue_date: form.issue_date || null,
           part_147_approval_number: form.part_147_approval_number || null,
           certificate_number: form.certificate_number || null,
-          mcq_score: mcqScore,
-          essay_score: essayScore,
-          is_btc: form.is_btc,
+          mcq_score: form.score ? parseInt(form.score, 10) : null,
         },
         { onConflict: 'user_id,target_category,module_id' }
       )
 
-    setSaving(prev => ({ ...prev, [moduleId]: false }))
-
+    setSaving(prev => ({ ...prev, [key]: false }))
     if (error) {
-      setSavedMsg(prev => ({ ...prev, [moduleId]: 'Failed to save' }))
+      setSavedMsg(prev => ({ ...prev, [key]: 'Failed to save' }))
     } else {
-      setSavedMsg(prev => ({ ...prev, [moduleId]: 'Saved' }))
+      setSavedMsg(prev => ({ ...prev, [key]: 'Saved' }))
       startTransition(() => router.refresh())
     }
   }
 
+  async function handleSaveEssay(moduleId: string) {
+    const key = `essay-${moduleId}`
+    setSaving(prev => ({ ...prev, [key]: true }))
+    setSavedMsg(prev => ({ ...prev, [key]: '' }))
+
+    const form = essayForms[moduleId]
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('module_exam_progress')
+      .upsert(
+        {
+          user_id: userId,
+          target_category: selectedCategory,
+          module_id: moduleId,
+          issue_date: form.issue_date || null,
+          part_147_approval_number: form.part_147_approval_number || null,
+          certificate_number: form.certificate_number || null,
+          essay_score: form.score ? parseInt(form.score, 10) : null,
+          essay_split: form.essay_split,
+          essay_score_2: form.essay_split && form.score_2 ? parseInt(form.score_2, 10) : null,
+        },
+        { onConflict: 'user_id,target_category,module_id' }
+      )
+
+    setSaving(prev => ({ ...prev, [key]: false }))
+    if (error) {
+      setSavedMsg(prev => ({ ...prev, [key]: 'Failed to save' }))
+    } else {
+      setSavedMsg(prev => ({ ...prev, [key]: 'Saved' }))
+      startTransition(() => router.refresh())
+    }
+  }
+
+  async function handleRemove(moduleId: string) {
+    const confirmed = window.confirm(
+      'Are you sure you want to remove this entry? This will clear all data and any verification status for this exam.'
+    )
+    if (!confirmed) return
+
+    const supabase = createClient()
+    await supabase
+      .from('module_exam_progress')
+      .delete()
+      .eq('user_id', userId)
+      .eq('target_category', selectedCategory)
+      .eq('module_id', moduleId)
+
+    // Reset local form state
+    setMcqForms(prev => ({
+      ...prev,
+      [moduleId]: { issue_date: '', part_147_approval_number: '', certificate_number: '', score: '' },
+    }))
+    setEssayForms(prev => ({
+      ...prev,
+      [moduleId]: { issue_date: '', part_147_approval_number: '', certificate_number: '', score: '', essay_split: false, score_2: '' },
+    }))
+    setSavedMsg(prev => ({ ...prev, [`mcq-${moduleId}`]: '', [`essay-${moduleId}`]: '' }))
+    startTransition(() => router.refresh())
+  }
+
   async function handleUpload(moduleId: string, file: File) {
+    const key = `upload-${moduleId}`
     setUploading(prev => ({ ...prev, [moduleId]: true }))
 
     const formData = new FormData()
@@ -125,36 +215,48 @@ export function ProgressTracker({ moduleRows, selectedCategory, userId }: Progre
     setUploading(prev => ({ ...prev, [moduleId]: false }))
 
     if (res.ok) {
-      setSavedMsg(prev => ({ ...prev, [moduleId]: 'Certificate uploaded' }))
+      setSavedMsg(prev => ({ ...prev, [key]: 'Certificate uploaded' }))
       startTransition(() => router.refresh())
     } else {
-      setSavedMsg(prev => ({ ...prev, [moduleId]: 'Upload failed' }))
+      setSavedMsg(prev => ({ ...prev, [key]: 'Upload failed' }))
     }
   }
 
   return (
     <div className="space-y-4">
-      {moduleRows.map(row => {
-        const form = forms[row.moduleId]
+      {examRows.map(row => {
         const isEquivalent = !!row.equivalentFrom
-        const hasEssay = ESSAY_MODULES.includes(row.moduleId)
+        const isMcq = row.examType === 'mcq'
+        const isEssay = row.examType === 'essay'
+        const cardKey = `${row.examType}-${row.moduleId}`
         const verificationStatus = row.progress?.verification_status
         const statusInfo = verificationStatus
           ? VERIFICATION_STATUSES[verificationStatus]
           : null
 
-        // Determine if module is passed
-        const mcqNum = form.mcq_score ? parseInt(form.mcq_score, 10) : null
-        const essayNum = form.essay_score ? parseInt(form.essay_score, 10) : null
-        const mcqPassed = mcqNum !== null && mcqNum >= PASS_MARK
-        const essayPassed = !hasEssay || (essayNum !== null && essayNum >= PASS_MARK)
-        const modulePassed = isEquivalent || (mcqPassed && essayPassed)
+        // Determine if this specific exam is passed
+        let examPassed = false
+        if (isEquivalent) {
+          examPassed = true
+        } else if (row.progress) {
+          if (isMcq) {
+            examPassed = row.progress.mcq_score !== null && row.progress.mcq_score >= PASS_MARK
+          } else {
+            const e1 = row.progress.essay_score !== null && row.progress.essay_score >= PASS_MARK
+            if (row.progress.essay_split) {
+              const e2 = row.progress.essay_score_2 !== null && row.progress.essay_score_2 >= PASS_MARK
+              examPassed = e1 && e2
+            } else {
+              examPassed = e1
+            }
+          }
+        }
 
         return (
           <Card
-            key={row.moduleId}
+            key={cardKey}
             className={`${
-              modulePassed
+              examPassed
                 ? 'border-green-200 bg-green-50/30'
                 : isEquivalent
                   ? 'border-blue-200 bg-blue-50/30'
@@ -165,19 +267,14 @@ export function ProgressTracker({ moduleRows, selectedCategory, userId }: Progre
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <CardTitle className="text-base">
-                    Module {row.moduleId} — {row.title}
+                    Module {row.moduleId}: {row.title}
                   </CardTitle>
                   <Badge variant="secondary" className="text-xs">
-                    Level {row.knowledgeLevel}
+                    {isMcq ? 'Multiple Choice Question' : 'Essay'}
                   </Badge>
-                  {hasEssay && (
-                    <Badge variant="outline" className="text-xs">
-                      MCQ + Essay
-                    </Badge>
-                  )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {modulePassed && (
+                  {examPassed && (
                     <Badge variant="default" className="bg-green-600">Passed</Badge>
                   )}
                   {isEquivalent && (
@@ -185,7 +282,7 @@ export function ProgressTracker({ moduleRows, selectedCategory, userId }: Progre
                       Equivalent
                     </Badge>
                   )}
-                  {statusInfo && row.progress && (
+                  {statusInfo && row.progress && isMcq && (
                     <Badge variant={statusInfo.color as 'outline' | 'default' | 'destructive'}>
                       {statusInfo.label}
                     </Badge>
@@ -197,156 +294,335 @@ export function ProgressTracker({ moduleRows, selectedCategory, userId }: Progre
                   {row.equivalentFrom.description}
                 </p>
               )}
-              {verificationStatus === 'rejected' && row.progress?.rejection_reason && (
+              {verificationStatus === 'rejected' && row.progress?.rejection_reason && isMcq && (
                 <p className="text-xs text-red-600 mt-1">
                   Rejection reason: {row.progress.rejection_reason}
                 </p>
               )}
             </CardHeader>
 
-            {!isEquivalent && (
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Issue Date */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                      Issue Date
-                    </label>
-                    <Input
-                      type="date"
-                      value={form.issue_date}
-                      onChange={e => updateField(row.moduleId, 'issue_date', e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
+            {!isEquivalent && isMcq && (
+              <McqCardContent
+                row={row}
+                form={mcqForms[row.moduleId] ?? initMcqForm(row)}
+                saving={saving[`mcq-${row.moduleId}`] ?? false}
+                savedMsg={savedMsg[`mcq-${row.moduleId}`] ?? ''}
+                uploadMsg={savedMsg[`upload-${row.moduleId}`] ?? ''}
+                uploading={uploading[row.moduleId] ?? false}
+                onFieldChange={updateMcqField}
+                onSave={handleSaveMcq}
+                onUpload={handleUpload}
+                onRemove={handleRemove}
+              />
+            )}
 
-                  {/* Part 147 Approval Number */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                      Part 147 Approval No.
-                    </label>
-                    <Input
-                      type="text"
-                      value={form.part_147_approval_number}
-                      onChange={e => updateField(row.moduleId, 'part_147_approval_number', e.target.value)}
-                      placeholder="e.g. UK.147.0001"
-                      className="text-sm"
-                    />
-                  </div>
-
-                  {/* Certificate Number */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                      Certificate Number
-                    </label>
-                    <Input
-                      type="text"
-                      value={form.certificate_number}
-                      onChange={e => updateField(row.moduleId, 'certificate_number', e.target.value)}
-                      placeholder="Certificate ref"
-                      className="text-sm"
-                    />
-                  </div>
-
-                  {/* MCQ Score */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                      MCQ Score (%)
-                    </label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={form.mcq_score}
-                      onChange={e => updateField(row.moduleId, 'mcq_score', e.target.value)}
-                      placeholder="0–100"
-                      className={`text-sm ${scoreColor(form.mcq_score)}`}
-                    />
-                  </div>
-
-                  {/* Essay Score (only for essay modules) */}
-                  {hasEssay && (
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">
-                        Essay Score (%)
-                      </label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={form.essay_score}
-                        onChange={e => updateField(row.moduleId, 'essay_score', e.target.value)}
-                        placeholder="0–100"
-                        className={`text-sm ${scoreColor(form.essay_score)}`}
-                      />
-                    </div>
-                  )}
-
-                  {/* BTC Toggle */}
-                  <div className="flex items-center gap-2 self-end pb-2">
-                    <input
-                      type="checkbox"
-                      id={`btc-${row.moduleId}`}
-                      checked={form.is_btc}
-                      onChange={e => updateField(row.moduleId, 'is_btc', e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300"
-                    />
-                    <label htmlFor={`btc-${row.moduleId}`} className="text-xs text-gray-600">
-                      Basic Training Course
-                    </label>
-                  </div>
-                </div>
-
-                {/* Certificate Upload & Save */}
-                <div className="flex items-center gap-3 mt-4 pt-3 border-t">
-                  <Button
-                    size="sm"
-                    onClick={() => handleSave(row.moduleId)}
-                    disabled={saving[row.moduleId]}
-                  >
-                    {saving[row.moduleId] ? 'Saving...' : 'Save'}
-                  </Button>
-
-                  {/* File upload */}
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,application/pdf"
-                      className="hidden"
-                      onChange={e => {
-                        const file = e.target.files?.[0]
-                        if (file) handleUpload(row.moduleId, file)
-                      }}
-                    />
-                    <span className="inline-flex items-center px-3 py-1.5 rounded-md border text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                      {uploading[row.moduleId]
-                        ? 'Uploading...'
-                        : row.progress?.certificate_photo_path
-                          ? 'Replace Certificate'
-                          : 'Upload Certificate'}
-                    </span>
-                  </label>
-
-                  {row.progress?.certificate_photo_path && (
-                    <span className="text-xs text-green-600">Certificate on file</span>
-                  )}
-
-                  {/* Save feedback */}
-                  {savedMsg[row.moduleId] && (
-                    <span className={`text-xs font-medium ${
-                      savedMsg[row.moduleId] === 'Saved' || savedMsg[row.moduleId] === 'Certificate uploaded'
-                        ? 'text-green-600'
-                        : 'text-red-600'
-                    }`}>
-                      {savedMsg[row.moduleId]}
-                    </span>
-                  )}
-                </div>
-              </CardContent>
+            {!isEquivalent && isEssay && (
+              <EssayCardContent
+                row={row}
+                form={essayForms[row.moduleId] ?? initEssayForm(row)}
+                saving={saving[`essay-${row.moduleId}`] ?? false}
+                savedMsg={savedMsg[`essay-${row.moduleId}`] ?? ''}
+                onFieldChange={updateEssayField}
+                onSave={handleSaveEssay}
+                onRemove={handleRemove}
+              />
             )}
           </Card>
         )
       })}
     </div>
+  )
+}
+
+function McqCardContent({
+  row,
+  form,
+  saving,
+  savedMsg,
+  uploadMsg,
+  uploading,
+  onFieldChange,
+  onSave,
+  onUpload,
+  onRemove,
+}: {
+  row: ExamRow
+  form: McqFormState
+  saving: boolean
+  savedMsg: string
+  uploadMsg: string
+  uploading: boolean
+  onFieldChange: (moduleId: string, field: keyof McqFormState, value: string) => void
+  onSave: (moduleId: string) => void
+  onUpload: (moduleId: string, file: File) => void
+  onRemove: (moduleId: string) => void
+}) {
+  return (
+    <CardContent>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Issue Date */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Issue Date
+          </label>
+          <Input
+            type="date"
+            value={form.issue_date}
+            onChange={e => onFieldChange(row.moduleId, 'issue_date', e.target.value)}
+            className="text-sm"
+          />
+        </div>
+
+        {/* Part 147 Approval Number */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Part 147 Approval Number
+          </label>
+          <Input
+            type="text"
+            value={form.part_147_approval_number}
+            onChange={e => onFieldChange(row.moduleId, 'part_147_approval_number', e.target.value)}
+            placeholder="e.g. UK.147.0000"
+            className="text-sm"
+          />
+        </div>
+
+        {/* Certificate Number */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Certificate Number
+          </label>
+          <Input
+            type="text"
+            value={form.certificate_number}
+            onChange={e => onFieldChange(row.moduleId, 'certificate_number', e.target.value)}
+            placeholder="e.g. UK.147.0000.001"
+            className="text-sm"
+          />
+        </div>
+
+        {/* Mark */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Mark (%)
+          </label>
+          <Input
+            type="number"
+            min={0}
+            max={100}
+            value={form.score}
+            onChange={e => onFieldChange(row.moduleId, 'score', e.target.value)}
+            placeholder="0–100"
+            className={`text-sm ${scoreColor(form.score)}`}
+          />
+        </div>
+      </div>
+
+      {/* Certificate Upload & Save */}
+      <div className="flex items-center gap-3 mt-4 pt-3 border-t">
+        <Button
+          size="sm"
+          onClick={() => onSave(row.moduleId)}
+          disabled={saving}
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </Button>
+
+        <label className="cursor-pointer">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,application/pdf"
+            className="hidden"
+            onChange={e => {
+              const file = e.target.files?.[0]
+              if (file) onUpload(row.moduleId, file)
+            }}
+          />
+          <span className="inline-flex items-center px-3 py-1.5 rounded-md border text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            {uploading
+              ? 'Uploading...'
+              : row.progress?.certificate_photo_path
+                ? 'Replace Certificate'
+                : 'Upload Certificate'}
+          </span>
+        </label>
+
+        {row.progress?.certificate_photo_path && (
+          <span className="text-xs text-green-600">Certificate on file</span>
+        )}
+
+        {savedMsg && (
+          <span className={`text-xs font-medium ${
+            savedMsg === 'Saved' ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {savedMsg}
+          </span>
+        )}
+        {uploadMsg && (
+          <span className={`text-xs font-medium ${
+            uploadMsg === 'Certificate uploaded' ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {uploadMsg}
+          </span>
+        )}
+
+        <div className="ml-auto">
+          <button
+            type="button"
+            onClick={() => onRemove(row.moduleId)}
+            className="text-xs text-red-500 hover:text-red-700 transition-colors"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    </CardContent>
+  )
+}
+
+function EssayCardContent({
+  row,
+  form,
+  saving,
+  savedMsg,
+  onFieldChange,
+  onSave,
+  onRemove,
+}: {
+  row: ExamRow
+  form: EssayFormState
+  saving: boolean
+  savedMsg: string
+  onFieldChange: (moduleId: string, field: keyof EssayFormState, value: string | boolean) => void
+  onSave: (moduleId: string) => void
+  onRemove: (moduleId: string) => void
+}) {
+  return (
+    <CardContent>
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Issue Date */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Issue Date
+            </label>
+            <Input
+              type="date"
+              value={form.issue_date}
+              onChange={e => onFieldChange(row.moduleId, 'issue_date', e.target.value)}
+              className="text-sm"
+            />
+          </div>
+
+          {/* Part 147 Approval Number */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Part 147 Approval Number
+            </label>
+            <Input
+              type="text"
+              value={form.part_147_approval_number}
+              onChange={e => onFieldChange(row.moduleId, 'part_147_approval_number', e.target.value)}
+              placeholder="e.g. UK.147.0000"
+              className="text-sm"
+            />
+          </div>
+
+          {/* Certificate Number */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Certificate Number
+            </label>
+            <Input
+              type="text"
+              value={form.certificate_number}
+              onChange={e => onFieldChange(row.moduleId, 'certificate_number', e.target.value)}
+              placeholder="e.g. UK.147.0000.001"
+              className="text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Split essay toggle (Module 7 only) */}
+        {row.canSplitEssay && (
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.essay_split}
+              onChange={e => onFieldChange(row.moduleId, 'essay_split', e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            <span className="text-xs text-gray-600">
+              Split Essay Marks
+            </span>
+          </label>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Essay Mark */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              {form.essay_split ? 'Mark 1 (%)' : 'Mark (%)'}
+            </label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              value={form.score}
+              onChange={e => onFieldChange(row.moduleId, 'score', e.target.value)}
+              placeholder="0–100"
+              className={`text-sm ${scoreColor(form.score)}`}
+            />
+          </div>
+
+          {/* Second essay mark (only when split) */}
+          {form.essay_split && (
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">
+                Mark 2 (%)
+              </label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={form.score_2}
+                onChange={e => onFieldChange(row.moduleId, 'score_2', e.target.value)}
+                placeholder="0–100"
+                className={`text-sm ${scoreColor(form.score_2)}`}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Save */}
+      <div className="flex items-center gap-3 mt-4 pt-3 border-t">
+        <Button
+          size="sm"
+          onClick={() => onSave(row.moduleId)}
+          disabled={saving}
+        >
+          {saving ? 'Saving...' : 'Save'}
+        </Button>
+
+        {savedMsg && (
+          <span className={`text-xs font-medium ${
+            savedMsg === 'Saved' ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {savedMsg}
+          </span>
+        )}
+
+        <div className="ml-auto">
+          <button
+            type="button"
+            onClick={() => onRemove(row.moduleId)}
+            className="text-xs text-red-500 hover:text-red-700 transition-colors"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    </CardContent>
   )
 }
