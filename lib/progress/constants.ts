@@ -7,18 +7,18 @@ export const PART_66_MODULES = [
   { id: '3', title: 'Electrical Fundamentals', hasEssay: false },
   { id: '4', title: 'Electronic Fundamentals', hasEssay: false },
   { id: '5', title: 'Digital Techniques / Electronic Instrument Systems', hasEssay: false },
-  { id: '6', title: 'Materials & Hardware', hasEssay: false },
+  { id: '6', title: 'Materials and Hardware', hasEssay: false },
   { id: '7A', title: 'Maintenance Practices', hasEssay: true },
   { id: '7B', title: 'Maintenance Practices', hasEssay: true },
   { id: '8', title: 'Basic Aerodynamics', hasEssay: false },
   { id: '9A', title: 'Human Factors', hasEssay: true },
   { id: '9B', title: 'Human Factors', hasEssay: true },
   { id: '10', title: 'Aviation Legislation', hasEssay: true },
-  { id: '11A', title: 'Aeroplane Aerodynamics, Structures & Systems', hasEssay: false },
-  { id: '11B', title: 'Aeroplane Aerodynamics, Structures & Systems', hasEssay: false },
-  { id: '11C', title: 'Aeroplane Aerodynamics, Structures & Systems', hasEssay: false },
-  { id: '12', title: 'Helicopter Aerodynamics, Structures & Systems', hasEssay: false },
-  { id: '13', title: 'Aircraft Aerodynamics, Structures & Systems', hasEssay: false },
+  { id: '11A', title: 'Aeroplane Aerodynamics, Structures and Systems', hasEssay: false },
+  { id: '11B', title: 'Aeroplane Aerodynamics, Structures and Systems', hasEssay: false },
+  { id: '11C', title: 'Aeroplane Aerodynamics, Structures and Systems', hasEssay: false },
+  { id: '12', title: 'Helicopter Aerodynamics, Structures and Systems', hasEssay: false },
+  { id: '13', title: 'Aircraft Aerodynamics, Structures and Systems', hasEssay: false },
   { id: '14', title: 'Propulsion', hasEssay: false },
   { id: '15', title: 'Gas Turbine Engine', hasEssay: false },
   { id: '16', title: 'Piston Engine', hasEssay: false },
@@ -34,16 +34,16 @@ export const PASS_MARK = 75
 
 // Target categories available for progress tracking (excludes C — no modular exams)
 export const PROGRESS_CATEGORIES = [
-  { value: 'A1', label: 'A1 — Aeroplanes Turbine' },
-  { value: 'A2', label: 'A2 — Aeroplanes Piston' },
-  { value: 'A3', label: 'A3 — Helicopters Turbine' },
-  { value: 'A4', label: 'A4 — Helicopters Piston' },
-  { value: 'B1.1', label: 'B1.1 — Aeroplanes Turbine' },
-  { value: 'B1.2', label: 'B1.2 — Aeroplanes Piston' },
-  { value: 'B1.3', label: 'B1.3 — Helicopters Turbine' },
-  { value: 'B1.4', label: 'B1.4 — Helicopters Piston' },
-  { value: 'B2', label: 'B2 — Avionics' },
-  { value: 'B3', label: 'B3 — Non-Pressurised Piston Aeroplanes' },
+  { value: 'A1', label: 'Turbine Aeroplanes' },
+  { value: 'A2', label: 'Piston Aeroplanes' },
+  { value: 'A3', label: 'Turbine Helicopters' },
+  { value: 'A4', label: 'Piston Helicopters' },
+  { value: 'B1.1', label: 'Turbine Aeroplanes' },
+  { value: 'B1.2', label: 'Piston Aeroplanes' },
+  { value: 'B1.3', label: 'Turbine Helicopters' },
+  { value: 'B1.4', label: 'Piston Helicopters' },
+  { value: 'B2', label: 'Avionics' },
+  { value: 'B3', label: 'Non-Pressurised Piston Aeroplanes' },
 ] as const
 
 export type ProgressCategory = (typeof PROGRESS_CATEGORIES)[number]['value']
@@ -137,7 +137,7 @@ export const CROSS_MODULE_EQUIVALENCIES = [
     sourceCategories: ['B1.1', 'B1.3'],
     targetModule: '14',
     targetCategories: ['B2'],
-    description: 'Module 15 (Gas Turbine Engine) passed at B1 level is equivalent to Module 14 (Propulsion) for B2',
+    description: 'Module 15: Gas Turbine Engine for B1 is higher or equivalent to Module 14: Propulsion for B2',
   },
   // B1.2 modules satisfy B3 requirements (pressurised covers non-pressurised)
   // Module 11B (Piston Aeroplanes) satisfies 11C (Non-Pressurised Piston Aeroplanes)
@@ -146,7 +146,7 @@ export const CROSS_MODULE_EQUIVALENCIES = [
     sourceCategories: ['B1.2'],
     targetModule: '11C',
     targetCategories: ['B3'],
-    description: 'Module 11B (Piston Aeroplanes) passed at B1.2 level is equivalent to Module 11C for B3',
+    description: 'Module 11B: Aeroplane Aerodynamics, Structures and Systems for B1.2 is higher or equivalent to Module 11C for B3',
   },
   // Module 17A (Propeller) at B1 level satisfies 17B (Propeller) for B3
   {
@@ -154,7 +154,7 @@ export const CROSS_MODULE_EQUIVALENCIES = [
     sourceCategories: ['B1.1', 'B1.2', 'B1.3', 'B1.4'],
     targetModule: '17B',
     targetCategories: ['B3'],
-    description: 'Module 17A (Propeller) at B1 level is equivalent to Module 17B for B3',
+    description: 'Module 17A: Propeller for B1 is higher or equivalent to Module 17B: Propeller for B3',
   },
 ] as const
 
@@ -193,12 +193,14 @@ export function getCrossModuleEquivalency(
 
 // Verification statuses
 export const VERIFICATION_STATUSES = {
-  pending: { label: 'Pending Review', color: 'outline' },
+  unverified: { label: 'Unverified', color: 'outline' },
   verified: { label: 'Verified', color: 'default' },
-  rejected: { label: 'Rejected', color: 'destructive' },
 } as const
 
 export type VerificationStatus = keyof typeof VERIFICATION_STATUSES
+
+// Module passes are valid for 10 years from issue date
+export const PASS_VALIDITY_YEARS = 10
 
 // Experience requirements (years) per category — with and without Basic Training Course
 export const EXPERIENCE_REQUIREMENTS: Record<string, { withBtc: number; withoutBtc: number }> = {

@@ -6,12 +6,13 @@ import {
   PART_66_MODULES,
   MODULE_REQUIREMENTS,
   PROGRESS_CATEGORIES,
-  getKnowledgeLevel,
+  ESSAY_MODULES,
+  PASS_MARK,
+  PASS_VALIDITY_YEARS,
   getCrossModuleEquivalency,
   isSameModuleEquivalent,
-  EXPERIENCE_REQUIREMENTS,
 } from '@/lib/progress/constants'
-import type { ModuleExamProgress, ModuleProgressRow } from '@/lib/progress/types'
+import type { ModuleExamProgress, ExamRow } from '@/lib/progress/types'
 import { ProgressTracker } from './progress-tracker'
 
 export default async function ProgressPage({
@@ -34,30 +35,41 @@ export default async function ProgressPage({
 
   const progressRecords = (allProgress ?? []) as ModuleExamProgress[]
 
+  // Check if an issue date is more than 10 years old
+  function checkExpired(issueDate: string | null): boolean {
+    if (!issueDate) return false
+    const issue = new Date(issueDate)
+    const expiryDate = new Date(issue)
+    expiryDate.setFullYear(expiryDate.getFullYear() + PASS_VALIDITY_YEARS)
+    return new Date() > expiryDate
+  }
+
   // Get required modules for the selected category
   const requiredModuleIds = MODULE_REQUIREMENTS[selectedCategory] ?? []
 
-  // Build module progress rows with equivalency detection
-  const moduleRows: ModuleProgressRow[] = requiredModuleIds.map(moduleId => {
-    const moduleDef = PART_66_MODULES.find(m => m.id === moduleId)!
-    const level = getKnowledgeLevel(moduleId, selectedCategory)
+  // Build exam rows: each module gets an MCQ row, essay modules also get an Essay row
+  const examRows: ExamRow[] = []
 
-    // Direct progress for this category
+  for (const moduleId of requiredModuleIds) {
+    const moduleDef = PART_66_MODULES.find(m => m.id === moduleId)!
+    const hasEssay = ESSAY_MODULES.includes(moduleId)
+
+    // Find direct progress for this category
     let progress = progressRecords.find(
       p => p.module_id === moduleId && p.target_category === selectedCategory
     ) ?? null
 
-    let equivalentFrom: ModuleProgressRow['equivalentFrom'] = null
+    let equivalentFrom: ExamRow['equivalentFrom'] = null
+    let equivalentSourceRecord: ModuleExamProgress | null = null
 
     if (!progress) {
       // Check same-module equivalency from other categories
-      // e.g., passed Module 1 at B1.1 level → counts for A1
       for (const record of progressRecords) {
         if (
           record.module_id === moduleId &&
           record.target_category !== selectedCategory &&
           record.mcq_score !== null &&
-          record.mcq_score >= 75 &&
+          record.mcq_score >= PASS_MARK &&
           isSameModuleEquivalent(record.target_category, selectedCategory, moduleId)
         ) {
           equivalentFrom = {
@@ -65,12 +77,12 @@ export default async function ProgressPage({
             sourceCategory: record.target_category,
             description: `Passed at ${record.target_category} level (higher or equal)`,
           }
+          equivalentSourceRecord = record
           break
         }
       }
 
       // Check cross-module equivalencies
-      // e.g., B1 Module 15 → B2 Module 14
       if (!equivalentFrom) {
         const crossRule = getCrossModuleEquivalency(moduleId, selectedCategory)
         if (crossRule) {
@@ -79,13 +91,14 @@ export default async function ProgressPage({
               record.module_id === crossRule.sourceModule &&
               crossRule.sourceCategories.includes(record.target_category) &&
               record.mcq_score !== null &&
-              record.mcq_score >= 75
+              record.mcq_score >= PASS_MARK
             ) {
               equivalentFrom = {
                 sourceModule: crossRule.sourceModule,
                 sourceCategory: record.target_category,
                 description: crossRule.description,
               }
+              equivalentSourceRecord = record
               break
             }
           }
@@ -93,33 +106,67 @@ export default async function ProgressPage({
       }
     }
 
-    return {
+    // Check expiry: direct progress or equivalent source record
+    const isExpired = progress
+      ? checkExpired(progress.issue_date)
+      : equivalentSourceRecord
+        ? checkExpired(equivalentSourceRecord.issue_date)
+        : false
+
+    // MCQ row (always)
+    examRows.push({
       moduleId,
       title: moduleDef.title,
-      knowledgeLevel: level,
-      hasEssay: moduleDef.hasEssay,
+      examType: 'mcq',
+      canSplitEssay: false,
       progress,
       equivalentFrom,
-    }
-  })
+      isExpired,
+    })
 
-  // Calculate progress percentage
-  const completedCount = moduleRows.filter(row => {
+    // Essay row (only for essay modules)
+    if (hasEssay) {
+      examRows.push({
+        moduleId,
+        title: moduleDef.title,
+        examType: 'essay',
+        canSplitEssay: moduleId === '7A' || moduleId === '7B',
+        progress,
+        equivalentFrom,
+        isExpired,
+      })
+    }
+  }
+
+  // Calculate progress: count passed exams out of total exam rows (expired entries do not count)
+  const passedCount = examRows.filter(row => {
+    if (row.isExpired) return false
     if (row.equivalentFrom) return true
     if (!row.progress) return false
-    const mcqPass = row.progress.mcq_score !== null && row.progress.mcq_score >= 75
-    if (row.hasEssay) {
-      const essayPass = row.progress.essay_score !== null && row.progress.essay_score >= 75
-      return mcqPass && essayPass
+
+    if (row.examType === 'mcq') {
+      return row.progress.mcq_score !== null && row.progress.mcq_score >= PASS_MARK
+    } else {
+      // Essay exam
+      const essayPassed = row.progress.essay_score !== null && row.progress.essay_score >= PASS_MARK
+      if (row.progress.essay_split) {
+        const essay2Passed = row.progress.essay_score_2 !== null && row.progress.essay_score_2 >= PASS_MARK
+        return essayPassed && essay2Passed
+      }
+      return essayPassed
     }
-    return mcqPass
   }).length
 
-  const totalRequired = moduleRows.length
-  const progressPercent = totalRequired > 0 ? Math.round((completedCount / totalRequired) * 100) : 0
+  const totalExams = examRows.length
+  const progressPercent = totalExams > 0 ? Math.round((passedCount / totalExams) * 100) : 0
 
-  // Experience requirement
-  const expReq = EXPERIENCE_REQUIREMENTS[selectedCategory]
+  // Check if user has BTC set for this category
+  const hasBtc = progressRecords.some(
+    p => p.target_category === selectedCategory && p.is_btc
+  )
+
+  // Category description
+  const categoryDescription = PROGRESS_CATEGORIES.find(c => c.value === selectedCategory)?.label ?? ''
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -130,7 +177,7 @@ export default async function ProgressPage({
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Module Exam Progress</h1>
             <p className="text-gray-500 mt-1">
-              Track your Part-66 modular examination progress toward your licence.
+              Track your Aircraft Maintenance Licence Module Examination progress.
             </p>
           </div>
           <Link href="/dashboard">
@@ -141,7 +188,7 @@ export default async function ProgressPage({
         {/* Category Selector */}
         <div className="bg-white rounded-xl border p-6 mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            Target Licence Category
+            Aircraft Maintenance Licence Categories
           </label>
           <div className="flex flex-wrap gap-2">
             {PROGRESS_CATEGORIES.map(cat => (
@@ -159,7 +206,7 @@ export default async function ProgressPage({
             ))}
           </div>
           <p className="text-xs text-gray-400 mt-2">
-            {PROGRESS_CATEGORIES.find(c => c.value === selectedCategory)?.label}
+            {categoryDescription}
           </p>
         </div>
 
@@ -169,20 +216,9 @@ export default async function ProgressPage({
             <div>
               <p className="text-3xl font-bold text-gray-900">{progressPercent}%</p>
               <p className="text-sm text-gray-500">
-                {completedCount} of {totalRequired} modules completed for {selectedCategory}
+                {passedCount} of {totalExams} exams passed for {selectedCategory}
               </p>
             </div>
-            {expReq && (
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-700">Experience Required</p>
-                <p className="text-xs text-gray-500">
-                  {expReq.withBtc} years with Basic Training Course
-                </p>
-                <p className="text-xs text-gray-500">
-                  {expReq.withoutBtc} years without
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Progress bar */}
@@ -197,14 +233,26 @@ export default async function ProgressPage({
 
           {progressPercent === 100 && (
             <p className="text-sm text-green-700 mt-3 font-medium">
-              All modular exams completed for {selectedCategory}. You may be eligible to apply for your licence once experience requirements are met.
+              All exams completed for {selectedCategory}. You may be eligible to apply for your licence once experience requirements are met.
             </p>
           )}
         </div>
 
-        {/* Module Progress Table */}
+        {/* Basic Training Course */}
+        <div className="bg-white rounded-xl border p-6 mb-6">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            Basic Training Course
+          </h2>
+          <BtcToggle
+            initialValue={hasBtc}
+            selectedCategory={selectedCategory}
+            userId={user.id}
+          />
+        </div>
+
+        {/* Exam Progress Cards */}
         <ProgressTracker
-          moduleRows={moduleRows}
+          examRows={examRows}
           selectedCategory={selectedCategory}
           userId={user.id}
         />
@@ -213,3 +261,5 @@ export default async function ProgressPage({
     </div>
   )
 }
+
+import { BtcToggle } from './btc-toggle'

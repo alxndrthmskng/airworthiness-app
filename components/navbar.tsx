@@ -8,34 +8,34 @@ export async function Navbar() {
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <nav className="border-b bg-white sticky top-0 z-50">
-      <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="font-bold text-lg text-gray-900 tracking-tight">
-          Airworthiness Limited
+    <nav className="bg-black sticky top-0 z-50">
+      <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <Link href="/" className="font-serif text-xl font-black text-white tracking-tight" style={{ letterSpacing: '-0.04em' }}>
+          AW
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <Link href="/courses"
-            className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+            className="text-sm text-neutral-400 hover:text-white transition-colors tracking-wide uppercase">
             Courses
           </Link>
 
           {user ? (
             <>
               <Link href="/logbook"
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                className="text-sm text-neutral-400 hover:text-white transition-colors tracking-wide uppercase">
                 Logbook
               </Link>
               <Link href="/progress"
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                className="text-sm text-neutral-400 hover:text-white transition-colors tracking-wide uppercase">
                 Progress
               </Link>
               <Link href="/dashboard"
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                className="text-sm text-neutral-400 hover:text-white transition-colors tracking-wide uppercase">
                 Dashboard
               </Link>
               <Link href="/profile"
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                className="text-sm text-neutral-400 hover:text-white transition-colors tracking-wide uppercase">
                 Profile
               </Link>
               <LogoutButton />
@@ -43,10 +43,14 @@ export async function Navbar() {
           ) : (
             <>
               <Link href="/login">
-                <Button variant="outline" size="sm">Log in</Button>
+                <Button variant="outline" size="sm" className="border-neutral-600 text-white hover:bg-white hover:text-black">
+                  Log in
+                </Button>
               </Link>
               <Link href="/signup">
-                <Button size="sm">Sign up free</Button>
+                <Button size="sm" className="bg-white text-black hover:bg-neutral-200">
+                  Sign up
+                </Button>
               </Link>
             </>
           )}
