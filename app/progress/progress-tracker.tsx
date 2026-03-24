@@ -198,6 +198,24 @@ export function ProgressTracker({ examRows, selectedCategory, userId }: Progress
     startTransition(() => router.refresh())
   }
 
+  async function handleRemoveEquivalent(row: ExamRow) {
+    if (!row.equivalentFrom) return
+    const confirmed = window.confirm(
+      `Are you sure you want to remove this entry? This will delete the source record from ${row.equivalentFrom.sourceCategory} (Module ${row.equivalentFrom.sourceModule}).`
+    )
+    if (!confirmed) return
+
+    const supabase = createClient()
+    await supabase
+      .from('module_exam_progress')
+      .delete()
+      .eq('user_id', userId)
+      .eq('target_category', row.equivalentFrom.sourceCategory)
+      .eq('module_id', row.equivalentFrom.sourceModule)
+
+    startTransition(() => router.refresh())
+  }
+
   async function handleUpload(moduleId: string, file: File) {
     const key = `upload-${moduleId}`
     setUploading(prev => ({ ...prev, [moduleId]: true }))
@@ -300,6 +318,22 @@ export function ProgressTracker({ examRows, selectedCategory, userId }: Progress
                 </p>
               )}
             </CardHeader>
+
+            {isEquivalent && (
+              <CardContent>
+                <div className="flex items-center pt-1">
+                  <div className="ml-auto">
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveEquivalent(row)}
+                      className="text-xs text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </CardContent>
+            )}
 
             {!isEquivalent && isMcq && (
               <McqCardContent
