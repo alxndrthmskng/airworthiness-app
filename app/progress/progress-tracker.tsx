@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -84,6 +84,18 @@ export function ProgressTracker({ examRows, selectedCategory, userId }: Progress
     }
     return init
   })
+
+  // Re-initialize form state when category or exam data changes
+  useEffect(() => {
+    const mcqInit: Record<string, McqFormState> = {}
+    const essayInit: Record<string, EssayFormState> = {}
+    for (const row of examRows) {
+      if (row.examType === 'mcq') mcqInit[row.moduleId] = initMcqForm(row)
+      if (row.examType === 'essay') essayInit[row.moduleId] = initEssayForm(row)
+    }
+    setMcqForms(mcqInit)
+    setEssayForms(essayInit)
+  }, [selectedCategory, examRows])
 
   const [saving, setSaving] = useState<Record<string, boolean>>({})
   const [savedMsg, setSavedMsg] = useState<Record<string, string>>({})
