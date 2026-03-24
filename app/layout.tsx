@@ -15,7 +15,7 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: 'Airworthiness Limited — Aircraft Engineer Marketplace',
+  title: 'Airworthiness Limited',
   description: 'Continuation training, digital logbooks, and recruiter-ready profiles for aircraft maintenance engineers.',
 }
 
