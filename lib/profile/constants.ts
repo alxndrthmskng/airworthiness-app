@@ -1,4 +1,4 @@
-// AML (Aircraft Maintenance Licence) categories per EASA Part 66
+// Aircraft Maintenance Licence categories per UK Part-66
 export const AML_CATEGORIES = [
   { value: 'A1', label: 'A1 – Aeroplanes Turbine' },
   { value: 'A2', label: 'A2 – Aeroplanes Piston' },
@@ -13,38 +13,6 @@ export const AML_CATEGORIES = [
   { value: 'C', label: 'C – Base Maintenance' },
 ] as const
 
-// Common aircraft types in the industry
-export const AIRCRAFT_TYPES = [
-  'A320 Family',
-  'A330',
-  'A340',
-  'A350',
-  'A380',
-  'B737 Classic',
-  'B737 NG',
-  'B737 MAX',
-  'B747',
-  'B757',
-  'B767',
-  'B777',
-  'B787',
-  'ATR 42/72',
-  'Bombardier CRJ',
-  'Bombardier Dash 8',
-  'Embraer E-Jet',
-  'Embraer E2',
-  'Cessna Citation',
-  'Gulfstream',
-  'Dassault Falcon',
-  'AW139',
-  'AW169',
-  'H125/AS350',
-  'H145/EC145',
-  'H175',
-  'S-76',
-  'S-92',
-] as const
-
 // Training courses that need to be current (within 2 years)
 export const REQUIRED_TRAINING = [
   { slug: 'human-factors', label: 'Human Factors' },
@@ -52,9 +20,9 @@ export const REQUIRED_TRAINING = [
   { slug: 'fuel-tank-safety', label: 'Fuel Tank Safety' },
 ] as const
 
-// Recency requirement: 6 months (approx 130 working days × 8 hours = 1040 hours)
-// in the preceding 2 years
-export const RECENCY_REQUIRED_HOURS = 1040
+// Recency requirement: 6 months of experience in the preceding 2 years
+// Tracked as distinct task days (days on which a logbook task was recorded)
+export const RECENCY_REQUIRED_DAYS = 130
 export const RECENCY_PERIOD_YEARS = 2
 
 // Competency assessment questions for public profile listing
@@ -72,7 +40,7 @@ export const COMPETENCY_QUESTIONS = [
   },
   {
     id: 'q2',
-    question: 'Under EASA Part 145, who is authorised to sign a Certificate of Release to Service (CRS)?',
+    question: 'Under Part 145, who is authorised to sign a Certificate of Release to Service (CRS)?',
     options: [
       'Any licensed engineer present on shift',
       'The shift supervisor regardless of licence',
@@ -149,7 +117,7 @@ export const COMPETENCY_QUESTIONS = [
   },
   {
     id: 'q9',
-    question: 'Under EASA regulations, what is the maximum validity period for continuation training such as Human Factors?',
+    question: 'What is the maximum validity period for continuation training such as Human Factors?',
     options: [
       '1 year',
       '2 years',
