@@ -4,8 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { REQUIRED_TRAINING, RECENCY_REQUIRED_HOURS, RECENCY_PERIOD_YEARS } from '@/lib/profile/constants'
-import type { Profile, TrainingStatus, RecencyStatus } from '@/lib/profile/types'
+import { REQUIRED_TRAINING, RECENCY_REQUIRED_DAYS, RECENCY_PERIOD_YEARS } from '@/lib/profile/constants'
+import { MODULE_REQUIREMENTS, PART_66_MODULES, ESSAY_MODULES, PASS_MARK, PASS_VALIDITY_YEARS, isSameModuleEquivalent, getCrossModuleEquivalency } from '@/lib/progress/constants'
+import type { TrainingStatus, RecencyStatus } from '@/lib/profile/types'
+import type { ModuleExamProgress } from '@/lib/progress/types'
 import { ProfileEditor } from './profile-editor'
 import { PublicToggle } from './public-toggle'
 import { LogoutButton } from '../dashboard/logout-button'
@@ -19,7 +21,7 @@ export default async function ProfilePage() {
   // Fetch profile
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, full_name, role, bio, aml_licence_number, aml_categories, type_ratings, is_public, competency_completed_at, created_at')
+    .select('id, full_name, role, aml_licence_number, aml_categories, type_ratings, is_public, competency_completed_at, created_at')
     .eq('id', user.id)
     .single()
 
@@ -39,15 +41,6 @@ export default async function ProfilePage() {
     .eq('user_id', user.id)
     .order('issued_at', { ascending: false })
 
-  // Exam attempts
-  const { data: attempts } = await supabase
-    .from('exam_attempts')
-    .select('id, passed')
-    .eq('user_id', user.id)
-
-  const passedCount = attempts?.filter(a => a.passed).length ?? 0
-  const totalAttempts = attempts?.length ?? 0
-
   // Calculate training status
   const now = new Date()
   const twoYearsAgo = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate())
@@ -66,36 +59,112 @@ export default async function ProfilePage() {
   // Logbook stats (all entries)
   const { data: allLogbookEntries } = await supabase
     .from('logbook_entries')
-    .select('duration_hours, task_date, status')
+    .select('task_date, status')
     .eq('user_id', user.id)
 
   const logbookCount = allLogbookEntries?.length ?? 0
-  const logbookHours = allLogbookEntries?.reduce((sum, e) => sum + Number(e.duration_hours), 0) ?? 0
 
-  // Calculate recency from logbook entries (within recency period)
+  // Calculate recency as distinct task days within the recency period
   const periodStart = new Date(now.getFullYear() - RECENCY_PERIOD_YEARS, now.getMonth(), now.getDate())
   const recencyEntries = allLogbookEntries?.filter(e =>
     e.task_date >= periodStart.toISOString().split('T')[0] &&
     ['verified', 'draft', 'pending_verification'].includes(e.status)
   ) ?? []
 
-  const totalHours = recencyEntries.reduce((sum, e) => sum + Number(e.duration_hours), 0)
+  const uniqueTaskDays = new Set(recencyEntries.map(e => e.task_date)).size
 
   const recencyStatus: RecencyStatus = {
-    totalHours,
-    requiredHours: RECENCY_REQUIRED_HOURS,
-    isCurrent: totalHours >= RECENCY_REQUIRED_HOURS,
+    totalDays: uniqueTaskDays,
+    requiredDays: RECENCY_REQUIRED_DAYS,
+    isCurrent: uniqueTaskDays >= RECENCY_REQUIRED_DAYS,
     periodStart: periodStart.toISOString().split('T')[0],
     periodEnd: now.toISOString().split('T')[0],
   }
 
+  // Module exam progress for the selected category (default B1.1)
+  const selectedCategory = profile.aml_categories?.[0] || 'B1.1'
+  const { data: allProgress } = await supabase
+    .from('module_exam_progress')
+    .select('*')
+    .eq('user_id', user.id)
+
+  const progressRecords = (allProgress ?? []) as ModuleExamProgress[]
+  const requiredModuleIds = MODULE_REQUIREMENTS[selectedCategory] ?? []
+
+  function checkExpired(issueDate: string | null): boolean {
+    if (!issueDate) return false
+    const issue = new Date(issueDate)
+    const expiryDate = new Date(issue)
+    expiryDate.setFullYear(expiryDate.getFullYear() + PASS_VALIDITY_YEARS)
+    return new Date() > expiryDate
+  }
+
+  // Count passed modules for the selected category
+  let passedModules = 0
+  for (const moduleId of requiredModuleIds) {
+    const hasEssay = ESSAY_MODULES.includes(moduleId)
+
+    let progress = progressRecords.find(
+      p => p.module_id === moduleId && p.target_category === selectedCategory
+    ) ?? null
+
+    let equivalentSourceRecord: ModuleExamProgress | null = null
+
+    if (!progress) {
+      for (const record of progressRecords) {
+        if (
+          record.module_id === moduleId &&
+          record.target_category !== selectedCategory &&
+          record.mcq_score !== null &&
+          record.mcq_score >= PASS_MARK &&
+          isSameModuleEquivalent(record.target_category, selectedCategory, moduleId)
+        ) {
+          equivalentSourceRecord = record
+          break
+        }
+      }
+      if (!equivalentSourceRecord) {
+        const crossRule = getCrossModuleEquivalency(moduleId, selectedCategory)
+        if (crossRule) {
+          for (const record of progressRecords) {
+            if (
+              record.module_id === crossRule.sourceModule &&
+              crossRule.sourceCategories.includes(record.target_category) &&
+              record.mcq_score !== null &&
+              record.mcq_score >= PASS_MARK
+            ) {
+              equivalentSourceRecord = record
+              break
+            }
+          }
+        }
+      }
+    }
+
+    const effectiveRecord = progress ?? equivalentSourceRecord
+    if (!effectiveRecord) continue
+
+    const isExpired = checkExpired(effectiveRecord.issue_date)
+    if (isExpired) continue
+
+    const mcqPassed = effectiveRecord.mcq_score !== null && effectiveRecord.mcq_score >= PASS_MARK
+    const essayPassed = !hasEssay || (effectiveRecord.essay_score !== null && effectiveRecord.essay_score >= PASS_MARK)
+
+    if (mcqPassed && essayPassed) passedModules++
+  }
+
+  const totalModules = requiredModuleIds.length
+  const progressPercent = totalModules > 0 ? Math.round((passedModules / totalModules) * 100) : 0
+
   // Check competency assessment status
   const competencyPassed = !!profile.competency_completed_at
-
-  // Can go public: must have competency assessment completed
   const canGoPublic = competencyPassed
-
   const allTrainingCurrent = trainingStatuses.every(t => t.isCurrent)
+  const allComplete = allTrainingCurrent && recencyStatus.isCurrent && competencyPassed
+
+  // Extract first name for welcome message
+  const firstName = profile.full_name?.split(' ')[0] ?? ''
+  const fullName = profile.full_name ?? 'Engineer'
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -104,13 +173,16 @@ export default async function ProfilePage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {profile.full_name ? `${profile.full_name}` : 'Engineer Profile'}
+            <h1 className="text-2xl text-gray-900" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>
+              Welcome, {fullName}!
             </h1>
-            <p className="text-gray-500 mt-1">Your qualifications, training currency, and recency at a glance.</p>
+            <p className="text-gray-500 mt-1">Your aircraft maintenance licence journey at a glance.</p>
             {purchase && (
-              <span className="inline-block mt-2 text-xs font-medium bg-amber-100 text-amber-800 px-3 py-1 rounded-full">
-                Premium member
+              <span
+                className="inline-block mt-2 text-xs px-3 py-1 rounded-full text-white"
+                style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold', backgroundColor: '#000' }}
+              >
+                No Adverts
               </span>
             )}
           </div>
@@ -118,95 +190,92 @@ export default async function ProfilePage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-8">
           <div className="bg-white rounded-xl border p-6">
-            <p className="text-sm text-gray-500">Certificates</p>
-            <p className="text-3xl font-bold mt-1">{certificates?.length ?? 0}</p>
+            <p className="text-sm text-gray-500" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Module Exams ({selectedCategory})</p>
+            <p className="text-3xl font-bold mt-1">{passedModules}/{totalModules}</p>
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+              <div
+                className={`h-2 rounded-full transition-all ${progressPercent === 100 ? 'bg-green-500' : 'bg-amber-500'}`}
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">{progressPercent}% complete</p>
           </div>
           <div className="bg-white rounded-xl border p-6">
-            <p className="text-sm text-gray-500">Exams passed</p>
-            <p className="text-3xl font-bold mt-1">{passedCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border p-6">
-            <p className="text-sm text-gray-500">Logbook entries</p>
+            <p className="text-sm text-gray-500" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Logbook Tasks</p>
             <p className="text-3xl font-bold mt-1">{logbookCount}</p>
-          </div>
-          <div className="bg-white rounded-xl border p-6">
-            <p className="text-sm text-gray-500">Logged hours</p>
-            <p className="text-3xl font-bold mt-1">{logbookHours.toFixed(0)}</p>
           </div>
         </div>
 
-        {/* Overall Status Banner */}
+        {/* Action Required Banner */}
         <div className={`rounded-xl border p-6 mb-8 ${
-          allTrainingCurrent && recencyStatus.isCurrent && competencyPassed
+          allComplete
             ? 'bg-green-50 border-green-200'
             : 'bg-amber-50 border-amber-200'
         }`}>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">
-              {allTrainingCurrent && recencyStatus.isCurrent && competencyPassed ? '✅' : '⚠️'}
-            </span>
-            <div>
-              <p className="font-semibold text-gray-900">
-                {allTrainingCurrent && recencyStatus.isCurrent && competencyPassed
-                  ? 'Profile Complete — Ready for recruiters'
-                  : 'Action Required — Complete your profile'}
-              </p>
-              <p className="text-sm text-gray-600 mt-0.5">
-                {!allTrainingCurrent && 'Some continuation training is expired. '}
-                {!recencyStatus.isCurrent && 'Recency requirement not met. '}
-                {!competencyPassed && 'Competency assessment not completed. '}
-                {allTrainingCurrent && recencyStatus.isCurrent && competencyPassed && 'All checks passed. You can list your profile publicly.'}
-              </p>
-            </div>
+          <div>
+            <p className="font-semibold text-gray-900" style={{ fontFamily: 'Times New Roman, serif' }}>
+              {allComplete
+                ? 'Profile Complete — Ready for recruiters'
+                : 'Action Required — Complete your profile'}
+            </p>
+            <p className="text-sm text-gray-600 mt-0.5">
+              {!allTrainingCurrent && 'Some continuation training is expired. '}
+              {!recencyStatus.isCurrent && 'Recency requirement not met. '}
+              {!competencyPassed && 'Competency assessment not completed. '}
+              {allComplete && 'All checks passed. You can list your profile publicly.'}
+            </p>
           </div>
         </div>
 
-        {/* Training Currency */}
+        {/* Continuation Training */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Continuation Training</CardTitle>
-            <CardDescription>EASA requires these to be completed within the last 2 years.</CardDescription>
+            <CardTitle style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Continuation Training</CardTitle>
+            <CardDescription>Required to be completed within the last 2 years.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="grid gap-3">
               {trainingStatuses.map(training => (
-                <div key={training.slug}
-                  className="flex items-center justify-between py-3 border-b last:border-0">
-                  <div>
-                    <p className="font-medium text-gray-900">{training.label}</p>
-                    {training.certificateDate ? (
-                      <p className="text-sm text-gray-500 mt-0.5">
-                        Completed {new Date(training.certificateDate).toLocaleDateString('en-GB', {
-                          day: 'numeric', month: 'long', year: 'numeric'
-                        })}
-                      </p>
-                    ) : (
-                      <p className="text-sm text-gray-400 mt-0.5">No certificate on record</p>
-                    )}
-                  </div>
-                  <Badge variant={training.isCurrent ? 'default' : 'destructive'}>
-                    {training.isCurrent ? 'Current' : 'Expired'}
-                  </Badge>
-                </div>
+                <Card key={training.slug} className={!training.isCurrent ? 'opacity-60' : ''}>
+                  <CardHeader className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-base">{training.label}</CardTitle>
+                        {training.certificateDate ? (
+                          <p className="text-sm text-gray-500 mt-0.5">
+                            Completed {new Date(training.certificateDate).toLocaleDateString('en-GB', {
+                              day: 'numeric', month: 'long', year: 'numeric'
+                            })}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-gray-400 mt-0.5">No certificate on record</p>
+                        )}
+                      </div>
+                      <Badge variant={training.isCurrent ? 'default' : 'destructive'}>
+                        {training.isCurrent ? 'Current' : 'Expired'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                </Card>
               ))}
             </div>
             {!allTrainingCurrent && (
               <div className="mt-4">
                 <Link href="/courses">
-                  <Button size="sm">Complete Training →</Button>
+                  <Button size="sm">Complete Training</Button>
                 </Link>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* AML Categories & Type Ratings */}
+        {/* Aircraft Maintenance Licence */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Aircraft Maintenance Licence</CardTitle>
-            <CardDescription>Your Part 66 licence categories and aircraft type ratings.</CardDescription>
+            <CardTitle style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Aircraft Maintenance Licence</CardTitle>
+            <CardDescription>Your licence categories and aircraft type ratings.</CardDescription>
           </CardHeader>
           <CardContent>
             <ProfileEditor
@@ -214,7 +283,6 @@ export default async function ProfilePage() {
                 aml_licence_number: profile.aml_licence_number ?? '',
                 aml_categories: profile.aml_categories ?? [],
                 type_ratings: profile.type_ratings ?? [],
-                bio: profile.bio ?? '',
               }}
             />
           </CardContent>
@@ -223,29 +291,28 @@ export default async function ProfilePage() {
         {/* Recency */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Maintenance Recency</CardTitle>
+            <CardTitle style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Maintenance Recency</CardTitle>
             <CardDescription>
-              6 months of maintenance experience ({RECENCY_REQUIRED_HOURS} hours) in the preceding {RECENCY_PERIOD_YEARS} years.
+              6 months of maintenance experience ({RECENCY_REQUIRED_DAYS} task days) in the preceding {RECENCY_PERIOD_YEARS} years.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-3xl font-bold text-gray-900">{recencyStatus.totalHours.toFixed(0)}</p>
-                <p className="text-sm text-gray-500">of {recencyStatus.requiredHours} hours required</p>
+                <p className="text-3xl font-bold text-gray-900">{recencyStatus.totalDays}</p>
+                <p className="text-sm text-gray-500">of {recencyStatus.requiredDays} task days required</p>
               </div>
               <Badge variant={recencyStatus.isCurrent ? 'default' : 'destructive'}>
                 {recencyStatus.isCurrent ? 'Recency Met' : 'Not Met'}
               </Badge>
             </div>
 
-            {/* Progress bar */}
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div
                 className={`h-3 rounded-full transition-all ${
                   recencyStatus.isCurrent ? 'bg-green-500' : 'bg-amber-500'
                 }`}
-                style={{ width: `${Math.min((recencyStatus.totalHours / recencyStatus.requiredHours) * 100, 100)}%` }}
+                style={{ width: `${Math.min((recencyStatus.totalDays / recencyStatus.requiredDays) * 100, 100)}%` }}
               />
             </div>
             <p className="text-xs text-gray-400 mt-2">
@@ -254,7 +321,7 @@ export default async function ProfilePage() {
 
             {!recencyStatus.isCurrent && (
               <p className="text-sm text-gray-500 mt-3">
-                Log your maintenance work to build up recency hours.
+                Log your maintenance tasks to build up recency days.
               </p>
             )}
           </CardContent>
@@ -263,7 +330,7 @@ export default async function ProfilePage() {
         {/* Competency Assessment */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Competency Assessment</CardTitle>
+            <CardTitle style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Competency Assessment</CardTitle>
             <CardDescription>
               Complete a basic competency check to list your profile publicly. This gives recruiters
               confidence you would pass their internal assessment during onboarding.
@@ -285,58 +352,24 @@ export default async function ProfilePage() {
                   10 multiple-choice questions covering core maintenance knowledge. You need 80% to pass.
                 </p>
                 <Link href="/profile/assessment">
-                  <Button>Take Assessment →</Button>
+                  <Button>Take Assessment</Button>
                 </Link>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Certificates */}
+        {/* Task Logbook */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Your Certificates</CardTitle>
-            <CardDescription>Certificates earned from completing courses and passing exams.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {certificates && certificates.length > 0 ? (
-              <div className="space-y-3">
-                {certificates.map((cert: any) => (
-                  <div key={cert.token}
-                    className="flex items-center justify-between py-3 border-b last:border-0">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {cert.courses?.title}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-0.5">
-                        Issued {new Date(cert.issued_at).toLocaleDateString('en-GB', {
-                          day: 'numeric', month: 'long', year: 'numeric'
-                        })}
-                      </p>
-                    </div>
-                    <Link href={`/certificates/${cert.token}`}>
-                      <Button variant="outline" size="sm">View</Button>
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">No certificates yet. Complete a course and pass the exam to earn one.</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Logbook */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Task Logbook</CardTitle>
+            <CardTitle style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Task Logbook</CardTitle>
             <CardDescription>CAP 741 Digital Logbook for recording maintenance tasks.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-500">
                 {logbookCount > 0
-                  ? `${logbookCount} entries, ${logbookHours.toFixed(1)} hours logged`
+                  ? `${logbookCount} tasks recorded`
                   : 'Record and verify your maintenance tasks'}
               </p>
               <Link href="/logbook">
@@ -349,9 +382,9 @@ export default async function ProfilePage() {
         {/* Public Profile Toggle */}
         <Card>
           <CardHeader>
-            <CardTitle>Public Profile</CardTitle>
+            <CardTitle style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Public Profile</CardTitle>
             <CardDescription>
-              List your profile on the engineer marketplace so recruiters can find you.
+              List your profile on the engineer directory so recruiters can find you.
               {!canGoPublic && ' Complete the competency assessment first.'}
             </CardDescription>
           </CardHeader>

@@ -2,7 +2,6 @@ export interface Profile {
   id: string
   full_name: string | null
   role: string
-  bio: string | null
   aml_licence_number: string | null
   aml_categories: string[]
   type_ratings: string[]
@@ -19,8 +18,8 @@ export interface TrainingStatus {
 }
 
 export interface RecencyStatus {
-  totalHours: number
-  requiredHours: number
+  totalDays: number
+  requiredDays: number
   isCurrent: boolean
   periodStart: string
   periodEnd: string

@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { REQUIRED_TRAINING, RECENCY_REQUIRED_HOURS, RECENCY_PERIOD_YEARS, AML_CATEGORIES } from '@/lib/profile/constants'
+import { REQUIRED_TRAINING, RECENCY_REQUIRED_DAYS, RECENCY_PERIOD_YEARS, AML_CATEGORIES } from '@/lib/profile/constants'
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -13,7 +13,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   // Fetch public profile
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, full_name, bio, aml_licence_number, aml_categories, type_ratings, is_public, competency_completed_at, created_at')
+    .select('id, full_name, aml_licence_number, aml_categories, type_ratings, is_public, competency_completed_at, created_at')
     .eq('id', id)
     .eq('is_public', true)
     .single()
@@ -39,17 +39,17 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     }
   })
 
-  // Calculate recency
+  // Calculate recency as distinct task days
   const periodStart = new Date(now.getFullYear() - RECENCY_PERIOD_YEARS, now.getMonth(), now.getDate())
   const { data: logbookEntries } = await supabase
     .from('logbook_entries')
-    .select('duration_hours')
+    .select('task_date')
     .eq('user_id', profile.id)
     .gte('task_date', periodStart.toISOString().split('T')[0])
     .in('status', ['verified'])
 
-  const totalHours = logbookEntries?.reduce((sum, e) => sum + Number(e.duration_hours), 0) ?? 0
-  const recencyMet = totalHours >= RECENCY_REQUIRED_HOURS
+  const uniqueTaskDays = new Set(logbookEntries?.map(e => e.task_date) ?? []).size
+  const recencyMet = uniqueTaskDays >= RECENCY_REQUIRED_DAYS
 
   const allTrainingCurrent = trainingStatuses.every(t => t.isCurrent)
   const memberSince = profile.created_at
@@ -64,12 +64,9 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         <div className="bg-white rounded-xl border p-8 mb-6">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl text-gray-900" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>
                 {profile.full_name ?? 'Aircraft Engineer'}
               </h1>
-              {profile.bio && (
-                <p className="text-gray-500 mt-2 max-w-lg">{profile.bio}</p>
-              )}
               {memberSince && (
                 <p className="text-xs text-gray-400 mt-2">Member since {memberSince}</p>
               )}
@@ -89,7 +86,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           {/* Licence Info */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Licence Details</CardTitle>
+              <CardTitle className="text-base" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Licence Details</CardTitle>
             </CardHeader>
             <CardContent>
               {profile.aml_licence_number ? (
@@ -120,7 +117,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           {/* Training Status */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Training Currency</CardTitle>
+              <CardTitle className="text-base" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Training Currency</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -140,7 +137,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           {profile.type_ratings && profile.type_ratings.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Aircraft Type Ratings</CardTitle>
+                <CardTitle className="text-base" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Aircraft Type Ratings</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-1.5">
@@ -157,11 +154,11 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           {/* Recency */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Maintenance Recency</CardTitle>
+              <CardTitle className="text-base" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Maintenance Recency</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl font-bold text-gray-900">{totalHours.toFixed(0)}h</span>
+                <span className="text-2xl font-bold text-gray-900">{uniqueTaskDays} days</span>
                 <Badge variant={recencyMet ? 'default' : 'destructive'}>
                   {recencyMet ? 'Current' : 'Not Met'}
                 </Badge>
@@ -169,11 +166,11 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full ${recencyMet ? 'bg-green-500' : 'bg-amber-500'}`}
-                  style={{ width: `${Math.min((totalHours / RECENCY_REQUIRED_HOURS) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((uniqueTaskDays / RECENCY_REQUIRED_DAYS) * 100, 100)}%` }}
                 />
               </div>
               <p className="text-xs text-gray-400 mt-1">
-                {totalHours.toFixed(0)} of {RECENCY_REQUIRED_HOURS} hours in the last {RECENCY_PERIOD_YEARS} years
+                {uniqueTaskDays} of {RECENCY_REQUIRED_DAYS} task days in the last {RECENCY_PERIOD_YEARS} years
               </p>
             </CardContent>
           </Card>
