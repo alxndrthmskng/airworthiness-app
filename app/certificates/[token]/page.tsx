@@ -39,7 +39,7 @@ export default async function CertificatePage({ params }: Props) {
 
       <div
         id="certificate"
-        className="min-h-screen flex items-center justify-center bg-gray-50 print:bg-white p-8"
+        className="min-h-screen flex items-center justify-center aw-gradient print:bg-white p-8"
       >
         <div className="w-full max-w-2xl bg-white border-4 border-double border-gray-800 rounded-2xl p-12 text-center shadow-xl print:shadow-none">
 

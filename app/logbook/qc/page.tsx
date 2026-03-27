@@ -51,14 +51,14 @@ export default async function QcPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen aw-gradient">
       <div className="max-w-6xl mx-auto px-4 py-12">
 
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">QC Review Queue</h1>
-            <p className="text-gray-500 mt-1">
-              Cross-check that the engineer and verifier were both on the job. Independent of the AML verification.
+            <h1 className="text-2xl font-bold text-white">QC Review Queue</h1>
+            <p className="text-white/60 mt-1">
+              Cross-check that the individual and verifier were both on the job. Independent of the AML verification.
             </p>
           </div>
           <Link href="/logbook">

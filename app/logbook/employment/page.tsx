@@ -15,10 +15,10 @@ export default async function EmploymentPage() {
     .order('start_date', { ascending: false })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen aw-gradient">
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Employment History</h1>
-        <p className="text-gray-500 mb-8">
+        <h1 className="text-2xl font-bold text-white mb-2">Employment History</h1>
+        <p className="text-white/60 mb-8">
           Add your employers and dates. This is used to match you with verifiers who worked at the same organisation during the same period.
         </p>
 

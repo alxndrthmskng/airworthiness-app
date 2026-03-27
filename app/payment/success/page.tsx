@@ -35,7 +35,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
 
   if (session.payment_status !== 'paid') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen aw-gradient flex items-center justify-center">
         <div className="bg-white rounded-2xl border p-12 text-center max-w-md">
           <div className="text-5xl mb-4">⚠️</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -56,7 +56,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
 
   if (!metadataUserId || metadataUserId !== user.id) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen aw-gradient flex items-center justify-center">
         <div className="bg-white rounded-2xl border p-12 text-center max-w-md">
           <div className="text-5xl mb-4">⚠️</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -80,7 +80,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen aw-gradient flex items-center justify-center">
         <div className="bg-white rounded-2xl border p-12 text-center max-w-md">
           <div className="text-5xl mb-4">⚠️</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -96,7 +96,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="min-h-screen aw-gradient flex items-center justify-center">
       <div className="bg-white rounded-2xl border p-12 text-center max-w-md">
         <div className="text-5xl mb-4">🎉</div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">

@@ -122,7 +122,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     <div className="space-y-6">
       {/* Licence Number */}
       <div>
-        <Label htmlFor="licence-number" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>
+        <Label htmlFor="licence-number">
           UK CAA Licence Number
         </Label>
         <Input
@@ -138,7 +138,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
 
       {/* AML Categories */}
       <div>
-        <Label style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>
+        <Label>
           Licence Categories Held
         </Label>
         <p className="text-xs text-gray-400 mt-0.5 mb-2">Select all that apply to your Aircraft Maintenance Licence.</p>
@@ -167,7 +167,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
 
       {/* Type Ratings */}
       <div>
-        <Label style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>
+        <Label>
           Aircraft Type Ratings
         </Label>
         <p className="text-xs text-gray-400 mt-0.5 mb-2">

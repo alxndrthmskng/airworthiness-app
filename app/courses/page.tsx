@@ -20,18 +20,18 @@ export default async function CoursesPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen aw-gradient">
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">All Courses</h1>
-          <p className="text-gray-500 mt-2">Browse our professional learning courses</p>
+          <h1 className="text-3xl text-white">All Courses</h1>
+          <p className="text-white/60 mt-2">Browse our professional learning courses</p>
         </div>
 
         {courses && courses.length > 0 && (
           <div className="grid gap-4 mb-12">
             {courses.map(course => (
               <Link key={course.id} href={`/courses/${course.slug}`}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card className="bg-white hover:shadow-md transition-shadow cursor-pointer">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <CardTitle className="text-lg">{course.title}</CardTitle>
@@ -49,19 +49,19 @@ export default async function CoursesPage() {
 
         {/* In Development Section */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">In Development</h2>
+          <h2 className="text-2xl text-white">In Development</h2>
         </div>
 
         {/* Continuation Training */}
         <div className="mb-10">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Continuation Training</h3>
+          <h3 className="text-lg text-white/80 mb-4">Continuation Training</h3>
           <div className="grid gap-3">
             {continuationTraining.map(title => (
-              <Card key={title} className="opacity-60">
+              <Card key={title} className="bg-white/10 border-white/20 backdrop-blur-sm">
                 <CardHeader className="py-4">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">{title}</CardTitle>
-                    <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+                    <CardTitle className="text-base text-white/70">{title}</CardTitle>
+                    <Badge variant="outline" className="text-xs border-white/30 text-white/60">Coming Soon</Badge>
                   </div>
                 </CardHeader>
               </Card>

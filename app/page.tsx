@@ -7,63 +7,61 @@ export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (user) redirect('/dashboard')
+  if (user) redirect('/profile')
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
 
       {/* Hero */}
-      <section className="max-w-4xl mx-auto px-4 py-24 text-center">
-        <span className="inline-block bg-blue-50 text-blue-700 text-sm font-medium px-3 py-1 rounded-full mb-6">
-          Aircraft Maintenance Recency
-        </span>
-        <h1 className="text-5xl font-bold text-gray-900 leading-tight mb-6">
-          Free Continuation Training.
-          <br />
-          Human Factors. Electrical Wiring. Fuel Tank Safety.
-        </h1>
-        <p className="text-xl text-gray-500 mb-10 max-w-2xl mx-auto">
-          Study our courses, test your knowledge with our exam,
-          and receive a verifiable certificate you can share with employers.
-        </p>
-        <div className="flex items-center justify-center gap-4">
-          <Link href="/signup">
-            <Button size="lg">Get started free →</Button>
-          </Link>
-          <Link href="/courses">
-            <Button size="lg" variant="outline">Browse courses</Button>
-          </Link>
+      <section className="aw-gradient py-24">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <span className="inline-block bg-white/10 text-white text-sm font-medium px-3 py-1 rounded-full mb-6 border border-white/20">
+            Aircraft Maintenance Recency
+          </span>
+          <h1 className="text-5xl text-white leading-tight mb-6">
+            Free Continuation Training.
+            <br />
+            Human Factors. Electrical Wiring. Fuel Tank Safety.
+          </h1>
+          <p className="text-xl text-white/70 mb-10 max-w-2xl mx-auto">
+            Study our courses, test your knowledge with our exam,
+            and receive a verifiable certificate you can share with employers.
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <Link href="/signup">
+              <Button size="lg" className="bg-white text-[#2d3a80] hover:bg-white/90 font-semibold">Get started free</Button>
+            </Link>
+            <Link href="/courses">
+              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">Browse courses</Button>
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Features */}
-      <section className="bg-gray-50 py-20">
+      <section className="aw-gradient-light py-20">
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-12">
+          <h2 className="text-2xl text-center text-white mb-12">
             Everything you need to get certified
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {[
               {
-                icon: '📚',
                 title: 'Expert-written courses',
                 description: 'Text-based modules written by aviation professionals.',
               },
               {
-                icon: '📝',
                 title: 'Multiple-Choice Exams',
                 description: 'A minimum pass score of 75% to ensure you\'ve understood the material.',
               },
               {
-                icon: '🏆',
                 title: 'Verifiable certificates',
                 description: 'Every certificate has a unique URL. Anyone can verify it\'s real in seconds.',
               },
             ].map(feature => (
-              <div key={feature.title} className="bg-white rounded-xl border p-6">
-                <div className="text-3xl mb-3">{feature.icon}</div>
-                <h3 className="font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-sm text-gray-500">{feature.description}</p>
+              <div key={feature.title} className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
+                <h3 className="font-semibold text-white mb-2">{feature.title}</h3>
+                <p className="text-sm text-white/70">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -71,16 +69,18 @@ export default async function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="max-w-2xl mx-auto px-4 py-24 text-center">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          Ready to get certified?
-        </h2>
-        <p className="text-gray-500 mb-8">
-          Join professionals already using the platform. Start with a free course today.
-        </p>
-        <Link href="/signup">
-          <Button size="lg">Create your free account →</Button>
-        </Link>
+      <section className="aw-gradient py-24">
+        <div className="max-w-2xl mx-auto px-4 text-center">
+          <h2 className="text-3xl text-white mb-4">
+            Ready to get certified?
+          </h2>
+          <p className="text-white/70 mb-8">
+            Join professionals already using the platform. Start with a free course today.
+          </p>
+          <Link href="/signup">
+            <Button size="lg" className="bg-white text-[#2d3a80] hover:bg-white/90 font-semibold">Create your free account</Button>
+          </Link>
+        </div>
       </section>
 
     </div>

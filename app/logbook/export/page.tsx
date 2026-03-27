@@ -67,7 +67,7 @@ export default async function ExportPage() {
           <h1 className="text-2xl font-bold text-gray-900 print:text-xl">
             Aircraft Maintenance Task Logbook
           </h1>
-          <p className="text-sm text-gray-500 mt-1">In the style of CAP 741 — Personal Logbook</p>
+          <p className="text-sm text-gray-500 mt-1">Aircraft Maintenance Digital Logbook</p>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 print:gap-2 print:mt-2">
             <div>

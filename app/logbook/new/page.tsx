@@ -18,10 +18,10 @@ export default async function NewLogbookEntryPage() {
   const employers = [...new Set(periods?.map(p => p.employer) ?? [])]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen aw-gradient">
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">New Logbook Entry</h1>
-        <p className="text-gray-500 mb-8">
+        <h1 className="text-2xl font-bold text-white mb-2">New Logbook Entry</h1>
+        <p className="text-white/60 mb-8">
           Record a maintenance task. You can save as draft and submit for verification later.
         </p>
 
