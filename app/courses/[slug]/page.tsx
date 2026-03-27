@@ -62,7 +62,7 @@ export default async function CoursePage({ params }: Props) {
     .single()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen aw-gradient">
       <div className="max-w-3xl mx-auto px-4 py-12">
 
         {/* Back */}
@@ -73,10 +73,10 @@ export default async function CoursePage({ params }: Props) {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">{course.title}</h1>
+            <h1 className="text-3xl font-bold text-white">{course.title}</h1>
             {course.is_premium && <Badge variant="secondary">Premium</Badge>}
           </div>
-          <p className="text-gray-500">{course.description}</p>
+          <p className="text-white/60">{course.description}</p>
 
           {/* Progress */}
           {totalModules > 0 && (

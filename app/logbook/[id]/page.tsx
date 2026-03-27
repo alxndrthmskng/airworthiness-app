@@ -92,10 +92,10 @@ export default async function LogbookEntryPage({ params }: Props) {
     const employers = [...new Set(periods?.map(p => p.employer) ?? [])]
 
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen aw-gradient">
         <div className="max-w-2xl mx-auto px-4 py-12">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">Edit Entry</h1>
+            <h1 className="text-2xl font-bold text-white">Edit Entry</h1>
             <Badge variant={statusInfo.color as 'default' | 'secondary' | 'outline' | 'destructive'}>
               {statusInfo.label}
             </Badge>
@@ -122,11 +122,11 @@ export default async function LogbookEntryPage({ params }: Props) {
 
   // Read-only view
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen aw-gradient">
       <div className="max-w-2xl mx-auto px-4 py-12">
 
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Logbook Entry</h1>
+          <h1 className="text-2xl font-bold text-white">Logbook Entry</h1>
           <Badge variant={statusInfo.color as 'default' | 'secondary' | 'outline' | 'destructive'}>
             {statusInfo.label}
           </Badge>

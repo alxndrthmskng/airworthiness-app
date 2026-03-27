@@ -57,14 +57,14 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     : null
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen aw-gradient">
       <div className="max-w-3xl mx-auto px-4 py-12">
 
         {/* Header */}
         <div className="bg-white rounded-xl border p-8 mb-6">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl text-gray-900" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>
+              <h1 className="text-2xl text-gray-900">
                 {profile.full_name ?? 'Aircraft Engineer'}
               </h1>
               {memberSince && (
@@ -86,7 +86,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           {/* Licence Info */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Licence Details</CardTitle>
+              <CardTitle className="text-base">Licence Details</CardTitle>
             </CardHeader>
             <CardContent>
               {profile.aml_licence_number ? (
@@ -117,7 +117,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           {/* Training Status */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Training Currency</CardTitle>
+              <CardTitle className="text-base">Training Currency</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -137,7 +137,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           {profile.type_ratings && profile.type_ratings.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Aircraft Type Ratings</CardTitle>
+                <CardTitle className="text-base">Aircraft Type Ratings</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-1.5">
@@ -154,7 +154,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           {/* Recency */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Maintenance Recency</CardTitle>
+              <CardTitle className="text-base">Maintenance Recency</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between mb-2">

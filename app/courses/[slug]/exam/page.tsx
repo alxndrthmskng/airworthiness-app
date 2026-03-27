@@ -51,7 +51,7 @@ export default async function ExamPage({ params }: Props) {
 
   if (!exam) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen aw-gradient flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-xl font-semibold text-gray-700">No exam available yet</h1>
           <Link href={`/courses/${slug}`} className="text-blue-600 hover:underline mt-2 block">
@@ -82,7 +82,7 @@ export default async function ExamPage({ params }: Props) {
     .order('order_index', { ascending: true })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen aw-gradient">
       <div className="max-w-2xl mx-auto px-4 py-12">
         <Link href={`/courses/${slug}`}
           className="text-sm text-blue-600 hover:underline mb-6 block">

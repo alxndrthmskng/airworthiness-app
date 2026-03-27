@@ -1,22 +1,17 @@
 import type { Metadata } from 'next'
-import { Inter, Playfair_Display } from 'next/font/google'
+import { Alexandria } from 'next/font/google'
 import './globals.css'
 import { Navbar } from '@/components/navbar'
 
-const inter = Inter({
+const alexandria = Alexandria({
   subsets: ['latin'],
-  variable: '--font-sans',
-})
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-serif',
-  weight: ['400', '700', '900'],
+  variable: '--font-alexandria',
+  weight: ['300', '400', '500', '600', '700', '800'],
 })
 
 export const metadata: Metadata = {
   title: 'Airworthiness Limited',
-  description: 'Continuation training, digital logbooks, and recruiter-ready profiles for aircraft maintenance engineers.',
+  description: 'Continuation training, digital logbooks, and module exam tracking for UK Aircraft Maintenance Licence holders.',
 }
 
 export default function RootLayout({
@@ -26,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
+      <body className={`${alexandria.variable} antialiased`} style={{ fontFamily: 'var(--font-alexandria), sans-serif' }}>
         <Navbar />
         <main>{children}</main>
       </body>

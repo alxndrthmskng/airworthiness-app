@@ -66,14 +66,14 @@ export default async function LogbookPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen aw-gradient">
       <div className="max-w-6xl mx-auto px-4 py-12">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Task Logbook</h1>
-            <p className="text-gray-500 mt-1">CAP 741 digital maintenance logbook</p>
+            <h1 className="text-2xl text-white">Aircraft Maintenance Digital Logbook</h1>
+            <p className="text-white/60 mt-1">Track your tasks in the format required by the Civil Aviation Authority.</p>
           </div>
           <div className="flex items-center gap-3">
             {isAmlHolder && (
@@ -92,30 +92,30 @@ export default async function LogbookPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-          <div className="bg-white rounded-xl border p-6">
-            <p className="text-sm text-gray-500">Total Entries</p>
-            <p className="text-3xl font-bold mt-1">{allEntries.length}</p>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
+            <p className="text-sm text-white/70">Total Entries</p>
+            <p className="text-3xl font-bold mt-1 text-white">{allEntries.length}</p>
           </div>
-          <div className="bg-white rounded-xl border p-6">
-            <p className="text-sm text-gray-500">Total Hours</p>
-            <p className="text-3xl font-bold mt-1">{totalHours.toFixed(1)}</p>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
+            <p className="text-sm text-white/70">Total Hours</p>
+            <p className="text-3xl font-bold mt-1 text-white">{totalHours.toFixed(1)}</p>
           </div>
-          <div className="bg-white rounded-xl border p-6">
-            <p className="text-sm text-gray-500">Verified</p>
-            <p className="text-3xl font-bold mt-1">{verifiedCount}</p>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
+            <p className="text-sm text-white/70">Verified</p>
+            <p className="text-3xl font-bold mt-1 text-white">{verifiedCount}</p>
           </div>
-          <div className="bg-white rounded-xl border p-6">
-            <p className="text-sm text-gray-500">Drafts</p>
-            <p className="text-3xl font-bold mt-1">{draftCount}</p>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
+            <p className="text-sm text-white/70">Drafts</p>
+            <p className="text-3xl font-bold mt-1 text-white">{draftCount}</p>
           </div>
         </div>
 
         {/* Quick links */}
         <div className="flex gap-3 mb-6 text-sm">
-          <Link href="/logbook/employment" className="text-blue-600 hover:underline">
+          <Link href="/logbook/employment" className="text-white/70 hover:text-white underline">
             Employment History
           </Link>
-          <Link href="/profile" className="text-blue-600 hover:underline">
+          <Link href="/profile" className="text-white/70 hover:text-white underline">
             AML Profile
           </Link>
         </div>
@@ -132,7 +132,7 @@ export default async function LogbookPage() {
           {['all', 'draft', 'pending_verification', 'verified'].map(tab => (
             <TabsContent key={tab} value={tab}>
               {filterEntries(tab as EntryStatus | 'all').length === 0 ? (
-                <div className="bg-white rounded-xl border p-8 text-center text-gray-500">
+                <div className="bg-white rounded-xl border p-8 text-center text-gray-500 bg-white">
                   <p>No entries{tab !== 'all' ? ` with status "${ENTRY_STATUSES[tab as EntryStatus]?.label ?? tab}"` : ''}.</p>
                   {tab === 'all' && (
                     <p className="text-sm mt-1">
@@ -141,7 +141,7 @@ export default async function LogbookPage() {
                   )}
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border overflow-hidden">
+                <div className="rounded-xl border overflow-hidden bg-white">
                   <Table>
                     <TableHeader>
                       <TableRow>

@@ -169,24 +169,24 @@ export default async function ProgressPage({
   const categoryDescription = PROGRESS_CATEGORIES.find(c => c.value === selectedCategory)?.label ?? ''
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen aw-gradient">
       <div className="max-w-6xl mx-auto px-4 py-12">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Module Exam Progress</h1>
-            <p className="text-gray-500 mt-1">
+            <h1 className="text-2xl text-white">Module Exam Progress</h1>
+            <p className="text-white/60 mt-1">
               Track your Aircraft Maintenance Licence Module Examination progress.
             </p>
           </div>
           <Link href="/profile">
-            <Button variant="outline" size="sm">← Profile</Button>
+            <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/10">Profile</Button>
           </Link>
         </div>
 
         {/* Category Selector */}
-        <div className="bg-white rounded-xl border p-6 mb-6">
+        <div className="bg-white rounded-xl p-6 mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Aircraft Maintenance Licence Categories
           </label>
@@ -211,7 +211,7 @@ export default async function ProgressPage({
         </div>
 
         {/* Progress Overview */}
-        <div className="bg-white rounded-xl border p-6 mb-6">
+        <div className="bg-white rounded-xl p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-3xl font-bold text-gray-900">{progressPercent}%</p>
@@ -239,7 +239,7 @@ export default async function ProgressPage({
         </div>
 
         {/* Basic Training Course */}
-        <div className="bg-white rounded-xl border p-6 mb-6">
+        <div className="bg-white rounded-xl p-6 mb-6">
           <h2 className="text-base font-semibold text-gray-900 mb-4">
             Basic Training Course
           </h2>

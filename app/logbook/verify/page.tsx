@@ -38,10 +38,10 @@ export default async function VerifyPage() {
 
   if (!profile?.aml_licence_number) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen aw-gradient">
         <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Verification Queue</h1>
-          <p className="text-gray-500 mb-6">
+          <h1 className="text-2xl font-bold text-white mb-4">Verification Queue</h1>
+          <p className="text-white/60 mb-6">
             You need a Part 66 Aircraft Maintenance Licence to verify logbook entries.
           </p>
           <Link href="/profile">
@@ -88,14 +88,14 @@ export default async function VerifyPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen aw-gradient">
       <div className="max-w-6xl mx-auto px-4 py-12">
 
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Verification Queue</h1>
-            <p className="text-gray-500 mt-1">
-              Entries from engineers at your employer(s), matching your AML categories.
+            <h1 className="text-2xl font-bold text-white">Verification Queue</h1>
+            <p className="text-white/60 mt-1">
+              Entries from personnel at your employer(s), matching your AML categories.
             </p>
           </div>
           <Link href="/logbook">
@@ -112,7 +112,7 @@ export default async function VerifyPage() {
         {filteredEntries.length === 0 ? (
           <div className="bg-white rounded-xl border p-8 text-center text-gray-500">
             <p>No entries pending your verification.</p>
-            <p className="text-sm mt-1">Entries will appear here when engineers at your employer submit them.</p>
+            <p className="text-sm mt-1">Entries will appear here when personnel at your employer submit them.</p>
           </div>
         ) : (
           <div className="bg-white rounded-xl border overflow-hidden">

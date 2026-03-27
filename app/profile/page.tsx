@@ -9,7 +9,6 @@ import { MODULE_REQUIREMENTS, PART_66_MODULES, ESSAY_MODULES, PASS_MARK, PASS_VA
 import type { TrainingStatus, RecencyStatus } from '@/lib/profile/types'
 import type { ModuleExamProgress } from '@/lib/progress/types'
 import { ProfileEditor } from './profile-editor'
-import { PublicToggle } from './public-toggle'
 import { LogoutButton } from '../dashboard/logout-button'
 
 export default async function ProfilePage() {
@@ -158,29 +157,26 @@ export default async function ProfilePage() {
 
   // Check competency assessment status
   const competencyPassed = !!profile.competency_completed_at
-  const canGoPublic = competencyPassed
   const allTrainingCurrent = trainingStatuses.every(t => t.isCurrent)
-  const allComplete = allTrainingCurrent && recencyStatus.isCurrent && competencyPassed
+  const allComplete = allTrainingCurrent && recencyStatus.isCurrent
 
-  // Extract first name for welcome message
-  const firstName = profile.full_name?.split(' ')[0] ?? ''
-  const fullName = profile.full_name ?? 'Engineer'
+  const fullName = profile.full_name ?? 'User'
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen aw-gradient">
       <div className="max-w-4xl mx-auto px-4 py-12">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl text-gray-900" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>
+            <h1 className="text-2xl text-white">
               Welcome, {fullName}!
             </h1>
-            <p className="text-gray-500 mt-1">Your aircraft maintenance licence journey at a glance.</p>
+            <p className="text-white/60 mt-1">Your aircraft maintenance licence journey at a glance.</p>
             {purchase && (
               <span
                 className="inline-block mt-2 text-xs px-3 py-1 rounded-full text-white"
-                style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold', backgroundColor: '#000' }}
+                style={{ fontWeight: 'bold', backgroundColor: '#000' }}
               >
                 No Adverts
               </span>
@@ -191,8 +187,8 @@ export default async function ProfilePage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-white rounded-xl border p-6">
-            <p className="text-sm text-gray-500" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Module Exams ({selectedCategory})</p>
+          <div className="bg-white rounded-xl p-6">
+            <p className="text-sm text-gray-500">Module Exams ({selectedCategory})</p>
             <p className="text-3xl font-bold mt-1">{passedModules}/{totalModules}</p>
             <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
               <div
@@ -202,63 +198,60 @@ export default async function ProfilePage() {
             </div>
             <p className="text-xs text-gray-400 mt-1">{progressPercent}% complete</p>
           </div>
-          <div className="bg-white rounded-xl border p-6">
-            <p className="text-sm text-gray-500" style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Logbook Tasks</p>
+          <div className="bg-white rounded-xl p-6">
+            <p className="text-sm text-gray-500">Logbook Tasks</p>
             <p className="text-3xl font-bold mt-1">{logbookCount}</p>
           </div>
         </div>
 
         {/* Action Required Banner */}
-        <div className={`rounded-xl border p-6 mb-8 ${
+        <div className={`rounded-xl p-6 mb-8 ${
           allComplete
-            ? 'bg-green-50 border-green-200'
-            : 'bg-amber-50 border-amber-200'
+            ? 'bg-green-500/20 border border-green-400/30'
+            : 'bg-amber-500/20 border border-amber-400/30'
         }`}>
           <div>
-            <p className="font-semibold text-gray-900" style={{ fontFamily: 'Times New Roman, serif' }}>
+            <p className="font-semibold text-white">
               {allComplete
-                ? 'Profile Complete — Ready for recruiters'
-                : 'Action Required — Complete your profile'}
+                ? 'Profile Complete'
+                : 'Action Required'}
             </p>
-            <p className="text-sm text-gray-600 mt-0.5">
+            <p className="text-sm text-white/70 mt-0.5">
               {!allTrainingCurrent && 'Some continuation training is expired. '}
               {!recencyStatus.isCurrent && 'Recency requirement not met. '}
-              {!competencyPassed && 'Competency assessment not completed. '}
-              {allComplete && 'All checks passed. You can list your profile publicly.'}
+              {allComplete && 'All checks passed.'}
             </p>
           </div>
         </div>
 
         {/* Continuation Training */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-white">
           <CardHeader>
-            <CardTitle style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Continuation Training</CardTitle>
+            <CardTitle>Continuation Training</CardTitle>
             <CardDescription>Required to be completed within the last 2 years.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3">
               {trainingStatuses.map(training => (
-                <Card key={training.slug} className={!training.isCurrent ? 'opacity-60' : ''}>
-                  <CardHeader className="py-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-base">{training.label}</CardTitle>
-                        {training.certificateDate ? (
-                          <p className="text-sm text-gray-500 mt-0.5">
-                            Completed {new Date(training.certificateDate).toLocaleDateString('en-GB', {
-                              day: 'numeric', month: 'long', year: 'numeric'
-                            })}
-                          </p>
-                        ) : (
-                          <p className="text-sm text-gray-400 mt-0.5">No certificate on record</p>
-                        )}
-                      </div>
-                      <Badge variant={training.isCurrent ? 'default' : 'destructive'}>
-                        {training.isCurrent ? 'Current' : 'Expired'}
-                      </Badge>
+                <div key={training.slug} className={`rounded-lg border p-4 ${!training.isCurrent ? 'opacity-60' : ''}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-base font-semibold">{training.label}</p>
+                      {training.certificateDate ? (
+                        <p className="text-sm text-gray-500 mt-0.5">
+                          Completed {new Date(training.certificateDate).toLocaleDateString('en-GB', {
+                            day: 'numeric', month: 'long', year: 'numeric'
+                          })}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-gray-400 mt-0.5">No certificate on record</p>
+                      )}
                     </div>
-                  </CardHeader>
-                </Card>
+                    <Badge variant={training.isCurrent ? 'default' : 'destructive'}>
+                      {training.isCurrent ? 'Current' : 'Expired'}
+                    </Badge>
+                  </div>
+                </div>
               ))}
             </div>
             {!allTrainingCurrent && (
@@ -272,9 +265,9 @@ export default async function ProfilePage() {
         </Card>
 
         {/* Aircraft Maintenance Licence */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-white">
           <CardHeader>
-            <CardTitle style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Aircraft Maintenance Licence</CardTitle>
+            <CardTitle>Aircraft Maintenance Licence</CardTitle>
             <CardDescription>Your licence categories and aircraft type ratings.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -289,9 +282,9 @@ export default async function ProfilePage() {
         </Card>
 
         {/* Recency */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-white">
           <CardHeader>
-            <CardTitle style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Maintenance Recency</CardTitle>
+            <CardTitle>Maintenance Recency</CardTitle>
             <CardDescription>
               6 months of maintenance experience ({RECENCY_REQUIRED_DAYS} task days) in the preceding {RECENCY_PERIOD_YEARS} years.
             </CardDescription>
@@ -328,23 +321,25 @@ export default async function ProfilePage() {
         </Card>
 
         {/* Competency Assessment */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-white">
           <CardHeader>
-            <CardTitle style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Competency Assessment</CardTitle>
+            <CardTitle>Competency Assessment</CardTitle>
             <CardDescription>
-              Complete a basic competency check to list your profile publicly. This gives recruiters
-              confidence you would pass their internal assessment during onboarding.
+              A basic competency check covering core maintenance knowledge.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {competencyPassed ? (
-              <div className="flex items-center gap-3">
-                <Badge>Passed</Badge>
-                <p className="text-sm text-gray-500">
-                  Completed {new Date(profile.competency_completed_at!).toLocaleDateString('en-GB', {
-                    day: 'numeric', month: 'long', year: 'numeric'
-                  })}
-                </p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Badge>Passed</Badge>
+                  <p className="text-sm text-gray-500">
+                    Completed {new Date(profile.competency_completed_at!).toLocaleDateString('en-GB', {
+                      day: 'numeric', month: 'long', year: 'numeric'
+                    })}
+                  </p>
+                </div>
+                <RemoveAssessmentButton />
               </div>
             ) : (
               <div>
@@ -360,10 +355,12 @@ export default async function ProfilePage() {
         </Card>
 
         {/* Task Logbook */}
-        <Card className="mb-6">
+        <Card className="bg-white">
           <CardHeader>
-            <CardTitle style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Task Logbook</CardTitle>
-            <CardDescription>CAP 741 Digital Logbook for recording maintenance tasks.</CardDescription>
+            <CardTitle>Aircraft Maintenance Digital Logbook</CardTitle>
+            <CardDescription>
+              Track your tasks in our Aircraft Maintenance Digital Logbook, in the format required by the Civil Aviation Authority. Tasks can be electronically verified, or printed to be signed manually, should they not have an Airworthiness account.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -379,21 +376,10 @@ export default async function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Public Profile Toggle */}
-        <Card>
-          <CardHeader>
-            <CardTitle style={{ fontFamily: 'Times New Roman, serif', fontWeight: 'bold' }}>Public Profile</CardTitle>
-            <CardDescription>
-              List your profile on the engineer directory so recruiters can find you.
-              {!canGoPublic && ' Complete the competency assessment first.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PublicToggle isPublic={profile.is_public ?? false} canGoPublic={canGoPublic} />
-          </CardContent>
-        </Card>
-
       </div>
     </div>
   )
 }
+
+// Client component for removing assessment
+import { RemoveAssessmentButton } from './remove-assessment-button'
