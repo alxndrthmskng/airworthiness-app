@@ -12,20 +12,32 @@ function useUser() {
   const [hasPremium, setHasPremium] = useState(false)
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-      setLoaded(true)
-      if (data.user) {
+
+    // Use getSession first (reads from cookie, no network call) then verify
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user)
+        setLoaded(true)
         supabase
           .from('purchases')
           .select('id')
-          .eq('user_id', data.user.id)
+          .eq('user_id', session.user.id)
           .single()
           .then(({ data: purchase }) => {
             setHasPremium(!!purchase)
           })
+      } else {
+        setLoaded(true)
       }
     })
+
+    // Listen for auth changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setLoaded(true)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
   return { user, loaded, hasPremium }
 }
