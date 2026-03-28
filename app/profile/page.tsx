@@ -31,7 +31,7 @@ export default async function ProfilePage() {
   // Fetch profile
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, full_name, role, aml_licence_number, aml_categories, type_ratings, is_public, competency_completed_at, created_at')
+    .select('id, full_name, role, aml_licence_number, aml_categories, type_ratings, aml_photo_path, aml_verified, is_public, competency_completed_at, created_at')
     .eq('id', user.id)
     .single()
 
@@ -287,6 +287,8 @@ export default async function ProfilePage() {
                 aml_licence_number: profile.aml_licence_number ?? '',
                 aml_categories: profile.aml_categories ?? [],
                 type_ratings: normaliseTypeRatings(profile.type_ratings),
+                aml_photo_path: profile.aml_photo_path ?? null,
+                aml_verified: profile.aml_verified ?? false,
               }}
             />
           </CardContent>

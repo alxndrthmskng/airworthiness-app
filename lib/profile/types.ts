@@ -13,6 +13,8 @@ export interface Profile {
   aml_licence_number: string | null
   aml_categories: string[]
   type_ratings: TypeEndorsement[]
+  aml_photo_path: string | null
+  aml_verified: boolean
   is_public: boolean
   competency_completed_at: string | null
   created_at: string | null
