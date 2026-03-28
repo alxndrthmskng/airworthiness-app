@@ -4,6 +4,7 @@ import './globals.css'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { CookieBanner } from '@/components/cookie-banner'
+import { ScrollToTop } from '@/components/scroll-to-top'
 import { AdPlaceholder } from '@/components/ad-placeholder'
 
 const alexandria = Alexandria({
@@ -34,6 +35,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <CookieBanner />
+        <ScrollToTop />
       </body>
     </html>
   )
