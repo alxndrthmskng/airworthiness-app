@@ -45,6 +45,40 @@ export const SCOPE_OF_WORK: Record<string, string> = {
   'Category A': 'Minor scheduled line maintenance and simple defect rectification.',
 }
 
+// Experience validity
+export const EXPERIENCE_VALIDITY_YEARS = 10
+
+// Experience requirements per AML category (in years)
+export const EXPERIENCE_REQUIREMENTS: Record<string, { years: number; yearsWithBtc: number }> = {
+  A1: { years: 3, yearsWithBtc: 1 },
+  A2: { years: 3, yearsWithBtc: 1 },
+  A3: { years: 3, yearsWithBtc: 1 },
+  A4: { years: 3, yearsWithBtc: 1 },
+  'B1.1': { years: 5, yearsWithBtc: 2 },
+  'B1.2': { years: 3, yearsWithBtc: 1 },
+  'B1.3': { years: 5, yearsWithBtc: 2 },
+  'B1.4': { years: 3, yearsWithBtc: 1 },
+  B2: { years: 5, yearsWithBtc: 2 },
+  B3: { years: 3, yearsWithBtc: 1 },
+}
+
+// Military/non-civil: minimum civil experience always required
+export const MIN_CIVIL_MONTHS = 12
+
+// Map AML categories to the aircraft_category values they count toward
+export const CATEGORY_TO_AIRCRAFT: Record<string, AircraftCategory[]> = {
+  A1: ['aeroplane_turbine'],
+  A2: ['aeroplane_piston'],
+  A3: ['helicopter_turbine'],
+  A4: ['helicopter_piston'],
+  'B1.1': ['aeroplane_turbine'],
+  'B1.2': ['aeroplane_piston'],
+  'B1.3': ['helicopter_turbine'],
+  'B1.4': ['helicopter_piston'],
+  B2: ['aeroplane_turbine', 'aeroplane_piston', 'helicopter_turbine', 'helicopter_piston'],
+  B3: ['aeroplane_piston'],
+}
+
 // B2 can verify avionics/electrical tasks on any aircraft category
 export const B2_UNIVERSAL_AUTHORITY = 'B2' as const
 

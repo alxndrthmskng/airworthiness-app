@@ -37,6 +37,7 @@ export interface EmploymentPeriod {
   employer: string
   start_date: string
   end_date: string | null
+  is_military: boolean
   created_at: string
 }
 
