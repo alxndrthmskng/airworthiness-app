@@ -18,12 +18,23 @@ import {
   AIRCRAFT_CATEGORIES,
   RECENCY_TASK_THRESHOLD,
   RECENCY_DAY_THRESHOLD,
-  SCOPE_OF_WORK,
+  EXPERIENCE_REQUIREMENTS,
+  EXPERIENCE_VALIDITY_YEARS,
+  MIN_CIVIL_MONTHS,
+  CATEGORY_TO_AIRCRAFT,
 } from '@/lib/logbook/constants'
 import type { EntryStatus } from '@/lib/logbook/constants'
 import { AdPlaceholder } from '@/components/ad-placeholder'
 
 const PAGE_SIZE = 25
+
+const CATEGORY_GROUPS = [
+  { label: 'Aeroplane \u2013 Turbine', cats: ['A1', 'B1.1'] },
+  { label: 'Aeroplane \u2013 Piston', cats: ['A2', 'B1.2', 'B3'] },
+  { label: 'Helicopter \u2013 Turbine', cats: ['A3', 'B1.3'] },
+  { label: 'Helicopter \u2013 Piston', cats: ['A4', 'B1.4'] },
+  { label: 'Avionics', cats: ['B2'] },
+]
 
 function getCategoryLabel(value: string) {
   return MAINTENANCE_CATEGORIES.find(c => c.value === value)?.label ?? value
@@ -33,19 +44,26 @@ function getAtaLabel(value: string) {
   return ATA_CHAPTERS.find(c => c.value === value)?.label ?? `ATA ${value}`
 }
 
-function getAircraftCategoryLabel(value: string) {
-  return AIRCRAFT_CATEGORIES.find(c => c.value === value)?.label ?? value
-}
-
 function StatusBadge({ status }: { status: EntryStatus }) {
   const info = ENTRY_STATUSES[status]
   return <Badge variant={info.color as 'default' | 'secondary' | 'outline' | 'destructive'}>{info.label}</Badge>
 }
 
+function calcMonths(periods: { start_date: string; end_date: string | null }[], cutoff: Date): number {
+  let totalDays = 0
+  for (const p of periods) {
+    const start = new Date(p.start_date) < cutoff ? cutoff : new Date(p.start_date)
+    const end = p.end_date ? new Date(p.end_date) : new Date()
+    if (end <= start) continue
+    totalDays += Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+  }
+  return Math.round(totalDays / 30.44)
+}
+
 export default async function LogbookPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; status?: string }>
+  searchParams: Promise<{ page?: string; status?: string; category?: string }>
 }) {
   const supabase = await createClient()
 
@@ -55,15 +73,23 @@ export default async function LogbookPage({
   const params = await searchParams
   const page = Math.max(1, parseInt(params.page || '1', 10))
   const statusFilter = params.status || 'all'
+  const selectedCategory = params.category || ''
   const offset = (page - 1) * PAGE_SIZE
 
-  // Two years ago from today
-  const twoYearsAgo = new Date()
+  // Date boundaries
+  const now = new Date()
+  const twoYearsAgo = new Date(now)
   twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2)
   const twoYearsAgoStr = twoYearsAgo.toISOString().split('T')[0]
+  const tenYearsAgo = new Date(now)
+  tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - EXPERIENCE_VALIDITY_YEARS)
+  const tenYearsAgoStr = tenYearsAgo.toISOString().split('T')[0]
 
-  // Fetch profile, all stats, and recency data in parallel
-  const [{ data: profile }, { data: statsEntries }, { data: recencyEntries }] = await Promise.all([
+  // Aircraft categories relevant to selected AML category
+  const relevantAircraftCats = selectedCategory ? CATEGORY_TO_AIRCRAFT[selectedCategory] ?? [] : []
+
+  // Fetch profile, stats, recency, and employment in parallel
+  const [{ data: profile }, { data: statsEntries }, { data: recencyEntries }, { data: employmentPeriods }] = await Promise.all([
     supabase
       .from('profiles')
       .select('aml_licence_number')
@@ -71,7 +97,7 @@ export default async function LogbookPage({
       .single(),
     supabase
       .from('logbook_entries')
-      .select('status')
+      .select('status, task_date, aircraft_category')
       .eq('user_id', user.id),
     supabase
       .from('logbook_entries')
@@ -79,35 +105,62 @@ export default async function LogbookPage({
       .eq('user_id', user.id)
       .in('status', ['verified', 'qc_approved', 'pending_qc'])
       .gte('task_date', twoYearsAgoStr),
+    supabase
+      .from('employment_periods')
+      .select('start_date, end_date, is_military')
+      .eq('user_id', user.id),
   ])
 
   const isAmlHolder = !!profile?.aml_licence_number
-
   const allStats = statsEntries ?? []
-  const totalCount = allStats.length
-  const verifiedCount = allStats.filter(e => e.status === 'verified' || e.status === 'qc_approved' || e.status === 'pending_qc').length
-  const pendingCount = allStats.filter(e => e.status === 'pending_verification').length
-  const draftCount = allStats.filter(e => e.status === 'draft').length
 
-  // Calculate recency per aircraft type
-  const recencyData = AIRCRAFT_CATEGORIES.map(cat => {
-    const catEntries = (recencyEntries ?? []).filter(e => e.aircraft_category === cat.value)
-    const tasks = catEntries.length
-    const uniqueDays = new Set(catEntries.map(e => e.task_date)).size
-    const meetsRecency = tasks >= RECENCY_TASK_THRESHOLD || uniqueDays >= RECENCY_DAY_THRESHOLD
-    return { ...cat, tasks, days: uniqueDays, meetsRecency }
-  }).filter(cat => cat.tasks > 0)
+  // Filter stats by category if selected
+  const filteredStats = selectedCategory && relevantAircraftCats.length > 0
+    ? allStats.filter(e => relevantAircraftCats.includes(e.aircraft_category))
+    : allStats
 
-  // Fetch the current page of entries with the active filter
+  const totalCount = filteredStats.length
+  const verifiedCount = filteredStats.filter(e => e.status === 'verified' || e.status === 'qc_approved' || e.status === 'pending_qc').length
+  const draftCount = filteredStats.filter(e => e.status === 'draft').length
+  const pendingCount = filteredStats.filter(e => e.status === 'pending_verification').length
+
+  // Recency: filter by selected category's aircraft types
+  const filteredRecency = selectedCategory && relevantAircraftCats.length > 0
+    ? (recencyEntries ?? []).filter(e => relevantAircraftCats.includes(e.aircraft_category))
+    : (recencyEntries ?? [])
+  const recencyTasks = filteredRecency.length
+  const recencyDays = new Set(filteredRecency.map(e => e.task_date)).size
+  const meetsRecency = recencyTasks >= RECENCY_TASK_THRESHOLD || recencyDays >= RECENCY_DAY_THRESHOLD
+
+  // Experience calculator (if category selected)
+  const expReq = selectedCategory ? EXPERIENCE_REQUIREMENTS[selectedCategory] : null
+  const allPeriods = employmentPeriods ?? []
+  const civilPeriods = allPeriods.filter(p => !p.is_military)
+  const militaryPeriods = allPeriods.filter(p => p.is_military)
+  const civilMonths = calcMonths(civilPeriods, tenYearsAgo)
+  const militaryMonths = calcMonths(militaryPeriods, tenYearsAgo)
+  const totalExpMonths = civilMonths + militaryMonths
+
+  // Check if meets requirements
+  const meetsFullExp = expReq ? totalExpMonths >= expReq.years * 12 : false
+  const meetsCivilMin = civilMonths >= MIN_CIVIL_MONTHS
+
+  // 10-year cutoff for entries
+  const tenYearsAgoTime = tenYearsAgo.getTime()
+
+  // Fetch the current page of entries with filters
   let query = supabase
     .from('logbook_entries')
-    .select('id, task_date, aircraft_type, aircraft_registration, ata_chapter, category, status')
+    .select('id, task_date, aircraft_type, aircraft_registration, aircraft_category, ata_chapter, category, status')
     .eq('user_id', user.id)
     .order('task_date', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
 
   if (statusFilter !== 'all') {
     query = query.eq('status', statusFilter)
+  }
+  if (selectedCategory && relevantAircraftCats.length > 0) {
+    query = query.in('aircraft_category', relevantAircraftCats)
   }
 
   const { data: entries } = await query
@@ -117,7 +170,14 @@ export default async function LogbookPage({
 
   const filteredTotal = statusFilter === 'all'
     ? totalCount
-    : allStats.filter(e => e.status === statusFilter).length
+    : filteredStats.filter(e => e.status === statusFilter).length
+
+  // Build URL helper
+  function buildUrl(overrides: Record<string, string>) {
+    const p = { category: selectedCategory, status: statusFilter, page: String(page), ...overrides }
+    const parts = Object.entries(p).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`)
+    return `/logbook?${parts.join('&')}`
+  }
 
   return (
     <div className="min-h-screen aw-gradient">
@@ -127,7 +187,7 @@ export default async function LogbookPage({
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl text-white">Digital Logbook (CAP 741)</h1>
-            <p className="text-white/60 mt-1">Track your maintenance tasks in the CAP 741 format.</p>
+            <p className="text-white/60 mt-1">Track your progress to demonstrate practical experience on a representative cross section of maintenance tasks.</p>
           </div>
           <div className="flex items-center gap-3">
             {isAmlHolder && (
@@ -144,67 +204,139 @@ export default async function LogbookPage({
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
-            <p className="text-sm text-white/70">Tasks</p>
-            <p className="text-3xl font-bold mt-1 text-white">{totalCount}</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
-            <p className="text-sm text-white/70">Verified</p>
-            <p className="text-3xl font-bold mt-1 text-white">{verifiedCount}</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-6">
-            <p className="text-sm text-white/70">Drafts</p>
-            <p className="text-3xl font-bold mt-1 text-white">{draftCount}</p>
+        {/* Category Selector */}
+        <div className="bg-white rounded-xl p-5 mb-6">
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            <div>
+              <Link
+                href="/logbook"
+                className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+                  !selectedCategory
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                }`}
+              >
+                All
+              </Link>
+            </div>
+            {CATEGORY_GROUPS.map(group => (
+              <div key={group.label} className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{group.label}</span>
+                {group.cats.map(catValue => (
+                  <Link
+                    key={catValue}
+                    href={buildUrl({ category: catValue, page: '1' })}
+                    className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+                      selectedCategory === catValue
+                        ? 'bg-gray-900 text-white border-gray-900'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    {catValue}
+                  </Link>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Recency Tracking */}
-        {recencyData.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-white mb-3">Recency (Last 2 Years)</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {recencyData.map(cat => (
-                <div
-                  key={cat.value}
-                  className={`bg-white rounded-xl p-5 border-2 ${
-                    cat.meetsRecency ? 'border-green-300' : 'border-amber-300'
-                  }`}
-                >
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{cat.label}</p>
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Tasks</span>
-                      <span className={`text-sm font-bold ${cat.tasks >= RECENCY_TASK_THRESHOLD ? 'text-green-600' : 'text-gray-900'}`}>
-                        {cat.tasks} / {RECENCY_TASK_THRESHOLD}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
-                      <div
-                        className={`h-1.5 rounded-full ${cat.tasks >= RECENCY_TASK_THRESHOLD ? 'bg-green-500' : 'bg-amber-500'}`}
-                        style={{ width: `${Math.min(100, (cat.tasks / RECENCY_TASK_THRESHOLD) * 100)}%` }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-sm text-gray-600">Days</span>
-                      <span className={`text-sm font-bold ${cat.days >= RECENCY_DAY_THRESHOLD ? 'text-green-600' : 'text-gray-900'}`}>
-                        {cat.days} / {RECENCY_DAY_THRESHOLD}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
-                      <div
-                        className={`h-1.5 rounded-full ${cat.days >= RECENCY_DAY_THRESHOLD ? 'bg-green-500' : 'bg-amber-500'}`}
-                        style={{ width: `${Math.min(100, (cat.days / RECENCY_DAY_THRESHOLD) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                  <p className={`text-xs font-bold mt-3 ${cat.meetsRecency ? 'text-green-600' : 'text-amber-600'}`}>
-                    {cat.meetsRecency ? 'Recent' : 'Not yet recent'}
-                  </p>
-                </div>
-              ))}
+        {/* Stats + Recency + Experience in grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 mb-6">
+
+          {/* Left: Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-5">
+              <p className="text-sm text-white/70">Tasks</p>
+              <p className="text-3xl font-bold mt-1 text-white">{totalCount}</p>
             </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-5">
+              <p className="text-sm text-white/70">Verified</p>
+              <p className="text-3xl font-bold mt-1 text-white">{verifiedCount}</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 p-5">
+              <p className="text-sm text-white/70">Drafts</p>
+              <p className="text-3xl font-bold mt-1 text-white">{draftCount}</p>
+            </div>
+          </div>
+
+          {/* Right: Recency */}
+          <div className={`bg-white rounded-xl p-5 border-2 ${meetsRecency ? 'border-green-300' : 'border-amber-300'}`}>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+              Recency (Last 2 Years){selectedCategory ? ` \u2013 ${selectedCategory}` : ''}
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Tasks</span>
+                  <span className={`text-sm font-bold ${recencyTasks >= RECENCY_TASK_THRESHOLD ? 'text-green-600' : 'text-gray-900'}`}>
+                    {recencyTasks} / {RECENCY_TASK_THRESHOLD}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                  <div
+                    className={`h-1.5 rounded-full ${recencyTasks >= RECENCY_TASK_THRESHOLD ? 'bg-green-500' : 'bg-amber-500'}`}
+                    style={{ width: `${Math.min(100, (recencyTasks / RECENCY_TASK_THRESHOLD) * 100)}%` }}
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Days</span>
+                  <span className={`text-sm font-bold ${recencyDays >= RECENCY_DAY_THRESHOLD ? 'text-green-600' : 'text-gray-900'}`}>
+                    {recencyDays} / {RECENCY_DAY_THRESHOLD}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                  <div
+                    className={`h-1.5 rounded-full ${recencyDays >= RECENCY_DAY_THRESHOLD ? 'bg-green-500' : 'bg-amber-500'}`}
+                    style={{ width: `${Math.min(100, (recencyDays / RECENCY_DAY_THRESHOLD) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            <p className={`text-xs font-bold mt-2 ${meetsRecency ? 'text-green-600' : 'text-amber-600'}`}>
+              {meetsRecency ? 'Recent experience met' : 'Not yet recent'}
+            </p>
+          </div>
+        </div>
+
+        {/* Experience Calculator (when category selected) */}
+        {selectedCategory && expReq && (
+          <div className="bg-white rounded-xl p-5 mb-6">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+              Experience Requirement \u2013 {selectedCategory}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Civil Experience</p>
+                <p className="text-2xl font-bold text-gray-900">{Math.floor(civilMonths / 12)}y {civilMonths % 12}m</p>
+                {civilMonths < MIN_CIVIL_MONTHS && (
+                  <p className="text-xs text-amber-600 font-medium mt-1">Minimum {MIN_CIVIL_MONTHS} months civil required</p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Military / Non-Civil</p>
+                <p className="text-2xl font-bold text-gray-900">{Math.floor(militaryMonths / 12)}y {militaryMonths % 12}m</p>
+                {militaryMonths > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">Recognised toward total</p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Total (last {EXPERIENCE_VALIDITY_YEARS} years)</p>
+                <p className={`text-2xl font-bold ${meetsFullExp && meetsCivilMin ? 'text-green-600' : 'text-gray-900'}`}>
+                  {Math.floor(totalExpMonths / 12)}y {totalExpMonths % 12}m
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Required: {expReq.years} years (or {expReq.yearsWithBtc} year{expReq.yearsWithBtc > 1 ? 's' : ''} with Part 147 BTC)
+                </p>
+                {meetsFullExp && meetsCivilMin && (
+                  <p className="text-xs text-green-600 font-bold mt-1">Requirement met</p>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-3">
+              Based on <Link href="/logbook/employment" className="text-blue-600 hover:underline">employment history</Link>. Mark military/non-civil periods in your employment records.
+            </p>
           </div>
         )}
 
@@ -230,7 +362,7 @@ export default async function LogbookPage({
           ].map(tab => (
             <Link
               key={tab.value}
-              href={`/logbook?status=${tab.value}`}
+              href={buildUrl({ status: tab.value, page: '1' })}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 statusFilter === tab.value
                   ? 'bg-white text-gray-900'
@@ -245,7 +377,7 @@ export default async function LogbookPage({
         {/* Entries table */}
         {pageEntries.length === 0 ? (
           <div className="bg-white rounded-xl border p-8 text-center text-gray-500">
-            <p>No entries{statusFilter !== 'all' ? ` with status "${ENTRY_STATUSES[statusFilter as EntryStatus]?.label ?? statusFilter}"` : ''}.</p>
+            <p>No entries{statusFilter !== 'all' ? ` with status "${ENTRY_STATUSES[statusFilter as EntryStatus]?.label ?? statusFilter}"` : ''}{selectedCategory ? ` for ${selectedCategory}` : ''}.</p>
             {statusFilter === 'all' && (
               <p className="text-sm mt-1">
                 <Link href="/logbook/new" className="text-blue-600 hover:underline">Create your first entry</Link>
@@ -266,33 +398,39 @@ export default async function LogbookPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pageEntries.map(entry => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="whitespace-nowrap">
-                      {new Date(entry.task_date).toLocaleDateString('en-GB', {
-                        day: '2-digit', month: 'short', year: 'numeric'
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{entry.aircraft_type}</div>
-                      <div className="text-xs text-gray-500">{entry.aircraft_registration}</div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-gray-600">
-                      {getAtaLabel(entry.ata_chapter)}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-gray-600">
-                      {getCategoryLabel(entry.category)}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={entry.status} />
-                    </TableCell>
-                    <TableCell>
-                      <Link href={`/logbook/${entry.id}`}>
-                        <Button variant="ghost" size="sm">View</Button>
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {pageEntries.map(entry => {
+                  const isExpired = new Date(entry.task_date).getTime() < tenYearsAgoTime
+                  return (
+                    <TableRow key={entry.id} className={isExpired ? 'opacity-50' : ''}>
+                      <TableCell className="whitespace-nowrap">
+                        {new Date(entry.task_date).toLocaleDateString('en-GB', {
+                          day: '2-digit', month: 'short', year: 'numeric'
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{entry.aircraft_type}</div>
+                        <div className="text-xs text-gray-500">{entry.aircraft_registration}</div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-sm text-gray-600">
+                        {getAtaLabel(entry.ata_chapter)}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-sm text-gray-600">
+                        {getCategoryLabel(entry.category)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          <StatusBadge status={entry.status} />
+                          {isExpired && <Badge variant="destructive">EXPIRED</Badge>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Link href={`/logbook/${entry.id}`}>
+                          <Button variant="ghost" size="sm">View</Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           </div>
@@ -302,7 +440,7 @@ export default async function LogbookPage({
         {filteredTotal > PAGE_SIZE && (
           <div className="flex items-center justify-between mt-6">
             {page > 1 ? (
-              <Link href={`/logbook?status=${statusFilter}&page=${page - 1}`}>
+              <Link href={buildUrl({ page: String(page - 1) })}>
                 <Button variant="outline" size="sm" className="bg-transparent border-white/30 text-white hover:bg-white/10">Previous</Button>
               </Link>
             ) : <div />}
@@ -310,7 +448,7 @@ export default async function LogbookPage({
               Page {page} of {Math.ceil(filteredTotal / PAGE_SIZE)}
             </span>
             {hasNextPage ? (
-              <Link href={`/logbook?status=${statusFilter}&page=${page + 1}`}>
+              <Link href={buildUrl({ page: String(page + 1) })}>
                 <Button variant="outline" size="sm" className="bg-transparent border-white/30 text-white hover:bg-white/10">Next</Button>
               </Link>
             ) : <div />}
