@@ -68,8 +68,8 @@ export function AtaChart({ entries }: AtaChartProps) {
     return ATA_2200_CHAPTERS.map(ch => ({ code: ch.value, count: counts[ch.value] }))
   }, [filtered])
 
-  // Round max up to nearest 5
-  const rawMax = Math.max(ATA_SUB_CHAPTER_TARGET, ...ataCounts.map(a => a.count))
+  // Round max up to nearest 5, minimum 15 so target line has room above
+  const rawMax = Math.max(15, ...ataCounts.map(a => a.count))
   const maxCount = Math.ceil(rawMax / 5) * 5
 
   // Y-axis ticks in increments of 5
