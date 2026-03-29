@@ -192,15 +192,6 @@ export default async function ProgressPage({
           </p>
         </div>
 
-        {/* BTC strip */}
-        <div className="bg-white rounded-xl px-5 py-3 mb-4">
-          <BtcToggle
-            initialValue={hasBtc}
-            selectedCategory={selectedCategory}
-            userId={user.id}
-          />
-        </div>
-
         {/* Two columns: Categories (wider) | Progress (narrower) */}
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 mb-6">
 
