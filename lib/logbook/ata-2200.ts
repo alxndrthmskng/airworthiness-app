@@ -1,4 +1,4 @@
-// ATA iSpec 2200 chapters (314 entries)
+// ATA iSpec 2200 chapters (deduplicated)
 // Generated from ATA 2200.xlsx
 export const ATA_2200_CHAPTERS = [
   { value: '05-00', label: 'Time Limits/Maintenance Checks: General (05-00)' },
@@ -118,12 +118,12 @@ export const ATA_2200_CHAPTERS = [
   { value: '32-50', label: 'Landing Gear: Steering (32-50)' },
   { value: '32-60', label: 'Landing Gear: Position/Warning (32-60)' },
   { value: '32-70', label: 'Landing Gear: Supplementary (32-70)' },
-  { value: '34-00', label: 'Lights: General (34-00)' },
-  { value: '34-10', label: 'Lights: Flight Compartment (34-10)' },
-  { value: '34-20', label: 'Lights: Passenger Compartment (34-20)' },
-  { value: '34-30', label: 'Lights: Cargo Compartment (34-30)' },
-  { value: '34-40', label: 'Lights: Exterior (34-40)' },
-  { value: '34-50', label: 'Lights: Emergency (34-50)' },
+  { value: '33-00', label: 'Lights: General (33-00)' },
+  { value: '33-10', label: 'Lights: Flight Compartment (33-10)' },
+  { value: '33-20', label: 'Lights: Passenger Compartment (33-20)' },
+  { value: '33-30', label: 'Lights: Cargo Compartment (33-30)' },
+  { value: '33-40', label: 'Lights: Exterior (33-40)' },
+  { value: '33-50', label: 'Lights: Emergency (33-50)' },
   { value: '34-00', label: 'Navigation: General (34-00)' },
   { value: '34-10', label: 'Navigation: Environment (34-10)' },
   { value: '34-20', label: 'Navigation: Attitude (34-20)' },
