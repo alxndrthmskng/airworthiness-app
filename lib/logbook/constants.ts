@@ -127,14 +127,15 @@ export type EntryStatus = keyof typeof ENTRY_STATUSES
 // ATA chapters: re-export ATA iSpec 2200 (314 sub-chapters)
 export { ATA_2200_CHAPTERS, type Ata2200Chapter } from './ata-2200'
 
-// Legacy ATA 100 lookup (for backward compatibility with old entries stored as 2-digit codes)
+// Backward-compatible alias so existing files can still import ATA_CHAPTERS
+import { ATA_2200_CHAPTERS as _ATA_2200 } from './ata-2200'
+export const ATA_CHAPTERS = _ATA_2200
+
+// ATA label lookup (handles both 4-digit xx-xx and legacy 2-digit codes)
 export function getAtaLabel(code: string): string {
-  // Try ATA 2200 first (xx-xx format)
-  const { ATA_2200_CHAPTERS } = require('./ata-2200')
-  const ata2200 = ATA_2200_CHAPTERS.find((c: { value: string; label: string }) => c.value === code)
-  if (ata2200) return ata2200.label
-  // Fallback: treat as ATA 100 main chapter
-  const main = ATA_2200_CHAPTERS.find((c: { value: string }) => c.value.startsWith(code + '-'))
+  const match = _ATA_2200.find(c => c.value === code)
+  if (match) return match.label
+  const main = _ATA_2200.find(c => c.value.startsWith(code + '-'))
   return main ? main.label.split(':')[0] + ` (${code})` : `ATA ${code}`
 }
 
