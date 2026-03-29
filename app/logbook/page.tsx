@@ -27,6 +27,7 @@ import { AdPlaceholder } from '@/components/ad-placeholder'
 import { MilitaryExperience } from './military-experience'
 import { MassInput } from './mass-input'
 import { AtaChart } from './ata-chart'
+import { BtcToggle } from '@/app/progress/btc-toggle'
 
 const PAGE_SIZE = 25
 
@@ -90,7 +91,7 @@ export default async function LogbookPage({
   const relevantAircraftCats = selectedCategory ? CATEGORY_TO_AIRCRAFT[selectedCategory] ?? [] : []
 
   // Fetch profile, stats, recency, and employment in parallel
-  const [{ data: profile }, { data: statsEntries }, { data: recencyEntries }, { data: employmentPeriods }] = await Promise.all([
+  const [{ data: profile }, { data: statsEntries }, { data: recencyEntries }, { data: employmentPeriods }, { data: btcRecord }] = await Promise.all([
     supabase
       .from('profiles')
       .select('aml_licence_number')
@@ -110,10 +111,17 @@ export default async function LogbookPage({
       .select('employer, start_date, end_date, is_military')
       .eq('user_id', user.id)
       .order('start_date', { ascending: false }),
+    supabase
+      .from('module_exam_progress')
+      .select('is_btc')
+      .eq('user_id', user.id)
+      .eq('module_id', '_btc')
+      .single(),
   ])
 
   const isAmlHolder = !!profile?.aml_licence_number
   const allStats = statsEntries ?? []
+  const hasBtc = !!(btcRecord as any)?.is_btc
 
 
   // Default employer: most recent employment period with no end date
@@ -308,6 +316,15 @@ export default async function LogbookPage({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Basic Training Course */}
+        <div className="bg-white rounded-xl px-5 py-3 mb-4">
+          <BtcToggle
+            initialValue={hasBtc}
+            selectedCategory={selectedCategory || 'B1.1'}
+            userId={user.id}
+          />
         </div>
 
         <AdPlaceholder format="banner" className="my-4" />
