@@ -54,19 +54,34 @@ export function AtaChart({ entries }: AtaChartProps) {
   }, [entries, typeFilter, catFilter])
 
   const ataCounts = useMemo(() => {
-    // Start with all ATA 2200 chapters at 0
-    const counts: Record<string, number> = {}
-    for (const ch of ATA_2200_CHAPTERS) {
-      counts[ch.value] = 0
-    }
-    // Add user's entries
+    // Count tasks per 4-digit sub-chapter
+    const subCounts: Record<string, number> = {}
     for (const entry of filtered) {
       const chapters = entry.ata_chapters ?? []
       for (const ch of chapters) {
-        counts[ch] = (counts[ch] || 0) + 1
+        subCounts[ch] = (subCounts[ch] || 0) + 1
       }
     }
-    const result = ATA_2200_CHAPTERS.map(ch => ({ code: ch.value, count: counts[ch.value] }))
+
+    // Get unique 2-digit main chapters from ATA 2200
+    const mainChapters = new Map<string, string>()
+    for (const ch of ATA_2200_CHAPTERS) {
+      const main = ch.value.split('-')[0]
+      if (!mainChapters.has(main)) {
+        mainChapters.set(main, ch.label.split(':')[0])
+      }
+    }
+
+    // Group sub-chapters into main chapters
+    const result = Array.from(mainChapters.entries()).map(([main, name]) => {
+      const subs = ATA_2200_CHAPTERS.filter(ch => ch.value.startsWith(main + '-'))
+      const total = subs.reduce((sum, ch) => sum + (subCounts[ch.value] || 0), 0)
+      const breakdown = subs
+        .filter(ch => (subCounts[ch.value] || 0) > 0)
+        .map(ch => ({ code: ch.value, label: ch.label, count: subCounts[ch.value] }))
+      return { code: main, name, count: total, breakdown }
+    })
+
     if (sortBy === 'most') return [...result].sort((a, b) => b.count - a.count)
     if (sortBy === 'least') return [...result].sort((a, b) => a.count - b.count)
     return result
@@ -147,10 +162,10 @@ export function AtaChart({ entries }: AtaChartProps) {
         </div>
       </div>
 
-      {/* Scrollable chart with fixed-width bars */}
+      {/* Chart with ~40 main chapter bars */}
       <div className="flex" style={{ paddingTop: 12 }}>
-        {/* Y-axis labels (sticky left) */}
-        <div className="relative flex-shrink-0 sticky left-0 bg-white z-10" style={{ width: 24, height: 180 }}>
+        {/* Y-axis labels */}
+        <div className="relative flex-shrink-0" style={{ width: 24, height: 180 }}>
           {yTicks.map(tick => {
             const pct = (1 - tick / maxCount) * 100
             return (
@@ -165,60 +180,67 @@ export function AtaChart({ entries }: AtaChartProps) {
           })}
         </div>
 
-        {/* Scrollable bar area */}
-        <div className="overflow-x-auto flex-1">
-          <div style={{ width: ataCounts.length * 8 + 2, minWidth: '100%' }}>
-            {/* Bar area */}
-            <div className="relative border-l border-b border-gray-300" style={{ height: 180 }}>
+        {/* Bar area */}
+        <div className="flex-1 min-w-0">
+          <div className="relative border-l border-b border-gray-300" style={{ height: 180 }}>
 
-              {yTicks.filter(t => t > 0).map(tick => (
-                <div
-                  key={`grid-${tick}`}
-                  className="absolute left-0 right-0 border-t border-gray-100"
-                  style={{ bottom: `${(tick / maxCount) * 100}%` }}
-                />
-              ))}
-
+            {yTicks.filter(t => t > 0).map(tick => (
               <div
-                className="absolute left-0 right-0 border-t-2 border-dashed z-10"
-                style={{ bottom: `${(ATA_SUB_CHAPTER_TARGET / maxCount) * 100}%`, borderColor: '#22c55e' }}
-              >
-                <span className="absolute -top-4 left-2 text-[10px] font-medium" style={{ color: '#22c55e' }}>Target: {ATA_SUB_CHAPTER_TARGET}</span>
-              </div>
+                key={`grid-${tick}`}
+                className="absolute left-0 right-0 border-t border-gray-100"
+                style={{ bottom: `${(tick / maxCount) * 100}%` }}
+              />
+            ))}
 
-              <div className="flex items-end h-full" style={{ gap: 1 }}>
-                {ataCounts.map(({ code, count }) => {
-                  const pct = count > 0 ? (count / maxCount) * 100 : 0
-                  const meetsTarget = count >= ATA_SUB_CHAPTER_TARGET
-                  return (
-                    <div key={code} className="flex items-end group relative" style={{ width: 7 }}>
-                      <div
-                        className="rounded-t-sm"
-                        style={{
-                          width: 7,
-                          height: count > 0 ? `${Math.max(2, pct)}%` : 1,
-                          backgroundColor: count > 0 ? (meetsTarget ? '#22c55e' : '#60a5fa') : '#e5e7eb',
-                        }}
-                      />
-                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block z-20 bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap pointer-events-none">
-                        {code}: {count} task{count !== 1 ? 's' : ''}
-                      </div>
+            <div
+              className="absolute left-0 right-0 border-t-2 border-dashed z-10"
+              style={{ bottom: `${(ATA_SUB_CHAPTER_TARGET / maxCount) * 100}%`, borderColor: '#22c55e' }}
+            >
+              <span className="absolute -top-4 left-2 text-[10px] font-medium" style={{ color: '#22c55e' }}>Target: {ATA_SUB_CHAPTER_TARGET}</span>
+            </div>
+
+            <div className="flex items-end gap-1 h-full px-1">
+              {ataCounts.map(({ code, count, breakdown }) => {
+                const pct = count > 0 ? (count / maxCount) * 100 : 0
+                const meetsTarget = count >= ATA_SUB_CHAPTER_TARGET
+                return (
+                  <div key={code} className="flex-1 flex items-end group relative">
+                    <div
+                      className="w-full rounded-t-sm"
+                      style={{
+                        height: count > 0 ? `${Math.max(2, pct)}%` : 1,
+                        backgroundColor: count > 0 ? (meetsTarget ? '#22c55e' : '#60a5fa') : '#e5e7eb',
+                      }}
+                    />
+                    {/* Tooltip with sub-chapter breakdown */}
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-20 bg-gray-900 text-white text-[10px] px-3 py-2 rounded-lg shadow-lg pointer-events-none" style={{ minWidth: 160 }}>
+                      <div className="font-bold mb-1">ATA {code}: {count} task{count !== 1 ? 's' : ''}</div>
+                      {breakdown.length > 0 ? (
+                        <div className="space-y-0.5">
+                          {breakdown.map(sub => (
+                            <div key={sub.code} className="flex justify-between gap-3">
+                              <span className="text-white/70">{sub.code}</span>
+                              <span>{sub.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-white/50">No tasks recorded</div>
+                      )}
                     </div>
-                  )
-                })}
-              </div>
+                  </div>
+                )
+              })}
             </div>
+          </div>
 
-            {/* X-axis labels — every single ATA shown */}
-            <div className="flex" style={{ gap: 1, height: 48 }}>
-              {ataCounts.map(({ code }) => (
-                <div key={`label-${code}`} className="flex items-start justify-center pt-1" style={{ width: 7 }}>
-                  <span className="text-[6px] text-gray-400 leading-none" style={{ writingMode: 'vertical-lr' }}>
-                    {code}
-                  </span>
-                </div>
-              ))}
-            </div>
+          {/* X-axis labels */}
+          <div className="flex gap-1 px-1" style={{ height: 32 }}>
+            {ataCounts.map(({ code }) => (
+              <div key={`label-${code}`} className="flex-1 flex items-start justify-center pt-1">
+                <span className="text-[9px] text-gray-500 font-medium">{code}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
