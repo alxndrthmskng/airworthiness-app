@@ -130,15 +130,18 @@ export function AtaChart({ entries }: AtaChartProps) {
         <div className="flex">
           {/* Left: Y-axis labels */}
           <div className="relative flex-shrink-0" style={{ width: 24, height: 160 }}>
-            {yTicks.map(tick => (
-              <div
-                key={tick}
-                className="absolute text-[10px] text-gray-400 -translate-y-1/2 text-right"
-                style={{ bottom: `${(tick / maxCount) * 100}%`, left: 0, right: 2 }}
-              >
-                {tick}
-              </div>
-            ))}
+            {yTicks.map(tick => {
+              const pct = (1 - tick / maxCount) * 100
+              return (
+                <div
+                  key={tick}
+                  className="absolute text-[10px] leading-none text-gray-400 text-right flex items-center"
+                  style={{ top: `calc(${pct}% - 5px)`, left: 0, right: 2, height: 10 }}
+                >
+                  {tick}
+                </div>
+              )
+            })}
           </div>
 
           {/* Middle: bars + x labels */}
