@@ -180,8 +180,9 @@ export default async function LogbookPage({
     civilExpDays += Math.round((periodEnd - periodStart) / (1000 * 60 * 60 * 24))
   }
   const civilExpMonths = Math.round(civilExpDays / 30.44)
-  const totalCombinedMonths = civilExpMonths + militaryMonths
-  const meetsExpThreshold = totalCombinedMonths >= 60 // 5 years
+  const cappedMilitaryMonths = Math.min(militaryMonths, 48) // Max 4 years military
+  const totalCombinedMonths = civilExpMonths + cappedMilitaryMonths
+  const meetsExpThreshold = totalCombinedMonths >= 60 && civilExpMonths >= 12 // 5 years total AND min 12 months civil
 
   // 10-year cutoff for entries
   const tenYearsAgoTime = tenYearsAgo.getTime()
@@ -267,9 +268,9 @@ export default async function LogbookPage({
             <p className="text-3xl font-bold mt-1 text-white">
               {Math.floor(totalCombinedMonths / 12)}y {totalCombinedMonths % 12}m
             </p>
-            {militaryMonths > 0 && (
+            {cappedMilitaryMonths > 0 && (
               <p className="text-[10px] mt-1" style={{ color: meetsExpThreshold ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)' }}>
-                {Math.floor(civilExpMonths / 12)}y {civilExpMonths % 12}m civil + {Math.floor(militaryMonths / 12)}y {militaryMonths % 12}m military
+                {Math.floor(civilExpMonths / 12)}y {civilExpMonths % 12}m civil + {Math.floor(cappedMilitaryMonths / 12)}y {cappedMilitaryMonths % 12}m military{militaryMonths > 48 ? ' (4yr max)' : ''}
               </p>
             )}
           </div>
