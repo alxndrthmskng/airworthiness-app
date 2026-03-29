@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { ATA_SUB_CHAPTER_TARGET } from '@/lib/logbook/constants'
+import { ATA_2200_CHAPTERS } from '@/lib/logbook/ata-2200'
 import type { AircraftCategory } from '@/lib/logbook/constants'
 
 interface ChartEntry {
@@ -52,16 +53,19 @@ export function AtaChart({ entries }: AtaChartProps) {
   }, [entries, typeFilter, catFilter])
 
   const ataCounts = useMemo(() => {
+    // Start with all ATA 2200 chapters at 0
     const counts: Record<string, number> = {}
+    for (const ch of ATA_2200_CHAPTERS) {
+      counts[ch.value] = 0
+    }
+    // Add user's entries
     for (const entry of filtered) {
       const chapters = entry.ata_chapters ?? []
       for (const ch of chapters) {
         counts[ch] = (counts[ch] || 0) + 1
       }
     }
-    return Object.entries(counts)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([code, count]) => ({ code, count }))
+    return ATA_2200_CHAPTERS.map(ch => ({ code: ch.value, count: counts[ch.value] }))
   }, [filtered])
 
   // Round max up to nearest 5
@@ -121,9 +125,7 @@ export function AtaChart({ entries }: AtaChartProps) {
         ))}
       </div>
 
-      {ataCounts.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">No tasks match the selected filters.</p>
-      ) : (
+      {(
         <div className="relative overflow-x-auto">
           <div className="relative border-l border-b border-gray-200 pl-8" style={{ minHeight: 220, paddingBottom: 60 }}>
 
@@ -156,24 +158,28 @@ export function AtaChart({ entries }: AtaChartProps) {
             </div>
 
             {/* Bars + X-axis labels */}
-            <div className="flex items-end gap-[2px] ml-8" style={{ height: 220 }}>
-              {ataCounts.map(({ code, count }) => {
-                const height = (count / maxCount) * 100
+            <div className="flex items-end gap-0 ml-8" style={{ height: 220, minWidth: ataCounts.length * 4 }}>
+              {ataCounts.map(({ code, count }, i) => {
+                const height = count > 0 ? (count / maxCount) * 100 : 0
                 const meetsTarget = count >= ATA_SUB_CHAPTER_TARGET
+                // Show label every ~20 bars to avoid overlap
+                const showLabel = i % Math.max(1, Math.floor(ataCounts.length / 20)) === 0
                 return (
-                  <div key={code} className="flex-1 min-w-[14px] max-w-[24px] flex flex-col items-center group relative">
+                  <div key={code} className="flex-1 min-w-[2px] flex flex-col items-center group relative">
                     {/* Bar */}
                     <div className="w-full flex items-end" style={{ height: '160px' }}>
                       <div
-                        className={`w-full rounded-t-sm transition-all ${meetsTarget ? 'bg-green-500' : 'bg-blue-400'}`}
-                        style={{ height: `${height}%` }}
+                        className={`w-full ${count > 0 ? (meetsTarget ? 'bg-green-500' : 'bg-blue-400') : 'bg-gray-200'}`}
+                        style={{ height: count > 0 ? `${Math.max(1, height)}%` : '1px' }}
                       />
                     </div>
-                    {/* X label (vertical) */}
+                    {/* X label (vertical, shown periodically) */}
                     <div className="h-[60px] flex items-start justify-center pt-1">
-                      <span className="text-[9px] text-gray-500 font-medium" style={{ writingMode: 'vertical-lr' }}>
-                        {code}
-                      </span>
+                      {showLabel && (
+                        <span className="text-[7px] text-gray-400" style={{ writingMode: 'vertical-lr' }}>
+                          {code}
+                        </span>
+                      )}
                     </div>
                     {/* Tooltip */}
                     <div className="absolute bottom-full mb-1 hidden group-hover:block z-20 bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap pointer-events-none">
