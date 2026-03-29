@@ -125,75 +125,71 @@ export function AtaChart({ entries }: AtaChartProps) {
         ))}
       </div>
 
-      {(
-        <div className="relative overflow-x-auto">
-          <div className="relative border-l border-b border-gray-200 pl-8" style={{ minHeight: 220, paddingBottom: 60 }}>
+      <div className="relative overflow-x-auto">
+        {/* Chart container: bars area + Y-axis on right */}
+        <div className="relative" style={{ paddingRight: 30 }}>
 
-            {/* Y-axis ticks (increments of 5) */}
-            {yTicks.map(tick => (
-              <div
-                key={tick}
-                className="absolute left-0 text-[10px] text-gray-400 -translate-y-1/2"
-                style={{ bottom: `calc(${(tick / maxCount) * 100}% + 60px)` }}
-              >
-                {tick}
-              </div>
-            ))}
-
-            {/* Horizontal grid lines at each 5 */}
-            {yTicks.map(tick => (
-              <div
-                key={`grid-${tick}`}
-                className="absolute left-8 right-0 border-t border-gray-100"
-                style={{ bottom: `calc(${(tick / maxCount) * 100}% + 60px)` }}
-              />
-            ))}
-
-            {/* Target line at 10 */}
+          {/* Horizontal grid lines */}
+          {yTicks.map(tick => (
             <div
-              className="absolute left-8 right-0 border-t-2 border-dashed border-green-400 z-10"
-              style={{ bottom: `calc(${(ATA_SUB_CHAPTER_TARGET / maxCount) * 100}% + 60px)` }}
-            >
-              <span className="absolute -top-4 right-0 text-[10px] text-green-600 font-medium">Target: {ATA_SUB_CHAPTER_TARGET}</span>
-            </div>
+              key={`grid-${tick}`}
+              className="absolute left-0 border-t border-gray-100"
+              style={{ bottom: `${(tick / maxCount) * 160 + 44}px`, right: 30 }}
+            />
+          ))}
 
-            {/* Bars + X-axis labels */}
-            <div className="flex items-end gap-0 ml-8" style={{ height: 220, minWidth: ataCounts.length * 4 }}>
-              {ataCounts.map(({ code, count }, i) => {
-                const height = count > 0 ? (count / maxCount) * 100 : 0
-                const meetsTarget = count >= ATA_SUB_CHAPTER_TARGET
-                // Show label every ~20 bars to avoid overlap
-                const showLabel = i % Math.max(1, Math.floor(ataCounts.length / 20)) === 0
-                return (
-                  <div key={code} className="flex-1 min-w-[2px] flex flex-col items-center group relative">
-                    {/* Bar */}
-                    <div className="w-full flex items-end" style={{ height: '160px' }}>
-                      <div
-                        className={`w-full ${count > 0 ? (meetsTarget ? 'bg-green-500' : 'bg-blue-400') : 'bg-gray-200'}`}
-                        style={{ height: count > 0 ? `${Math.max(1, height)}%` : '1px' }}
-                      />
-                    </div>
-                    {/* X label (vertical, shown periodically) */}
-                    <div className="h-[60px] flex items-start justify-center pt-1">
-                      {showLabel && (
-                        <span className="text-[7px] text-gray-400" style={{ writingMode: 'vertical-lr' }}>
-                          {code}
-                        </span>
-                      )}
-                    </div>
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full mb-1 hidden group-hover:block z-20 bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap pointer-events-none">
-                      {code}: {count} task{count !== 1 ? 's' : ''}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+          {/* Target line */}
+          <div
+            className="absolute left-0 border-t-2 border-dashed border-green-400 z-10"
+            style={{ bottom: `${(ATA_SUB_CHAPTER_TARGET / maxCount) * 160 + 44}px`, right: 30 }}
+          >
+            <span className="absolute -top-4 left-2 text-[10px] text-green-600 font-medium">Target: {ATA_SUB_CHAPTER_TARGET}</span>
           </div>
 
-          <p className="text-[10px] text-gray-400 text-center mt-1">ATA Chapter</p>
+          {/* Y-axis labels on right */}
+          {yTicks.map(tick => (
+            <div
+              key={tick}
+              className="absolute text-[10px] text-gray-400 -translate-y-1/2"
+              style={{ bottom: `${(tick / maxCount) * 160 + 44}px`, right: 0, width: 25, textAlign: 'right' }}
+            >
+              {tick}
+            </div>
+          ))}
+
+          {/* Bars + X-axis labels */}
+          <div className="flex items-end gap-0 border-b border-l border-gray-200" style={{ height: 160 + 44, paddingBottom: 44 }}>
+            {ataCounts.map(({ code, count }, i) => {
+              const barH = count > 0 ? Math.max(2, (count / maxCount) * 160) : 0
+              const meetsTarget = count >= ATA_SUB_CHAPTER_TARGET
+              const showLabel = i % Math.max(1, Math.floor(ataCounts.length / 25)) === 0
+              return (
+                <div key={code} className="flex-1 min-w-[1px] flex flex-col items-stretch group relative" style={{ gap: 0 }}>
+                  {/* Bar area */}
+                  <div className="flex-1 flex items-end">
+                    <div
+                      className={`w-full ${count > 0 ? (meetsTarget ? 'bg-green-500' : 'bg-blue-400') : 'bg-gray-100'}`}
+                      style={{ height: count > 0 ? barH : 1 }}
+                    />
+                  </div>
+                  {/* X label */}
+                  <div className="h-[44px] flex items-start justify-center" style={{ paddingTop: 2 }}>
+                    {showLabel && (
+                      <span className="text-[7px] text-gray-400 leading-none" style={{ writingMode: 'vertical-lr' }}>
+                        {code}
+                      </span>
+                    )}
+                  </div>
+                  {/* Tooltip */}
+                  <div className="absolute bottom-[48px] left-1/2 -translate-x-1/2 hidden group-hover:block z-20 bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap pointer-events-none">
+                    {code}: {count} task{count !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
-      )}
+      </div>
 
       <p className="text-xs text-gray-400 mt-3 text-center">
         The practical experience shall involve a representative cross section of maintenance tasks on aircraft.
