@@ -295,7 +295,7 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                     <div className="border rounded-lg overflow-hidden print:border-black">
                       <table className="w-full text-sm print:text-xs">
                         <thead>
-                          <tr className="bg-gray-50 border-b">
+                          <tr className="bg-gray-50 border-b divide-x divide-gray-200 print:divide-gray-800">
                             {visibleCols.map(col => (
                               <th
                                 key={col.key}
@@ -314,11 +314,11 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                         </thead>
                         <tbody className="divide-y divide-gray-100 print:divide-gray-300">
                           {ataEntries.map(entry => (
-                            <tr key={entry.id}>
+                            <tr key={entry.id} className="divide-x divide-gray-200 print:divide-gray-800">
                               {visibleCols.map(col => (
                                 <td
                                   key={col.key}
-                                  className={`px-3 py-2 print:px-1 text-center ${col.key === 'task_detail' ? 'max-w-xs' : 'whitespace-nowrap'} ${col.key === 'supervisor' ? 'border-l border-gray-200 print:border-black w-32 min-w-[8rem]' : ''}`}
+                                  className={`px-3 py-2 print:px-1 text-center ${col.key === 'task_detail' ? 'max-w-xs' : 'whitespace-nowrap'} ${col.key === 'supervisor' ? 'w-32 min-w-[8rem]' : ''}`}
                                 >
                                   {getCellValue(entry, col.key)}
                                 </td>
