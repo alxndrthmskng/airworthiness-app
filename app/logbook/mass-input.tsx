@@ -158,15 +158,50 @@ function newRow(defaults: Partial<DraftRow> = {}): DraftRow {
   }
 }
 
+function entryToDraftRow(entry: Record<string, unknown>): DraftRow {
+  const desc = (entry.description as string) ?? ''
+  const typeMatch = desc.match(/^\[([^\]]+)\]/)
+  const taskTypes = typeMatch ? typeMatch[1].split(',').map(t => t.trim()).filter(Boolean) : []
+  const taskDetail = desc.replace(/^\[[^\]]+\]\s*/, '')
+
+  const isoDate = (entry.task_date as string) ?? ''
+  const [y, m, d] = isoDate.split('-')
+  const taskDate = y && m && d ? `${d}/${m}/${y}` : ''
+
+  const ataChapters = (entry.ata_chapters as string[]) ??
+    ((entry.ata_chapter as string) ? [entry.ata_chapter as string] : [])
+
+  return {
+    id: (entry.id as string) ?? crypto.randomUUID(),
+    taskDate,
+    maintenanceType: (entry.maintenance_type as MaintenanceType) ?? 'line_maintenance',
+    aircraftCategory: (entry.aircraft_category as string) ?? '',
+    aircraftRegistration: (entry.aircraft_registration as string) ?? '',
+    aircraftType: (entry.aircraft_type as string) ?? '',
+    ataChapters,
+    taskTypes,
+    jobNumber: (entry.job_number as string) ?? '',
+    jobNumberPhotoPath: (entry.work_order_photo_path as string) ?? null,
+    taskDetail,
+    employer: (entry.employer as string) ?? '',
+    saving: false,
+    saved: false,
+    saveError: null,
+  }
+}
+
 interface MassInputProps {
   defaultEmployer: string
   lastMaintenanceType?: MaintenanceType
+  editingEntry?: Record<string, unknown> | null
 }
 
-export function MassInput({ defaultEmployer, lastMaintenanceType }: MassInputProps) {
+export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }: MassInputProps) {
   const router = useRouter()
+  const isEditing = !!editingEntry
   const [toast, setToast] = useState<string | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   function showToast(msg: string) {
     if (toastTimer.current) clearTimeout(toastTimer.current)
@@ -175,7 +210,9 @@ export function MassInput({ defaultEmployer, lastMaintenanceType }: MassInputPro
   }
 
   const [rows, setRows] = useState<DraftRow[]>([
-    newRow({ employer: defaultEmployer, maintenanceType: lastMaintenanceType }),
+    editingEntry
+      ? entryToDraftRow(editingEntry)
+      : newRow({ employer: defaultEmployer, maintenanceType: lastMaintenanceType }),
   ])
   const [typeSearch, setTypeSearch] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState<Record<string, boolean>>({})
@@ -185,7 +222,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType }: MassInputPro
     setRows(prev => {
       const updated = prev.map(r => r.id === id ? { ...r, [field]: value, saved: false } : r)
       const lastRow = updated[updated.length - 1]
-      if (lastRow.id === id && !lastRow.saved) {
+      if (!isEditing && lastRow.id === id && !lastRow.saved) {
         const hasContent = lastRow.taskDate || lastRow.taskDetail
         if (hasContent && updated.filter(r => !r.saved).length === 1) {
           updated.push(newRow({
@@ -248,8 +285,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType }: MassInputPro
       row.taskDetail,
     ].filter(Boolean).join(' ')
 
-    const { error } = await supabase.from('logbook_entries').insert({
-      user_id: user.id,
+    const payload = {
       task_date: parseDateInput(row.taskDate),
       maintenance_type: row.maintenanceType,
       aircraft_category: (() => {
@@ -270,9 +306,18 @@ export function MassInput({ defaultEmployer, lastMaintenanceType }: MassInputPro
       supervised: true,
       status: 'draft',
       work_order_photo_path: row.jobNumberPhotoPath,
-    })
+    }
+
+    const { error } = isEditing
+      ? await supabase.from('logbook_entries').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', editingEntry!.id as string)
+      : await supabase.from('logbook_entries').insert({ ...payload, user_id: user.id })
 
     if (!error) {
+      if (isEditing) {
+        showToast('Task updated successfully.')
+        router.push('/logbook/export')
+        return
+      }
       setRows(prev => {
         const updated = prev.map(r => r.id === id ? { ...r, saving: false, saved: true } : r)
         const unsaved = updated.filter(r => !r.saved)
@@ -301,6 +346,21 @@ export function MassInput({ defaultEmployer, lastMaintenanceType }: MassInputPro
       if (updated.length === 0) updated.push(newRow({ employer: defaultEmployer }))
       return updated
     })
+  }
+
+  async function handleDelete() {
+    if (!editingEntry) return
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('logbook_entries')
+      .delete()
+      .eq('id', editingEntry.id as string)
+    if (error) {
+      showToast('Failed to delete: ' + error.message)
+      return
+    }
+    showToast('Task deleted.')
+    router.push('/logbook/export')
   }
 
   function getTypeResults(rowId: string): typeof UK_TYPE_RATINGS {
@@ -528,9 +588,9 @@ export function MassInput({ defaultEmployer, lastMaintenanceType }: MassInputPro
                     onClick={() => saveRow(row.id)}
                     disabled={row.saving || !canSave}
                   >
-                    {row.saving ? 'Saving...' : 'SAVE'}
+                    {row.saving ? 'Saving...' : isEditing ? 'UPDATE' : 'SAVE'}
                   </Button>
-                  {unsavedRows.length > 1 && (
+                  {!isEditing && unsavedRows.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeRow(row.id)}
@@ -551,6 +611,39 @@ export function MassInput({ defaultEmployer, lastMaintenanceType }: MassInputPro
                     <span className="text-xs text-red-600">{row.saveError}</span>
                   )}
                 </div>
+
+                {/* Delete — edit mode only */}
+                {isEditing && (
+                  <div className="flex items-center gap-3 pt-3 mt-3 border-t border-gray-100">
+                    {!confirmDelete ? (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete(true)}
+                        className="text-sm text-red-500 hover:text-red-700 font-medium"
+                      >
+                        Delete this entry
+                      </button>
+                    ) : (
+                      <Fragment>
+                        <span className="text-sm text-red-600 font-medium">Are you sure?</span>
+                        <button
+                          type="button"
+                          onClick={handleDelete}
+                          className="text-sm font-semibold text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-lg"
+                        >
+                          Yes, delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDelete(false)}
+                          className="text-sm text-gray-500 hover:text-gray-700"
+                        >
+                          Cancel
+                        </button>
+                      </Fragment>
+                    )}
+                  </div>
+                )}
               </div>
             </Fragment>
           )

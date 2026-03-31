@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { getAtaLabel } from '@/lib/logbook/constants'
 import { createClient } from '@/lib/supabase/client'
 import { AdPlaceholder } from '@/components/ad-placeholder'
@@ -82,6 +83,7 @@ function getCellValue(entry: ExportEntry, key: ColKey): string {
 
 
 export function ExportTable({ entries }: { entries: ExportEntry[] }) {
+  const router = useRouter()
   const [columns, setColumns] = useState(DEFAULT_COLUMNS)
   const [showColPanel, setShowColPanel] = useState(false)
   const [hiddenCols, setHiddenCols] = useState<Set<ColKey>>(new Set())
@@ -373,7 +375,8 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                     <div className="border rounded-lg print:border-black">
                       <table className="w-full text-sm print:text-xs border-separate border-spacing-0">
                         <thead>
-                          <tr className="bg-gray-50 border-b divide-x divide-gray-200 print:divide-gray-800">
+                          <tr className="bg-gray-50">
+                            <th className="w-8 px-1 py-2 border-b border-gray-200 print:hidden rounded-tl-lg" />
                             {visibleCols.map((col, colIdx) => (
                               <th
                                 key={col.key}
@@ -382,7 +385,7 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                                 onDragOver={e => handleDragOver(e, col.key)}
                                 onDrop={() => handleDrop(col.key)}
                                 onDragEnd={() => { setDragging(null); setDragOver(null) }}
-                                className={`text-center px-3 py-2 text-xs font-semibold text-gray-600 whitespace-nowrap cursor-grab print:cursor-default print:px-1 select-none ${colIdx === 0 ? 'rounded-tl-lg' : ''} ${colIdx === visibleCols.length - 1 ? 'rounded-tr-lg' : ''} ${dragOver === col.key ? 'bg-blue-50' : ''} ${dragging === col.key ? 'opacity-50' : ''}`}
+                                className={`text-center px-3 py-2 text-xs font-semibold text-gray-600 whitespace-nowrap cursor-grab print:cursor-default print:px-1 select-none border-b border-l border-gray-200 print:border-gray-800 ${colIdx === visibleCols.length - 1 ? 'rounded-tr-lg' : ''} ${colIdx === 0 ? 'border-l-0' : ''} ${dragOver === col.key ? 'bg-blue-50' : ''} ${dragging === col.key ? 'opacity-50' : ''}`}
                               >
                                 <span className="print:hidden mr-1 text-gray-300">⠿</span>
                                 {col.label}
@@ -390,13 +393,25 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 print:divide-gray-300">
+                        <tbody>
                           {ataEntries.map(entry => (
-                            <tr key={entry.id} className="divide-x divide-gray-200 print:divide-gray-800">
+                            <tr key={entry.id}>
+                              <td className="px-1 py-2 text-center print:hidden border-t border-gray-200">
+                                <button
+                                  type="button"
+                                  onClick={() => router.push('/logbook?edit=' + entry.id)}
+                                  className="text-gray-300 hover:text-blue-600 transition-colors"
+                                  title="Edit entry"
+                                >
+                                  <svg className="w-3.5 h-3.5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                                  </svg>
+                                </button>
+                              </td>
                               {visibleCols.map(col => (
                                 <td
                                   key={col.key}
-                                  className={`px-3 py-2 print:px-1 text-center align-middle ${col.key === 'task_detail' ? 'max-w-xs' : col.key === 'task_type' ? 'max-w-[160px] w-[160px]' : 'whitespace-nowrap'} ${col.key === 'supervisor' ? 'w-32 min-w-[8rem]' : ''}`}
+                                  className={`px-3 py-2 print:px-1 text-center align-middle border-t border-l border-gray-200 print:border-gray-800 ${col.key === 'task_detail' ? 'max-w-xs' : col.key === 'task_type' ? 'max-w-[160px] w-[160px]' : 'whitespace-nowrap'} ${col.key === 'supervisor' ? 'w-32 min-w-[8rem]' : ''}`}
                                 >
                                   {col.key === 'task_type' ? (() => {
                                     const types = extractTaskTypes(entry.description)
