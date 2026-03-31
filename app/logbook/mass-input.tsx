@@ -308,17 +308,23 @@ export function MassInput({ defaultEmployer, lastMaintenanceType }: MassInputPro
                     type="text"
                     value={row.taskDate}
                     onChange={e => {
-                      const raw = e.target.value.replace(/[^\d/]/g, '').slice(0, 10)
-                      updateRow(row.id, 'taskDate', raw)
+                      const digits = e.target.value.replace(/\D/g, '').slice(0, 8)
+                      let formatted = digits
+                      if (digits.length > 4) formatted = digits.slice(0,2) + '/' + digits.slice(2,4) + '/' + digits.slice(4)
+                      else if (digits.length > 2) formatted = digits.slice(0,2) + '/' + digits.slice(2)
+                      updateRow(row.id, 'taskDate', formatted)
                     }}
                     onKeyDown={e => {
                       const allowed = ['Backspace','Delete','Tab','ArrowLeft','ArrowRight','ArrowUp','ArrowDown']
-                      if (!allowed.includes(e.key) && !/^\d$/.test(e.key) && e.key !== '/') e.preventDefault()
+                      if (!allowed.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault()
                     }}
                     onPaste={e => {
                       e.preventDefault()
-                      const pasted = e.clipboardData.getData('text').replace(/[^\d/]/g, '').slice(0, 10)
-                      updateRow(row.id, 'taskDate', pasted)
+                      const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 8)
+                      let formatted = digits
+                      if (digits.length > 4) formatted = digits.slice(0,2) + '/' + digits.slice(2,4) + '/' + digits.slice(4)
+                      else if (digits.length > 2) formatted = digits.slice(0,2) + '/' + digits.slice(2)
+                      updateRow(row.id, 'taskDate', formatted)
                     }}
                     placeholder="DD/MM/YYYY"
                     maxLength={10}
