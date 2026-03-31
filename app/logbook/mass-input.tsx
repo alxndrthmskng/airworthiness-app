@@ -316,9 +316,10 @@ export function MassInput({ defaultEmployer, lastMaintenanceType }: MassInputPro
                   {/* Date */}
                   <td className="px-2 py-2">
                     <input
-                      type="date"
+                      type="text"
                       value={row.taskDate}
                       onChange={e => updateRow(row.id, 'taskDate', e.target.value)}
+                      placeholder="DD/MM/YYYY"
                       className="w-full text-sm h-8 px-2 border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </td>
