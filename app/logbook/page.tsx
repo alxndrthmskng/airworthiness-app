@@ -31,10 +31,6 @@ function getCategoryLabel(value: string) {
   return MAINTENANCE_CATEGORIES.find(c => c.value === value)?.label ?? value
 }
 
-function StatusBadge({ status }: { status: EntryStatus }) {
-  const info = ENTRY_STATUSES[status]
-  return <Badge variant={info.color as 'default' | 'secondary' | 'outline' | 'destructive'}>{info.label}</Badge>
-}
 
 function calcMonths(periods: { start_date: string; end_date: string | null }[], cutoff: Date): number {
   let totalDays = 0
