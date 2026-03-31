@@ -46,7 +46,7 @@ function calcMonths(periods: { start_date: string; end_date: string | null }[], 
 export default async function LogbookPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; status?: string; category?: string; sort?: string; dir?: string }>
+  searchParams: Promise<{ page?: string; status?: string; category?: string; sort?: string; dir?: string; edit?: string }>
 }) {
   const supabase = await createClient()
 
@@ -54,6 +54,7 @@ export default async function LogbookPage({
   if (!user) redirect('/login')
 
   const params = await searchParams
+  const editId = params.edit || ''
   const page = Math.max(1, parseInt(params.page || '1', 10))
   const statusFilter = params.status || 'all'
   const selectedCategory = params.category || ''
@@ -102,6 +103,18 @@ export default async function LogbookPage({
       .eq('module_id', '_btc')
       .single(),
   ])
+
+  // Fetch editing entry if ?edit= param is set
+  let editingEntry: Record<string, unknown> | null = null
+  if (editId) {
+    const { data } = await supabase
+      .from('logbook_entries')
+      .select('*')
+      .eq('id', editId)
+      .eq('user_id', user.id)
+      .single()
+    editingEntry = data
+  }
 
   const isAmlHolder = !!profile?.aml_licence_number
   const allStats = statsEntries ?? []
@@ -312,10 +325,11 @@ export default async function LogbookPage({
         <AdPlaceholder format="banner" className="my-4" />
 
         {/* Mass Input */}
-        <h2 className="text-lg font-bold text-white mb-3">New Entries</h2>
+        <h2 className="text-lg font-bold text-white mb-3">{editingEntry ? 'Edit Entry' : 'New Entries'}</h2>
         <MassInput
           defaultEmployer={defaultEmployer}
           lastMaintenanceType={lastMaintenanceType}
+          editingEntry={editingEntry}
         />
 
       </div>
