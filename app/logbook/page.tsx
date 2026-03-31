@@ -229,21 +229,19 @@ export default async function LogbookPage({
       <div className="max-w-6xl mx-auto px-4 py-12">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
+        <div className="mb-8">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl text-white">Digital Logbook (CAP 741)</h1>
-            <p className="text-white/60 mt-1">Track your progress to demonstrate practical experience on a representative cross section of maintenance tasks.</p>
-          </div>
-          <div className="flex items-center gap-3">
+            <Link href="/logbook/export">
+              <Button variant="outline" size="sm" className="bg-transparent border-white/30 text-white hover:bg-white hover:text-[#1565C0] font-bold tracking-wide uppercase">Export Tasks</Button>
+            </Link>
             {isAmlHolder && (
               <Link href="/logbook/verify">
-                <Button variant="outline" className="bg-transparent border-white/30 text-white hover:bg-white/10">Verification Queue</Button>
+                <Button variant="outline" size="sm" className="bg-transparent border-white/30 text-white hover:bg-white/10">Verification Queue</Button>
               </Link>
             )}
-            <Link href="/logbook/export">
-              <Button variant="outline" className="bg-transparent border-white/30 text-white hover:bg-white/10">Print / Export</Button>
-            </Link>
           </div>
+          <p className="text-white/60 mt-1">Track your progress to demonstrate practical experience on a representative cross section of maintenance tasks.</p>
         </div>
 
         {/* ATA Distribution Chart */}
