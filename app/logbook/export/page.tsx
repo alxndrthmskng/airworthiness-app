@@ -23,8 +23,7 @@ export default async function ExportPage() {
 
   return (
     <>
-      <style>{`@media print { @page { size: landscape; } }`}</style>
-      <div className="max-w-7xl mx-auto px-6 py-8 print:px-2 print:py-4">
+<div className="max-w-7xl mx-auto px-6 py-8 print:px-2 print:py-4">
         {/* Header */}
         <div className="mb-8 print:mb-4">
           <div className="flex items-center gap-3 mb-4">
