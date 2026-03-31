@@ -175,13 +175,6 @@ export function AtaChart({ entries }: AtaChartProps) {
               />
             ))}
 
-            <div
-              className="absolute left-0 right-0 border-t-2 border-dashed z-10"
-              style={{ bottom: `${(ATA_SUB_CHAPTER_TARGET / maxCount) * 100}%`, borderColor: '#22c55e' }}
-            >
-              <span className="absolute -top-4 left-2 text-[10px] font-medium" style={{ color: '#22c55e' }}>Target: {ATA_SUB_CHAPTER_TARGET}</span>
-            </div>
-
             <div className="flex items-end gap-1 px-1" style={{ height: 250 }}>
               {ataCounts.map(({ code, count, breakdown }) => {
                 const barPx = count > 0 ? Math.max(8, Math.round((count / maxCount) * 250)) : 0
