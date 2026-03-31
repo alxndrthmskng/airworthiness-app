@@ -1,6 +1,14 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { getAtaLabel, ATA_2200_CHAPTERS } from '@/lib/logbook/constants'
+
+function mainAtaLabel(mainCode: string): string {
+  const sub = ATA_2200_CHAPTERS.find(c => c.value.startsWith(mainCode + '-'))
+  if (!sub) return `ATA ${mainCode}`
+  const chapterName = sub.label.split(':')[0]
+  return `${mainCode}: ${chapterName}`
+}
 
 const CATEGORY_ORDER = [
   'aeroplane_turbine',
@@ -53,7 +61,7 @@ function getCellValue(entry: ExportEntry, key: ColKey): string {
     case 'aircraft_type': return entry.aircraft_type ?? '-'
     case 'registration': return entry.aircraft_registration ?? '-'
     case 'job_number': return entry.job_number ?? '-'
-    case 'ata_group': return entry.ata_chapter ?? '-'
+    case 'ata_group': return entry.ata_chapter ? getAtaLabel(entry.ata_chapter) : '-'
     case 'task_detail': return entry.description ?? '-'
     case 'supervisor': return ''
   }
@@ -231,7 +239,7 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                 onClick={() => toggleAta(ata)}
                 className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors ${selectedAta.has(ata) ? 'bg-[#1565C0] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
               >
-                {ata}
+                {mainAtaLabel(ata)}
               </button>
             ))}
           </div>
@@ -296,7 +304,7 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                   <div key={ata}>
                     {/* ATA subheading */}
                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 print:text-[10px]">
-                      ATA {ata}
+                      {mainAtaLabel(ata)}
                     </h3>
                     <div className="border rounded-lg overflow-hidden print:border-black">
                       <table className="w-full text-sm print:text-xs">
