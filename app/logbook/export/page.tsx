@@ -23,6 +23,7 @@ export default async function ExportPage() {
 
   return (
     <>
+      <style>{`@media print { @page { size: landscape; } }`}</style>
       <div className="print:hidden flex justify-end max-w-7xl mx-auto px-6 pt-6">
         <PrintButton />
       </div>
