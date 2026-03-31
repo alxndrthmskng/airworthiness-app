@@ -8,7 +8,6 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { AdPlaceholder } from '@/components/ad-placeholder'
 
 function AuthForm() {
   const router = useRouter()
@@ -109,16 +108,7 @@ function AuthForm() {
 
   return (
     <div className="aw-gradient">
-      {/* Top ad banner */}
-      <div className="max-w-6xl mx-auto px-4 pt-4">
-        <AdPlaceholder format="banner" />
-      </div>
-
       <div className="flex min-h-[calc(100vh-200px)]">
-        {/* Left sidebar ad */}
-        <div className="hidden xl:flex items-center pl-4">
-          <AdPlaceholder format="sidebar" />
-        </div>
 
         {/* Left panel - branding */}
         <div className="hidden lg:flex flex-1 flex-col justify-center p-12">
@@ -385,15 +375,6 @@ function AuthForm() {
           </div>
         </div>
 
-        {/* Right sidebar ad */}
-        <div className="hidden xl:flex items-center pr-4">
-          <AdPlaceholder format="sidebar" />
-        </div>
-      </div>
-
-      {/* Bottom ad banner */}
-      <div className="max-w-6xl mx-auto px-4 pb-4">
-        <AdPlaceholder format="banner" />
       </div>
     </div>
   )
