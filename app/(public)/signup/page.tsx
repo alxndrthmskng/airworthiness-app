@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -86,6 +86,26 @@ function AuthForm() {
     router.push('/profile')
   }
 
+  const [resendCountdown, setResendCountdown] = useState(60)
+  const [resending, setResending] = useState(false)
+  const [resent, setResent] = useState(false)
+
+  useEffect(() => {
+    if (!success) return
+    if (resendCountdown <= 0) return
+    const timer = setTimeout(() => setResendCountdown(c => c - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [success, resendCountdown])
+
+  async function handleResendEmail() {
+    setResending(true)
+    setResent(false)
+    await supabase.auth.resend({ type: 'signup', email })
+    setResending(false)
+    setResent(true)
+    setResendCountdown(60)
+  }
+
   if (success) {
     return (
       <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4">
@@ -99,6 +119,22 @@ function AuthForm() {
           <p className="text-sm text-gray-500">
             We have sent a confirmation link to <span className="font-medium text-gray-700">{email}</span>.
           </p>
+          <div className="mt-6">
+            {resent && (
+              <p className="text-sm text-green-600 mb-3">Email sent again.</p>
+            )}
+            {resendCountdown > 0 ? (
+              <p className="text-sm text-gray-400">Resend available in {resendCountdown}s</p>
+            ) : (
+              <button
+                onClick={handleResendEmail}
+                disabled={resending}
+                className="text-sm font-medium text-[#123456] hover:underline"
+              >
+                {resending ? 'Sending...' : 'Resend confirmation email'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     )
