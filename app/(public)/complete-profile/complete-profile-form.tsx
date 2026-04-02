@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,6 +27,11 @@ const APPROVAL_TYPES = [
   'Other',
 ]
 
+interface Approval {
+  type: string
+  reference: string
+}
+
 export function CompleteProfileForm() {
   const router = useRouter()
   const supabase = createClient()
@@ -34,18 +40,45 @@ export function CompleteProfileForm() {
   const [middleNames, setMiddleNames] = useState('')
   const [lastName, setLastName] = useState('')
   const [hasLicence, setHasLicence] = useState<'yes' | 'no' | ''>('')
-  const [licenceNumber, setLicenceNumber] = useState('')
+  const [licences, setLicences] = useState<string[]>([''])
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [employer, setEmployer] = useState('')
-  const [approvalType, setApprovalType] = useState('')
-  const [approvalNumber, setApprovalNumber] = useState('')
+  const [approvals, setApprovals] = useState<Approval[]>([{ type: '', reference: '' }])
+  const [marketingOptIn, setMarketingOptIn] = useState(true)
+  const [termsAccepted, setTermsAccepted] = useState(true)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // Licence helpers
+  function updateLicence(index: number, value: string) {
+    setLicences(prev => prev.map((l, i) => i === index ? value : l))
+  }
+
+  function removeLicence(index: number) {
+    setLicences(prev => prev.filter((_, i) => i !== index))
+  }
+
+  function addLicence() {
+    setLicences(prev => [...prev, ''])
+  }
+
+  // Approval helpers
+  function updateApproval(index: number, field: keyof Approval, value: string) {
+    setApprovals(prev => prev.map((a, i) => i === index ? { ...a, [field]: value } : a))
+  }
+
+  function removeApproval(index: number) {
+    setApprovals(prev => prev.filter((_, i) => i !== index))
+  }
+
+  function addApproval() {
+    setApprovals(prev => [...prev, { type: '', reference: '' }])
+  }
+
+  // Category helpers
   function toggleCategory(cat: string) {
     setSelectedCategories(prev => {
       if (prev.includes(cat)) {
-        // Removing — also remove any categories that are only implied by this one
         const implied = IMPLIED_CATEGORIES[cat] || []
         const otherImplied = Object.entries(IMPLIED_CATEGORIES)
           .filter(([k]) => k !== cat && prev.includes(k))
@@ -54,7 +87,6 @@ export function CompleteProfileForm() {
           .filter(c => c !== cat)
           .filter(c => !implied.includes(c) || otherImplied.includes(c))
       } else {
-        // Adding — also add implied categories
         const implied = IMPLIED_CATEGORIES[cat] || []
         return [...new Set([...prev, cat, ...implied])]
       }
@@ -77,7 +109,14 @@ export function CompleteProfileForm() {
       return
     }
 
+    if (!termsAccepted) {
+      setError('You must accept the Terms and Privacy Policy to continue.')
+      setLoading(false)
+      return
+    }
+
     const fullName = [firstName.trim(), middleNames.trim(), lastName.trim()].filter(Boolean).join(' ')
+    const validLicences = licences.map(l => l.trim()).filter(Boolean)
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -90,9 +129,9 @@ export function CompleteProfileForm() {
       .from('profiles')
       .update({
         full_name: fullName,
-        aml_licence_number: hasLicence === 'yes' ? (licenceNumber.trim() || null) : null,
+        aml_licence_number: hasLicence === 'yes' && validLicences.length > 0 ? validLicences.join(', ') : null,
         aml_categories: hasLicence === 'yes' ? selectedCategories : [],
-        industry: approvalType || null,
+        industry: approvals.filter(a => a.type).map(a => a.type).join(', ') || null,
       })
       .eq('id', user.id)
 
@@ -188,7 +227,7 @@ export function CompleteProfileForm() {
               </button>
               <button
                 type="button"
-                onClick={() => { setHasLicence('no'); setLicenceNumber(''); setSelectedCategories([]) }}
+                onClick={() => { setHasLicence('no'); setLicences(['']); setSelectedCategories([]) }}
                 className={`flex-1 h-12 rounded-xl text-sm font-bold transition-colors ${
                   hasLicence === 'no'
                     ? 'bg-black text-white'
@@ -206,17 +245,43 @@ export function CompleteProfileForm() {
               <div>
                 <p className="text-xs font-bold text-black mb-3">Licence details</p>
                 <p className="text-[11px] text-gray-400 mb-3">Used to track your module exam progress and generate your continuation training record.</p>
-                <div className="space-y-1.5">
-                  <Label htmlFor="licenceNumber" className="text-xs text-gray-500">
-                    Licence number <span className="text-gray-300">optional</span>
-                  </Label>
-                  <Input
-                    id="licenceNumber"
-                    placeholder="e.g. UK.66.12345, ES.66.1234567, IE.66.1234567"
-                    value={licenceNumber}
-                    onChange={e => setLicenceNumber(e.target.value)}
-                    className="h-12 rounded-xl border-gray-300 focus:border-black focus:ring-black"
-                  />
+                <div className="space-y-3">
+                  {licences.map((licence, index) => (
+                    <div key={index} className="flex gap-2">
+                      <div className="flex-1 space-y-1.5">
+                        {index === 0 && (
+                          <Label className="text-xs text-gray-500">
+                            Licence number <span className="text-gray-300">optional</span>
+                          </Label>
+                        )}
+                        <Input
+                          placeholder="e.g. UK.66.12345"
+                          value={licence}
+                          onChange={e => updateLicence(index, e.target.value)}
+                          className="h-12 rounded-xl border-gray-300 focus:border-black focus:ring-black"
+                        />
+                      </div>
+                      {licences.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeLicence(index)}
+                          className="self-end h-12 px-3 text-gray-400 hover:text-red-500 transition-colors"
+                          title="Remove"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addLicence}
+                    className="text-xs font-bold text-black hover:underline"
+                  >
+                    + Add another licence
+                  </button>
                 </div>
               </div>
 
@@ -282,37 +347,89 @@ export function CompleteProfileForm() {
             </div>
           </div>
 
-          {/* Approval Type */}
-          <div className="space-y-1.5">
-            <Label htmlFor="approvalType" className="text-xs font-bold text-black">
-              Approval type <span className="text-gray-300 font-normal">optional</span>
-            </Label>
-            <p className="text-[11px] text-gray-400 mb-2">The type of approval held by your organisation.</p>
-            <select
-              id="approvalType"
-              value={approvalType}
-              onChange={e => setApprovalType(e.target.value)}
-              className="w-full h-12 rounded-xl border border-gray-300 bg-white px-3 text-sm focus:border-black focus:ring-black focus:outline-none"
-            >
-              <option value="">Select approval type</option>
-              {APPROVAL_TYPES.map(type => (
-                <option key={type} value={type}>{type}</option>
+          {/* Approvals — repeatable */}
+          <div>
+            <p className="text-xs font-bold text-black mb-1">Organisation approval</p>
+            <p className="text-[11px] text-gray-400 mb-3">The type of approval and reference number held by your organisation.</p>
+            <div className="space-y-3">
+              {approvals.map((approval, index) => (
+                <div key={index} className="space-y-2">
+                  {index > 0 && <div className="h-px bg-gray-50 mt-1" />}
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      {index === 0 && <Label className="text-xs text-gray-500 mb-1.5 block">Approval type <span className="text-gray-300">optional</span></Label>}
+                      <select
+                        value={approval.type}
+                        onChange={e => updateApproval(index, 'type', e.target.value)}
+                        className="w-full h-12 rounded-xl border border-gray-300 bg-white px-3 text-sm focus:border-black focus:ring-black focus:outline-none"
+                      >
+                        <option value="">Select approval type</option>
+                        {APPROVAL_TYPES.map(type => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {approvals.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeApproval(index)}
+                        className="self-end h-12 px-3 text-gray-400 hover:text-red-500 transition-colors"
+                        title="Remove"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  <div>
+                    {index === 0 && <Label className="text-xs text-gray-500 mb-1.5 block">Approval reference <span className="text-gray-300">optional</span></Label>}
+                    <Input
+                      placeholder="e.g. UK.145.0000"
+                      value={approval.reference}
+                      onChange={e => updateApproval(index, 'reference', e.target.value)}
+                      className="h-12 rounded-xl border-gray-300 focus:border-black focus:ring-black"
+                    />
+                  </div>
+                </div>
               ))}
-            </select>
+              <button
+                type="button"
+                onClick={addApproval}
+                className="text-xs font-bold text-black hover:underline"
+              >
+                + Add another approval
+              </button>
+            </div>
           </div>
 
-          {/* Approval Number */}
-          <div className="space-y-1.5">
-            <Label htmlFor="approvalNumber" className="text-xs font-bold text-black">
-              Approval number <span className="text-gray-300 font-normal">optional</span>
-            </Label>
-            <Input
-              id="approvalNumber"
-              placeholder="e.g. UK.145.0000"
-              value={approvalNumber}
-              onChange={e => setApprovalNumber(e.target.value)}
-              className="h-12 rounded-xl border-gray-300 focus:border-black focus:ring-black"
-            />
+          <div className="h-px bg-gray-100" />
+
+          {/* Consent checkboxes */}
+          <div className="space-y-3">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={e => setTermsAccepted(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+              />
+              <span className="text-xs text-gray-500">
+                I agree to the <Link href="/terms" className="text-black font-bold hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-black font-bold hover:underline">Privacy Policy</Link>.
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={marketingOptIn}
+                onChange={e => setMarketingOptIn(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+              />
+              <span className="text-xs text-gray-500">
+                Keep me updated with product news, regulatory changes, and training resources. You can unsubscribe at any time.
+              </span>
+            </label>
           </div>
 
           {error && (
@@ -330,7 +447,7 @@ export function CompleteProfileForm() {
           </Button>
 
           <p className="text-[11px] text-gray-300 text-center leading-relaxed">
-            You can update these details at any time from your profile settings. Your data is processed in accordance with our Privacy Policy.
+            You can update these details at any time from your profile settings.
           </p>
         </form>
       </div>
