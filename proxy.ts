@@ -36,9 +36,10 @@ export async function proxy(request: NextRequest) {
     (request.nextUrl.pathname.startsWith('/dashboard') ||
       request.nextUrl.pathname.startsWith('/logbook') ||
       request.nextUrl.pathname.startsWith('/profile') ||
-      request.nextUrl.pathname.startsWith('/progress'))
+      request.nextUrl.pathname.startsWith('/progress') ||
+      request.nextUrl.pathname.startsWith('/complete-profile'))
   ) {
-    return NextResponse.redirect(new URL('/signup?mode=login', request.url))
+    return NextResponse.redirect(new URL('/signup', request.url))
   }
 
   if (
@@ -59,6 +60,7 @@ export const config = {
     '/profile/:path*',
     '/progress/:path*',
     '/courses/:path*',
+    '/complete-profile',
     '/login',
     '/signup',
   ],

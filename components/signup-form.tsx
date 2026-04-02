@@ -33,7 +33,7 @@ export function SignUpForm() {
         </div>
         <Button
           type="submit"
-          className="w-full h-14 bg-[#123456] text-white hover:bg-[#0e2a45] text-base font-semibold rounded-xl"
+          className="w-full h-14 bg-black text-white hover:bg-gray-800 text-base font-bold rounded-xl"
         >
           Get started free
         </Button>
@@ -45,7 +45,7 @@ export function SignUpForm() {
         <div className="flex-1 h-px bg-gray-200" />
       </div>
 
-      <Link href="/signup?mode=login" className="block">
+      <Link href="/signup" className="block">
         <Button
           variant="outline"
           className="w-full h-14 text-base font-semibold rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50"

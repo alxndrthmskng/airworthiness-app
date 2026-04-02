@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type')
-  const next = searchParams.get('next') ?? '/profile'
+  const next = searchParams.get('next') ?? '/complete-profile'
 
   // Collect cookies Supabase wants to set, then apply them to the response.
   // Using request.cookies (not cookies() from next/headers) ensures they are
@@ -45,13 +45,13 @@ export async function GET(request: NextRequest) {
       token_hash,
     })
     if (!error) {
-      redirectPath = type === 'recovery' ? '/reset-password' : next
+      redirectPath = next
     }
   }
 
   const response = redirectPath
     ? NextResponse.redirect(`${origin}${redirectPath}`)
-    : NextResponse.redirect(`${origin}/signup?mode=login`)
+    : NextResponse.redirect(`${origin}/signup`)
 
   // Write session cookies onto the redirect response so the browser stores them
   cookiesToSet.forEach(({ name, value, options }) => {
