@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import Link from 'next/link'
 
 export function SignUpForm() {
   const router = useRouter()
@@ -20,39 +19,19 @@ export function SignUpForm() {
   }
 
   return (
-    <div>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <Input
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="h-14 text-base rounded-xl px-5"
-          />
-        </div>
-        <Button
-          type="submit"
-          className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/80 text-base font-semibold rounded-xl"
-        >
-          Get started free
-        </Button>
-      </form>
-
-      <div className="flex items-center gap-3 my-5">
-        <div className="flex-1 h-px bg-border" />
-        <span className="text-xs text-muted-foreground uppercase tracking-wider">or</span>
-        <div className="flex-1 h-px bg-border" />
-      </div>
-
-      <Link href="/signup" className="block">
-        <Button
-          variant="outline"
-          className="w-full h-14 text-base font-semibold rounded-xl"
-        >
-          Log in
-        </Button>
-      </Link>
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        className="h-14 text-base rounded-xl px-5"
+      />
+      <Button
+        type="submit"
+        className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/80 text-base font-semibold rounded-xl"
+      >
+        Log In or Sign Up
+      </Button>
+    </form>
   )
 }

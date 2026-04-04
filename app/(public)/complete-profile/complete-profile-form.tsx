@@ -331,6 +331,7 @@ export function CompleteProfileForm() {
         aml_categories: hasLicence === 'yes' ? allCategories : [],
         type_ratings: hasLicence === 'yes' ? allEndorsements : [],
         industry: employers.flatMap(e => e.approvals).filter(a => a.type).map(a => a.type).join(', ') || null,
+        profile_completed_at: new Date().toISOString(),
       })
       .eq('id', user.id)
 
@@ -449,8 +450,8 @@ export function CompleteProfileForm() {
                   {licenceFrontPath ? (
                     <div className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-green-300 dark:border-green-700">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-green-600 font-medium">Uploaded</span>
-                        <button type="button" onClick={() => handleDeleteLicencePhoto('front')} className="text-xs text-red-500 hover:text-red-700">Delete</button>
+                        <span className="text-xs text-green-600 font-medium block">Uploaded</span>
+                        <button type="button" onClick={() => handleDeleteLicencePhoto('front')} className="text-xs text-red-500 hover:text-red-700 block mt-1">Delete</button>
                       </div>
                     </div>
                   ) : (
@@ -473,8 +474,8 @@ export function CompleteProfileForm() {
                   {licenceBackPath ? (
                     <div className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-green-300 dark:border-green-700">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-green-600 font-medium">Uploaded</span>
-                        <button type="button" onClick={() => handleDeleteLicencePhoto('back')} className="text-xs text-red-500 hover:text-red-700">Delete</button>
+                        <span className="text-xs text-green-600 font-medium block">Uploaded</span>
+                        <button type="button" onClick={() => handleDeleteLicencePhoto('back')} className="text-xs text-red-500 hover:text-red-700 block mt-1">Delete</button>
                       </div>
                     </div>
                   ) : (

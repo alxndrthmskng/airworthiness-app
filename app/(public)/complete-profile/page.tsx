@@ -10,11 +10,11 @@ export default async function CompleteProfilePage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name')
+    .select('profile_completed_at')
     .eq('id', user.id)
     .single()
 
-  if (profile?.full_name?.trim()) {
+  if (profile?.profile_completed_at) {
     redirect('/profile')
   }
 
