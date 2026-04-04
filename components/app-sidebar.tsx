@@ -108,7 +108,13 @@ function UserMenu({ fullName, onLogout, onClose }: { fullName: string | null; on
       </button>
 
       {open && (
-        <div className="absolute bottom-full left-3 right-3 mb-2 bg-popover border border-border rounded-xl shadow-lg py-1 z-50">
+        <div className="absolute bottom-full left-0 mb-2 w-56 bg-popover border border-border rounded-xl shadow-xl py-1.5 z-50">
+          {/* User info header */}
+          <div className="px-3 py-2 mb-1">
+            <p className="text-sm font-medium text-foreground truncate">{fullName || 'User'}</p>
+            <p className="text-xs text-muted-foreground truncate">{firstName}</p>
+          </div>
+          <div className="h-px bg-border mx-2 mb-1" />
           {menuItems.map(item => {
             const Icon = item.icon
             const active = pathname === item.href || pathname.startsWith(item.href + '/')
@@ -117,13 +123,13 @@ function UserMenu({ fullName, onLogout, onClose }: { fullName: string | null; on
                 key={item.href}
                 href={item.href}
                 onClick={() => { setOpen(false); onClose?.() }}
-                className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 mx-1.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${
                   active
                     ? 'text-foreground bg-muted'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    : 'text-foreground hover:bg-muted'
                 }`}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
+                <Icon className="w-4 h-4 flex-shrink-0 text-muted-foreground" strokeWidth={1.5} />
                 {item.label}
               </Link>
             )
@@ -131,9 +137,9 @@ function UserMenu({ fullName, onLogout, onClose }: { fullName: string | null; on
           <div className="h-px bg-border mx-2 my-1" />
           <button
             onClick={() => { setOpen(false); onLogout() }}
-            className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors w-full"
+            className="flex items-center gap-3 mx-1.5 px-2.5 py-2 rounded-lg text-sm text-foreground hover:bg-muted transition-colors w-[calc(100%-0.75rem)]"
           >
-            <LogOut className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
+            <LogOut className="w-4 h-4 flex-shrink-0 text-muted-foreground" strokeWidth={1.5} />
             Log Out
           </button>
         </div>
