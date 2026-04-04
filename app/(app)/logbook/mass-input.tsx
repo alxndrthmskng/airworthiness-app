@@ -4,6 +4,7 @@ import { useState, Fragment, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { useToast, Toast } from '@/components/toast'
 import {
   NO_AIRCRAFT_REQUIRED,
 } from '@/lib/logbook/constants'
@@ -86,7 +87,7 @@ function TagSelect({ options, selected, onChange, multi = false }: {
               <button
                 type="button"
                 disabled
-                className="text-xs font-semibold px-3 py-1 rounded-lg bg-gray-100 text-gray-300 cursor-not-allowed"
+                className="text-xs font-semibold px-3 py-1 rounded-lg bg-muted text-muted-foreground/40 cursor-not-allowed"
               >
                 {item.label}
               </button>
@@ -103,8 +104,8 @@ function TagSelect({ options, selected, onChange, multi = false }: {
             onClick={() => toggle(item.value)}
             className={`text-xs font-semibold px-3 py-1 rounded-lg transition-colors ${
               isSelected
-                ? 'bg-[#1565C0] text-white'
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
             {item.label}
@@ -199,15 +200,8 @@ interface MassInputProps {
 export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }: MassInputProps) {
   const router = useRouter()
   const isEditing = !!editingEntry
-  const [toast, setToast] = useState<string | null>(null)
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { toast, show: showToast } = useToast()
   const [confirmDelete, setConfirmDelete] = useState(false)
-
-  function showToast(msg: string) {
-    if (toastTimer.current) clearTimeout(toastTimer.current)
-    setToast(msg)
-    toastTimer.current = setTimeout(() => setToast(null), 3500)
-  }
 
   const [rows, setRows] = useState<DraftRow[]>([
     editingEntry
@@ -356,7 +350,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
       .delete()
       .eq('id', editingEntry.id as string)
     if (error) {
-      showToast('Failed to delete: ' + error.message)
+      showToast('Failed to delete: ' + error.message, 'error')
       return
     }
     showToast('Task deleted.')
@@ -377,17 +371,9 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
 
   return (
     <Fragment>
-    {/* Success toast */}
-    {toast && (
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-gray-900 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg animate-fade-in-up">
-        <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-        </svg>
-        {toast}
-      </div>
-    )}
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="divide-y divide-gray-100">
+    {toast && <Toast message={toast.message} variant={toast.variant} />}
+    <div className="bg-card rounded-xl border overflow-hidden">
+      <div className="divide-y divide-border">
         {unsavedRows.map((row) => {
           const isSimple = NO_AIRCRAFT_REQUIRED.includes(row.maintenanceType)
           const dateValid = /^\d{2}\/\d{2}\/\d{4}$/.test(row.taskDate)
@@ -398,7 +384,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
               <div className="px-6 py-6">
                 {/* Date — full width */}
                 <div className="mb-5">
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Date</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Date</label>
                   <input
                     type="text"
                     value={row.taskDate}
@@ -417,13 +403,13 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
                     }}
                     placeholder="DD/MM/YYYY"
                     maxLength={10}
-                    className="w-full text-sm h-10 px-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full text-sm h-10 px-3 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 {/* Experience Type */}
                 <div className="mb-5">
-                  <label className="block text-xs font-medium text-gray-500 mb-2">Experience Type</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-2">Experience Type</label>
                   <TagSelect
                     options={FACILITY_OPTIONS}
                     selected={row.maintenanceType}
@@ -434,12 +420,12 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
                 {/* Aircraft Registration — only for Base/Line */}
                 {!isSimple && (
                   <div className="mb-5">
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Aircraft Registration</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Aircraft Registration</label>
                     <input
                       type="text"
                       value={row.aircraftRegistration}
                       onChange={e => updateRow(row.id, 'aircraftRegistration', e.target.value.toUpperCase())}
-                      className="w-full text-sm h-10 px-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                      className="w-full text-sm h-10 px-3 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
                     />
                   </div>
                 )}
@@ -447,7 +433,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
                 {/* Aircraft Type — only for Base/Line */}
                 {!isSimple && (
                   <div className="mb-5 relative">
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Aircraft Type</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Aircraft Type</label>
                     <input
                       type="text"
                       value={row.id in typeSearch ? typeSearch[row.id] : row.aircraftType}
@@ -455,10 +441,10 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
                         setTypeSearch(prev => ({ ...prev, [row.id]: e.target.value }))
                         updateRow(row.id, 'aircraftType', e.target.value)
                       }}
-                      className="w-full text-sm h-10 px-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full text-sm h-10 px-3 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     {getTypeResults(row.id).length > 0 && (
-                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                         {getTypeResults(row.id).map(t => (
                           <button
                             key={t.rating}
@@ -473,7 +459,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
                               } : r))
                               setTypeSearch(prev => { const next = { ...prev }; delete next[row.id]; return next })
                             }}
-                            className="block w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                            className="block w-full text-left px-4 py-2.5 text-sm text-popover-foreground hover:bg-muted"
                           >
                             {t.rating}
                           </button>
@@ -485,7 +471,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
 
                 {/* Licence Category */}
                 <div className="mb-5">
-                  <label className="block text-xs font-medium text-gray-500 mb-2">Licence Category</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-2">Licence Category</label>
                   <TagSelect
                     options={CATEGORY_OPTIONS}
                     selected={row.aircraftCategory}
@@ -495,7 +481,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
 
                 {/* ATA Chapter(s) */}
                 <div className="mb-5">
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">ATA Chapter(s)</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">ATA Chapter(s)</label>
                   <AtaSearch
                     selected={row.ataChapters}
                     onChange={chapters => updateAtaChapters(row.id, chapters)}
@@ -505,7 +491,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
                 {/* Job Number — only for Base/Line */}
                 {!isSimple && (
                   <div className="mb-5">
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Job Number</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Job Number</label>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -514,7 +500,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
                         className={`flex items-center justify-center w-10 h-10 rounded-lg border transition-colors flex-shrink-0 ${
                           row.jobNumberPhotoPath
                             ? 'border-green-300 bg-green-50 text-green-600'
-                            : 'border-gray-200 bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                            : 'border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted'
                         }`}
                         title={row.jobNumberPhotoPath ? 'Photo uploaded' : 'Upload job card photo'}
                       >
@@ -531,7 +517,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
                         type="text"
                         value={row.jobNumber}
                         onChange={e => updateRow(row.id, 'jobNumber', e.target.value)}
-                        className="flex-1 text-sm h-10 px-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 text-sm h-10 px-3 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <input
                         ref={el => { fileInputRefs.current[row.id] = el }}
@@ -561,7 +547,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
 
                 {/* Task Type(s) */}
                 <div className="mb-5">
-                  <label className="block text-xs font-medium text-gray-500 mb-2">Task Type(s)</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-2">Task Type(s)</label>
                   <TagSelect
                     options={TASK_TYPES}
                     selected={row.taskTypes}
@@ -572,17 +558,17 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
 
                 {/* Task Detail */}
                 <div className="mb-5">
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Task Detail</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Task Detail</label>
                   <textarea
                     value={row.taskDetail}
                     onChange={e => updateRow(row.id, 'taskDetail', e.target.value)}
                     rows={3}
-                    className="w-full text-sm px-3 py-2.5 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    className="w-full text-sm px-3 py-2.5 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   />
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+                <div className="flex items-center gap-3 pt-4 border-t border-border">
                   <Button
                     size="sm"
                     onClick={() => saveRow(row.id)}
@@ -614,7 +600,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
 
                 {/* Delete — edit mode only */}
                 {isEditing && (
-                  <div className="flex items-center gap-3 pt-3 mt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-3 pt-3 mt-3 border-t border-border">
                     {!confirmDelete ? (
                       <button
                         type="button"
@@ -636,7 +622,7 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
                         <button
                           type="button"
                           onClick={() => setConfirmDelete(false)}
-                          className="text-sm text-gray-500 hover:text-gray-700"
+                          className="text-sm text-muted-foreground hover:text-foreground"
                         >
                           Cancel
                         </button>

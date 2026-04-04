@@ -104,7 +104,7 @@ export function ProfileForm({ fullName: initialName, amlLicenceNumber: initialLi
           {amlLicenceNumber && (
             <div className="space-y-2">
               <Label>Licence Categories</Label>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Select all categories on your licence.
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -114,7 +114,7 @@ export function ProfileForm({ fullName: initialName, amlLicenceNumber: initialLi
                     className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer text-sm transition-colors ${
                       amlCategories.includes(cat.value)
                         ? 'border-blue-500 bg-blue-50 text-blue-900'
-                        : 'border-gray-200 hover:bg-gray-50 text-gray-700'
+                        : 'border-border hover:bg-muted text-foreground'
                     }`}
                   >
                     <input

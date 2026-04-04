@@ -37,10 +37,10 @@ export function PublicToggle({ isPublic, canGoPublic }: PublicToggleProps) {
   return (
     <div className="flex items-center justify-between">
       <div>
-        <p className="font-medium text-gray-900">
+        <p className="font-medium text-foreground">
           {checked ? 'Your profile is visible to recruiters' : 'Your profile is private'}
         </p>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <p className="text-sm text-muted-foreground mt-0.5">
           {checked
             ? 'Recruiters on the platform can view your qualifications and contact you.'
             : 'Toggle on to appear in recruiter searches.'}
@@ -52,8 +52,8 @@ export function PublicToggle({ isPublic, canGoPublic }: PublicToggleProps) {
         aria-checked={checked}
         disabled={!canGoPublic && !checked}
         onClick={handleToggle}
-        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 ${
-          checked ? 'bg-green-500' : 'bg-gray-200'
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-foreground focus:ring-offset-2 ${
+          checked ? 'bg-green-500' : 'bg-muted'
         } ${(!canGoPublic && !checked) ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         <span

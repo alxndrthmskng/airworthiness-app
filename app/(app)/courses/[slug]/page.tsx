@@ -81,11 +81,11 @@ export default async function CoursePage({ params }: Props) {
           {/* Progress */}
           {totalModules > 0 && (
             <div className="mt-4">
-              <div className="flex justify-between text-sm text-gray-500 mb-1">
+              <div className="flex justify-between text-sm text-muted-foreground mb-1">
                 <span>{completedCount} of {totalModules} modules completed</span>
                 <span>{Math.round((completedCount / totalModules) * 100)}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-muted rounded-full h-2">
                 <div
                   className="bg-blue-600 h-2 rounded-full"
                   style={{ width: `${(completedCount / totalModules) * 100}%` }}
@@ -121,15 +121,15 @@ export default async function CoursePage({ params }: Props) {
 
                 return (
                   <Link key={module.id} href={`/courses/${slug}/modules/${module.id}`}>
-                    <div className="bg-white rounded-xl border p-4 hover:shadow-md flex justify-between">
+                    <div className="bg-card rounded-xl border p-4 hover:shadow-md flex justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm
-                          ${isCompleted ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                          ${isCompleted ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
                           {isCompleted ? '✓' : index + 1}
                         </div>
                         <span className="font-medium">{module.title}</span>
                       </div>
-                      <span className="text-sm text-gray-400">
+                      <span className="text-sm text-muted-foreground">
                         {isCompleted ? 'Completed' : 'Start →'}
                       </span>
                     </div>

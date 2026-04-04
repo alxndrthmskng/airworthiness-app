@@ -61,14 +61,14 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       <div className="max-w-3xl mx-auto px-4 py-12">
 
         {/* Header */}
-        <div className="bg-white rounded-xl border p-8 mb-6">
+        <div className="bg-card rounded-xl border p-8 mb-6">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl text-gray-900">
+              <h1 className="text-2xl text-foreground">
                 {profile.full_name ?? 'Aircraft Engineer'}
               </h1>
               {memberSince && (
-                <p className="text-xs text-gray-400 mt-2">Member since {memberSince}</p>
+                <p className="text-xs text-muted-foreground mt-2">Member since {memberSince}</p>
               )}
             </div>
             <div className="flex flex-col items-end gap-2">
@@ -90,16 +90,16 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             </CardHeader>
             <CardContent>
               {profile.aml_licence_number ? (
-                <p className="text-sm text-gray-700 mb-3">
+                <p className="text-sm text-foreground mb-3">
                   Licence: <span className="font-mono font-medium">{profile.aml_licence_number}</span>
                 </p>
               ) : (
-                <p className="text-sm text-gray-400 mb-3">Licence number not provided</p>
+                <p className="text-sm text-muted-foreground mb-3">Licence number not provided</p>
               )}
 
               {profile.aml_categories && profile.aml_categories.length > 0 ? (
                 <div>
-                  <p className="text-xs text-gray-500 mb-1.5">Categories</p>
+                  <p className="text-xs text-muted-foreground mb-1.5">Categories</p>
                   <div className="flex flex-wrap gap-1.5">
                     {profile.aml_categories.map((cat: string) => (
                       <Badge key={cat} variant="outline" className="text-xs">
@@ -109,7 +109,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-gray-400">No categories listed</p>
+                <p className="text-sm text-muted-foreground">No categories listed</p>
               )}
             </CardContent>
           </Card>
@@ -123,7 +123,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
               <div className="space-y-2">
                 {trainingStatuses.map(t => (
                   <div key={t.label} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700">{t.label}</span>
+                    <span className="text-foreground">{t.label}</span>
                     <Badge variant={t.isCurrent ? 'default' : 'destructive'} className="text-xs">
                       {t.isCurrent ? 'Current' : 'Expired'}
                     </Badge>
@@ -143,12 +143,12 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm border-collapse">
                     <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-2 px-2 font-semibold text-gray-700">Aircraft Type</th>
-                        <th className="text-center py-2 px-2 font-semibold text-gray-700 w-[100px]">B1</th>
-                        <th className="text-center py-2 px-2 font-semibold text-gray-700 w-[100px]">B2</th>
-                        <th className="text-center py-2 px-2 font-semibold text-gray-700 w-[100px]">B3</th>
-                        <th className="text-center py-2 px-2 font-semibold text-gray-700 w-[100px]">C</th>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 px-2 font-semibold text-foreground">Aircraft Type</th>
+                        <th className="text-center py-2 px-2 font-semibold text-foreground w-[100px]">B1</th>
+                        <th className="text-center py-2 px-2 font-semibold text-foreground w-[100px]">B2</th>
+                        <th className="text-center py-2 px-2 font-semibold text-foreground w-[100px]">B3</th>
+                        <th className="text-center py-2 px-2 font-semibold text-foreground w-[100px]">C</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -161,7 +161,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                         const formatDate = (d: string | null) =>
                           d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null
                         return (
-                          <tr key={i} className="border-b border-gray-100">
+                          <tr key={i} className="border-b border-border">
                             <td className="py-2 px-2 font-medium">{rating}</td>
                             <td className="py-2 px-2 text-center">
                               {b1 ? (
@@ -208,18 +208,18 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl font-bold text-gray-900">{uniqueTaskDays} days</span>
+                <span className="text-2xl font-bold text-foreground">{uniqueTaskDays} days</span>
                 <Badge variant={recencyMet ? 'default' : 'destructive'}>
                   {recencyMet ? 'Current' : 'Not Met'}
                 </Badge>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-muted rounded-full h-2">
                 <div
                   className={`h-2 rounded-full ${recencyMet ? 'bg-green-500' : 'bg-amber-500'}`}
                   style={{ width: `${Math.min((uniqueTaskDays / RECENCY_REQUIRED_DAYS) * 100, 100)}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {uniqueTaskDays} of {RECENCY_REQUIRED_DAYS} task days in the last {RECENCY_PERIOD_YEARS} years
               </p>
             </CardContent>
@@ -227,7 +227,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-muted-foreground">
             Profile verified by Airworthiness Limited
           </p>
         </div>

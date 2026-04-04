@@ -64,8 +64,8 @@ export function ExternalTrainingForm({ slug, existingDate, existingCertificatePa
   }
 
   return (
-    <div className="mt-3 pt-3 border-t border-gray-100">
-      <p className="text-xs text-gray-400 mb-2">If completed with another provider:</p>
+    <div className="mt-3 pt-3 border-t border-border">
+      <p className="text-xs text-muted-foreground mb-2">If completed with another provider:</p>
       <div className="flex items-center gap-2">
         <Input
           type="date"

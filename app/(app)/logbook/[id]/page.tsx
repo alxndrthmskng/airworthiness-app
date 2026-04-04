@@ -146,8 +146,8 @@ export default async function LogbookEntryPage({ params }: Props) {
               <Row label="Supervised" value={entry.supervised ? 'Yes' : 'No'} />
               {entry.job_number && <Row label="Job Number" value={entry.job_number} />}
               <div className="pt-2">
-                <p className="text-sm font-medium text-gray-500 mb-1">Description</p>
-                <p className="text-gray-800 whitespace-pre-wrap">{entry.description}</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Description</p>
+                <p className="text-foreground whitespace-pre-wrap">{entry.description}</p>
               </div>
             </CardContent>
           </Card>
@@ -214,8 +214,8 @@ export default async function LogbookEntryPage({ params }: Props) {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-start">
-      <p className="text-sm font-medium text-gray-500">{label}</p>
-      <p className="text-sm text-gray-800 text-right max-w-[60%]">{value}</p>
+      <p className="text-sm font-medium text-muted-foreground">{label}</p>
+      <p className="text-sm text-foreground text-right max-w-[60%]">{value}</p>
     </div>
   )
 }

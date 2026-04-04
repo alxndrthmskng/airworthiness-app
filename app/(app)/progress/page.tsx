@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -13,6 +14,8 @@ import {
 } from '@/lib/progress/constants'
 import type { ModuleExamProgress, ExamRow } from '@/lib/progress/types'
 import { ProgressTracker } from './progress-tracker'
+
+export const metadata: Metadata = { title: 'Module Tracker | Airworthiness' }
 
 export default async function ProgressPage({
   searchParams,
@@ -183,8 +186,8 @@ export default async function ProgressPage({
     <div>
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Module Tracker</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Module Tracker</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Track your Part 66 subject module examination progress.
           </p>
         </div>
@@ -193,10 +196,10 @@ export default async function ProgressPage({
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 mb-6">
 
           {/* Categories */}
-          <div className="rounded-xl border border-gray-100 p-5 space-y-3">
+          <div className="rounded-xl border border-border p-5 space-y-3">
             {categoryGroups.map(group => (
               <div key={group.label}>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">{group.label}</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">{group.label}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {group.cats.map(catValue => (
                     <Link
@@ -204,8 +207,8 @@ export default async function ProgressPage({
                       href={`/progress?category=${catValue}`}
                       className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
                         selectedCategory === catValue
-                          ? 'bg-gray-900 text-white border-gray-900'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                          ? 'bg-foreground text-background border-foreground'
+                          : 'bg-card text-muted-foreground border-border hover:border-foreground/40'
                       }`}
                     >
                       {catValue}
@@ -217,12 +220,12 @@ export default async function ProgressPage({
           </div>
 
           {/* Progress */}
-          <div className="rounded-xl border border-gray-100 p-5 flex flex-col justify-center">
-            <p className="text-4xl font-bold text-gray-900">{progressPercent}%</p>
-            <p className="text-sm text-gray-500 mt-1 mb-3">
+          <div className="rounded-xl border border-border p-5 flex flex-col justify-center">
+            <p className="text-4xl font-bold text-foreground">{progressPercent}%</p>
+            <p className="text-sm text-muted-foreground mt-1 mb-3">
               {passedCount} of {totalExams} exams passed for {selectedCategory}
             </p>
-            <div className="w-full bg-gray-200 rounded-full h-3">
+            <div className="w-full bg-muted rounded-full h-3">
               <div
                 className={`h-3 rounded-full transition-all ${
                   progressPercent === 100 ? 'bg-green-500' : 'bg-amber-500'
@@ -244,7 +247,7 @@ export default async function ProgressPage({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* MCQ Column */}
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Multiple-Choice Question Exams</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Multiple-Choice Question Exams</h2>
             <ProgressTracker
               examRows={mcqRows}
               selectedCategory={selectedCategory}
@@ -254,7 +257,7 @@ export default async function ProgressPage({
 
           {/* Essay Column */}
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Essay Exams</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Essay Exams</h2>
             {essayRows.length > 0 ? (
               <ProgressTracker
                 examRows={essayRows}
@@ -262,8 +265,8 @@ export default async function ProgressPage({
                 userId={user.id}
               />
             ) : (
-              <div className="rounded-xl border border-gray-100 p-6 text-center">
-                <p className="text-gray-400 text-sm">No essay exams required for {selectedCategory}.</p>
+              <div className="rounded-xl border border-border p-6 text-center">
+                <p className="text-muted-foreground text-sm">No essay exams required for {selectedCategory}.</p>
               </div>
             )}
           </div>

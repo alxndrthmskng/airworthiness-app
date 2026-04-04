@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ExportTable } from './export-table'
@@ -7,6 +8,8 @@ import {
   RECENCY_DAY_THRESHOLD,
   EXPERIENCE_VALIDITY_YEARS,
 } from '@/lib/logbook/constants'
+
+export const metadata: Metadata = { title: 'Export Logbook | Airworthiness' }
 
 function toLogbookNumber(uuid: string): string {
   const hex = uuid.replace(/-/g, '')
@@ -129,7 +132,7 @@ export default async function ExportPage() {
         {/* Header */}
         <div className="mb-8 print:mb-4">
           <div className="flex items-center gap-3 mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 print:text-xl">
+            <h1 className="text-2xl font-bold text-foreground print:text-xl">
               Digital Logbook (CAP 741)
             </h1>
             <div className="print:hidden flex items-center gap-2">
@@ -161,14 +164,14 @@ export default async function ExportPage() {
               { label: 'Recent Days', value: `${recencyDays} / ${RECENCY_DAY_THRESHOLD}` },
               { label: 'Experience', value: `${expYears}y ${expMonths}m` },
             ].map(({ label, value }) => (
-              <div key={label} className="border border-gray-200 rounded-lg px-3 py-2 print:px-2 print:py-1">
-                <p className="text-xs text-gray-400 uppercase tracking-wider leading-none mb-1">{label}</p>
-                <p className="text-sm font-semibold text-gray-900">{value}</p>
+              <div key={label} className="border rounded-lg px-3 py-2 print:px-2 print:py-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider leading-none mb-1">{label}</p>
+                <p className="text-sm font-semibold text-foreground">{value}</p>
               </div>
             ))}
-            <div className="border border-gray-200 rounded-lg px-3 py-2 print:px-2 print:py-1 col-span-2 sm:col-span-2">
-              <p className="text-xs text-gray-400 uppercase tracking-wider leading-none mb-1">Logbook ID</p>
-              <p className="text-sm font-semibold text-gray-900 font-mono break-all">{logbookNumber}</p>
+            <div className="border rounded-lg px-3 py-2 print:px-2 print:py-1 col-span-2 sm:col-span-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider leading-none mb-1">Logbook ID</p>
+              <p className="text-sm font-semibold text-foreground font-mono break-all">{logbookNumber}</p>
             </div>
           </div>
         </div>
@@ -176,7 +179,7 @@ export default async function ExportPage() {
         <ExportTable entries={entries ?? []} />
 
         {/* Screen-only footer */}
-        <div className="mt-8 pt-4 border-t text-xs text-gray-400 print:hidden">
+        <div className="mt-8 pt-4 border-t text-xs text-muted-foreground print:hidden">
           <p>Generated {generatedDate}, Airworthiness Limited Digital Logbook</p>
         </div>
       </div>

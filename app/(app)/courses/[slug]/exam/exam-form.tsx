@@ -147,8 +147,8 @@ if (passed && attempt) {
   return (
     <div className="space-y-8">
       {questions.map((question, index) => (
-        <div key={question.id} className="bg-white rounded-xl border p-6">
-          <p className="font-semibold text-gray-800 mb-4">
+        <div key={question.id} className="bg-card rounded-xl border p-6">
+          <p className="font-semibold text-foreground mb-4">
             {index + 1}. {question.question_text}
           </p>
           <div className="space-y-2">
@@ -158,7 +158,7 @@ if (passed && attempt) {
                 className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
                   ${selected[question.id] === answer.id
                     ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:bg-gray-50'
+                    : 'border-border hover:bg-muted'
                   }`}
               >
                 <input
@@ -172,14 +172,14 @@ if (passed && attempt) {
                   }))}
                   className="accent-blue-600"
                 />
-                <span className="text-gray-700">{answer.answer_text}</span>
+                <span className="text-foreground">{answer.answer_text}</span>
               </label>
             ))}
           </div>
         </div>
       ))}
 
-      <div className="text-sm text-gray-500 text-center">
+      <div className="text-sm text-muted-foreground text-center">
         {Object.keys(selected).length} of {questions.length} questions answered
       </div>
 

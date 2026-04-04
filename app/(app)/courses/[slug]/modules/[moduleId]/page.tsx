@@ -57,9 +57,9 @@ export default async function ModulePage({ params }: Props) {
         <h1 className="text-2xl font-bold text-white mb-6">{module.title}</h1>
 
         {/* Content */}
-        <div className="bg-white rounded-xl border p-8 prose prose-gray max-w-none">
+        <div className="bg-card rounded-xl border p-8 prose prose-gray max-w-none">
           {module.content.split('\n\n').map((paragraph: string, i: number) => (
-            <p key={i} className="mb-4 text-gray-700 leading-relaxed">{paragraph}</p>
+            <p key={i} className="mb-4 text-foreground leading-relaxed">{paragraph}</p>
           ))}
         </div>
 

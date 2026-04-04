@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -15,6 +16,8 @@ import {
 import { MassInput } from './mass-input'
 import { AtaChart } from './ata-chart'
 import { BtcToggle } from '@/app/(app)/progress/btc-toggle'
+
+export const metadata: Metadata = { title: 'Digital Logbook | Airworthiness' }
 
 const PAGE_SIZE = 25
 
@@ -226,7 +229,7 @@ export default async function LogbookPage({
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Digital Logbook</h1>
+            <h1 className="text-2xl font-semibold text-foreground tracking-tight">Digital Logbook</h1>
             <Link href="/logbook/export">
               <Button variant="outline" size="sm">View All Tasks</Button>
             </Link>
@@ -236,7 +239,7 @@ export default async function LogbookPage({
               </Link>
             )}
           </div>
-          <p className="text-sm text-gray-500 mt-1">Track your practical experience on a representative cross section of maintenance tasks.</p>
+          <p className="text-sm text-muted-foreground mt-1">Track your practical experience on a representative cross section of maintenance tasks.</p>
         </div>
 
         {/* ATA Distribution Chart */}
@@ -249,25 +252,25 @@ export default async function LogbookPage({
 
         {/* Stats + Experience + Recency */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="rounded-xl border border-gray-100 p-5">
-            <p className="text-sm text-gray-500">Tasks</p>
-            <p className="text-3xl font-bold mt-1 text-gray-900">{totalCount}</p>
+          <div className="rounded-xl border border-border p-5">
+            <p className="text-sm text-muted-foreground">Tasks</p>
+            <p className="text-3xl font-bold mt-1 text-foreground">{totalCount}</p>
           </div>
-          <div className="rounded-xl border border-gray-100 p-5">
-            <p className="text-sm text-gray-500">Drafts</p>
-            <p className="text-3xl font-bold mt-1 text-gray-900">{draftCount}</p>
+          <div className="rounded-xl border border-border p-5">
+            <p className="text-sm text-muted-foreground">Drafts</p>
+            <p className="text-3xl font-bold mt-1 text-foreground">{draftCount}</p>
           </div>
-          <div className="rounded-xl border border-gray-100 p-5">
-            <p className="text-sm text-gray-500">Verified</p>
-            <p className="text-3xl font-bold mt-1 text-gray-900">{verifiedCount}</p>
+          <div className="rounded-xl border border-border p-5">
+            <p className="text-sm text-muted-foreground">Verified</p>
+            <p className="text-3xl font-bold mt-1 text-foreground">{verifiedCount}</p>
           </div>
-          <div className={`rounded-xl border p-5 ${meetsExpThreshold ? 'border-green-200 bg-green-50' : 'border-gray-100'}`}>
-            <p className="text-sm text-gray-500">Experience</p>
-            <p className="text-3xl font-bold mt-1 text-gray-900">
+          <div className={`rounded-xl border p-5 ${meetsExpThreshold ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950' : 'border-border'}`}>
+            <p className="text-sm text-muted-foreground">Experience</p>
+            <p className="text-3xl font-bold mt-1 text-foreground">
               {Math.floor(totalCombinedMonths / 12)}y {totalCombinedMonths % 12}m
             </p>
             {cappedMilitaryMonths > 0 && (
-              <p className="text-[10px] text-gray-400 mt-1">
+              <p className="text-[10px] text-muted-foreground mt-1">
                 {Math.floor(civilExpMonths / 12)}y {civilExpMonths % 12}m civil + {Math.floor(cappedMilitaryMonths / 12)}y {cappedMilitaryMonths % 12}m military{militaryMonths > 48 ? ' (4yr max)' : ''}
               </p>
             )}
@@ -276,17 +279,17 @@ export default async function LogbookPage({
 
         <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 mb-6">
 
-          <div className="rounded-xl border border-gray-100 p-5">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+          <div className="rounded-xl border border-border p-5">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
               Recency (6 Months / 2 Years)
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Tasks</span>
-                  <span className="text-sm font-bold text-gray-900">{recencyTasks} / {RECENCY_TASK_THRESHOLD}</span>
+                  <span className="text-sm text-muted-foreground">Tasks</span>
+                  <span className="text-sm font-bold text-foreground">{recencyTasks} / {RECENCY_TASK_THRESHOLD}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                <div className="w-full bg-muted rounded-full h-1.5 mt-1">
                   <div
                     style={{ width: `${Math.min(100, (recencyTasks / RECENCY_TASK_THRESHOLD) * 100)}%`, backgroundColor: recencyTasks >= RECENCY_TASK_THRESHOLD ? '#22c55e' : '#3b82f6' }}
                     className="h-1.5 rounded-full"
@@ -295,10 +298,10 @@ export default async function LogbookPage({
               </div>
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Days</span>
-                  <span className="text-sm font-bold text-gray-900">{recencyDays} / {RECENCY_DAY_THRESHOLD}</span>
+                  <span className="text-sm text-muted-foreground">Days</span>
+                  <span className="text-sm font-bold text-foreground">{recencyDays} / {RECENCY_DAY_THRESHOLD}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                <div className="w-full bg-muted rounded-full h-1.5 mt-1">
                   <div
                     style={{ width: `${Math.min(100, (recencyDays / RECENCY_DAY_THRESHOLD) * 100)}%`, backgroundColor: recencyDays >= RECENCY_DAY_THRESHOLD ? '#22c55e' : '#3b82f6' }}
                     className="h-1.5 rounded-full"
@@ -310,7 +313,7 @@ export default async function LogbookPage({
         </div>
 
         {/* Basic Training Course */}
-        <div className="rounded-xl border border-gray-100 px-5 py-3 mb-4">
+        <div className="rounded-xl border border-border px-5 py-3 mb-4">
           <BtcToggle
             initialValue={hasBtc}
             selectedCategory={selectedCategory || 'B1.1'}
@@ -320,7 +323,7 @@ export default async function LogbookPage({
 
 
         {/* Mass Input */}
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">{editingEntry ? 'Edit Entry' : 'New Entries'}</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-3">{editingEntry ? 'Edit Entry' : 'New Entries'}</h2>
         <MassInput
           defaultEmployer={defaultEmployer}
           lastMaintenanceType={lastMaintenanceType}

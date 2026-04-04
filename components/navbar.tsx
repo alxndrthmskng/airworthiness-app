@@ -55,7 +55,7 @@ function Dropdown({
         type="button"
         onClick={() => setOpen(!open)}
         className={`text-sm font-medium transition-colors flex items-center gap-1 ${
-          isActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-900'
+          isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
         }`}
       >
         {label}
@@ -64,7 +64,7 @@ function Dropdown({
         </svg>
       </button>
       {open && (
-        <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border py-1 z-50">
+        <div className="absolute top-full right-0 mt-2 w-56 bg-popover rounded-lg shadow-lg border py-1 z-50">
           {items.map(item => (
             item.href ? (
               <Link
@@ -73,8 +73,8 @@ function Dropdown({
                 onClick={() => setOpen(false)}
                 className={`block px-4 py-2.5 text-sm font-medium transition-colors ${
                   pathname === item.href || pathname.startsWith(item.href + '/')
-                    ? 'text-[#123456] bg-gray-50'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'text-primary bg-muted'
+                    : 'text-foreground hover:bg-muted'
                 }`}
               >
                 {item.label}
@@ -82,7 +82,7 @@ function Dropdown({
             ) : (
               <span
                 key={item.label}
-                className="block px-4 py-2.5 text-sm font-medium text-gray-400 cursor-default"
+                className="block px-4 py-2.5 text-sm font-medium text-muted-foreground cursor-default"
               >
                 {item.label}
               </span>
@@ -125,10 +125,10 @@ function MobileMenu({
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="absolute top-0 right-0 w-72 h-full bg-white shadow-xl overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <span className="font-bold text-gray-900 tracking-tight">Menu</span>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-900 p-1">
+      <div className="absolute top-0 right-0 w-72 h-full bg-background shadow-xl overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border-b">
+          <span className="font-bold text-foreground tracking-tight">Menu</span>
+          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -137,7 +137,7 @@ function MobileMenu({
 
         <div className="p-4">
           <div className="pt-2">
-            <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-2">Professionals</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-2">Professionals</p>
             {professionalsItems.map(item => (
               item.href ? (
                 <Link
@@ -146,22 +146,22 @@ function MobileMenu({
                   onClick={onClose}
                   className={`block py-2.5 text-sm font-medium ${
                     pathname === item.href || pathname.startsWith(item.href + '/')
-                      ? 'text-[#123456]'
-                      : 'text-gray-600'
+                      ? 'text-primary'
+                      : 'text-muted-foreground'
                   }`}
                 >
                   {item.label}
                 </Link>
               ) : (
-                <span key={item.label} className="block py-2.5 text-sm font-medium text-gray-300">
+                <span key={item.label} className="block py-2.5 text-sm font-medium text-muted-foreground/60">
                   {item.label}
                 </span>
               )
             ))}
           </div>
 
-          <div className="border-t border-gray-100 mt-4 pt-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-2">Organisations</p>
+          <div className="border-t mt-4 pt-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-2">Organisations</p>
             {organisationsItems.map(item => (
               item.href ? (
                 <Link
@@ -169,23 +169,23 @@ function MobileMenu({
                   href={item.href}
                   onClick={onClose}
                   className={`block py-2.5 text-sm font-medium ${
-                    pathname === item.href ? 'text-[#123456]' : 'text-gray-600'
+                    pathname === item.href ? 'text-primary' : 'text-muted-foreground'
                   }`}
                 >
                   {item.label}
                 </Link>
               ) : (
-                <span key={item.label} className="block py-2.5 text-sm font-medium text-gray-300">
+                <span key={item.label} className="block py-2.5 text-sm font-medium text-muted-foreground/60">
                   {item.label}
                 </span>
               )
             ))}
           </div>
 
-          <div className="border-t border-gray-100 mt-4 pt-4 space-y-3">
+          <div className="border-t mt-4 pt-4 space-y-3">
             {loaded && !user && (
               <Link href="/signup" onClick={onClose}>
-                <Button className="w-full bg-[#123456] text-white hover:bg-[#0e2a45] font-semibold">
+                <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/80 font-semibold">
                   Sign up
                 </Button>
               </Link>
@@ -235,9 +235,9 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="bg-white sticky top-0 z-50 border-b border-gray-100">
+      <nav className="bg-background sticky top-0 z-50 border-b">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-          <Link href="/" className="text-xl text-gray-900 tracking-tight font-extrabold">
+          <Link href="/" className="text-xl text-foreground tracking-tight font-extrabold">
             Airworthiness
           </Link>
 
@@ -246,12 +246,12 @@ export function Navbar() {
             {loaded && !user && (
               <>
                 <a href="mailto:contact@airworthiness.org.uk">
-                  <Button variant="outline" className="font-semibold border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl px-6 h-10 text-sm">
+                  <Button variant="outline" className="font-semibold rounded-xl px-6 h-10 text-sm">
                     Consultancy
                   </Button>
                 </a>
                 <Link href="/signup">
-                  <Button className="bg-[#123456] text-white hover:bg-[#0e2a45] font-semibold rounded-xl px-6 h-10 text-sm">
+                  <Button className="bg-primary text-primary-foreground hover:bg-primary/80 font-semibold rounded-xl px-6 h-10 text-sm">
                     Get started
                   </Button>
                 </Link>
@@ -271,7 +271,7 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="md:hidden text-gray-400 hover:text-gray-900 p-1"
+            className="md:hidden text-muted-foreground hover:text-foreground p-1"
             aria-label="Open menu"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

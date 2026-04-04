@@ -259,13 +259,13 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               if (!e.target.checked) setShowTypeRatings(false)
               setSaved(false)
             }}
-            className="mt-1 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+            className="mt-1 h-4 w-4 rounded border-border text-foreground focus:ring-foreground"
           />
           <div>
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-sm font-medium text-foreground">
               I hold an Aircraft Maintenance Licence
             </span>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Tick to confirm and enter your licence details.
             </p>
           </div>
@@ -287,17 +287,17 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               placeholder="UK.66.1234567"
               className="mt-1.5 max-w-xs"
             />
-            <p className="text-xs text-gray-400 mt-1">UK.66.XXXXXXX (7 digits)</p>
+            <p className="text-xs text-muted-foreground mt-1">UK.66.XXXXXXX (7 digits)</p>
           </div>
 
           {/* Photo Upload */}
           <div>
             <Label>Upload Photo(s)</Label>
-            <p className="text-xs text-gray-400 mt-0.5 mb-2">
+            <p className="text-xs text-muted-foreground mt-0.5 mb-2">
               Upload a photo of your signed Aircraft Maintenance Licence for verification.
             </p>
             <div className="flex items-center gap-3">
-              <label className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-gray-400 cursor-pointer transition-colors">
+              <label className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium text-foreground hover:border-foreground/40 cursor-pointer transition-colors">
                 {uploading ? 'Uploading...' : photoPath ? 'Replace Photo' : 'Choose File'}
                 <input
                   type="file"
@@ -327,7 +327,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
           {/* Categories */}
           <div>
             <Label>Categories</Label>
-            <p className="text-xs text-gray-400 mt-0.5 mb-2">Select all that apply to your Aircraft Maintenance Licence.</p>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-2">Select all that apply to your Aircraft Maintenance Licence.</p>
             <div className="flex flex-wrap gap-2">
               {AML_CATEGORIES.map(cat => (
                 <button
@@ -336,8 +336,8 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                   onClick={() => toggleCategory(cat.value)}
                   className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
                     categories.includes(cat.value)
-                      ? 'bg-gray-900 text-white border-gray-900'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'bg-card text-muted-foreground border-border hover:border-foreground/40'
                   }`}
                 >
                   {cat.value}
@@ -345,7 +345,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
               ))}
             </div>
             {categories.length > 0 && (
-              <div className="mt-2 text-sm text-gray-500">
+              <div className="mt-2 text-sm text-muted-foreground">
                 {categories.map(c => AML_CATEGORIES.find(a => a.value === c)?.label).join(', ')}
               </div>
             )}
@@ -361,13 +361,13 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                   setShowTypeRatings(e.target.checked)
                   setSaved(false)
                 }}
-                className="mt-1 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                className="mt-1 h-4 w-4 rounded border-border text-foreground focus:ring-foreground"
               />
               <div>
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm font-medium text-foreground">
                   Aircraft Type Ratings
                 </span>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Tick to enter your endorsed aircraft type ratings and dates.
                 </p>
               </div>
@@ -377,19 +377,19 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
           {showTypeRatings && (
             <div>
               <Label>Type Endorsements</Label>
-              <p className="text-xs text-gray-400 mt-0.5 mb-2">
+              <p className="text-xs text-muted-foreground mt-0.5 mb-2">
                 Enter the date each type was endorsed on your licence. Category C eligibility is calculated automatically.
               </p>
 
               <div className="overflow-x-auto border rounded-lg">
                 <table className="w-full text-sm border-collapse">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="text-left py-3 px-3 font-semibold text-gray-700 min-w-[260px]">Aircraft Type</th>
-                      <th className="text-center py-3 px-3 font-semibold text-gray-700 w-[140px]">B1</th>
-                      <th className="text-center py-3 px-3 font-semibold text-gray-700 w-[140px]">B2</th>
-                      <th className="text-center py-3 px-3 font-semibold text-gray-700 w-[140px]">B3</th>
-                      <th className="text-center py-3 px-3 font-semibold text-gray-700 w-[140px]">C</th>
+                    <tr className="border-b border-border bg-muted">
+                      <th className="text-left py-3 px-3 font-semibold text-foreground min-w-[260px]">Aircraft Type</th>
+                      <th className="text-center py-3 px-3 font-semibold text-foreground w-[140px]">B1</th>
+                      <th className="text-center py-3 px-3 font-semibold text-foreground w-[140px]">B2</th>
+                      <th className="text-center py-3 px-3 font-semibold text-foreground w-[140px]">B3</th>
+                      <th className="text-center py-3 px-3 font-semibold text-foreground w-[140px]">C</th>
                       <th className="w-[40px]"></th>
                     </tr>
                   </thead>
@@ -401,7 +401,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                       const eligibleDate = endorsement.rating ? getCEligibilityDate(endorsement) : null
 
                       return (
-                        <tr key={rowIndex} className="border-b border-gray-100">
+                        <tr key={rowIndex} className="border-b border-border">
                           {/* Aircraft Type cell */}
                           <td className="py-3 px-3">
                             {isEmptyRow ? (
@@ -417,16 +417,16 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                                   className="text-sm"
                                 />
                                 {activeSearchRow === rowIndex && filteredRatings.length > 0 && (
-                                  <div className="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-72 overflow-y-auto">
+                                  <div className="absolute z-10 mt-1 w-full bg-popover border rounded-lg shadow-lg max-h-72 overflow-y-auto">
                                     {filteredRatings.map(r => (
                                       <button
                                         key={`${r.category}-${r.rating}`}
                                         type="button"
                                         onClick={() => selectAircraftType(rowIndex, r.rating)}
-                                        className="w-full text-left px-3 py-2.5 text-sm hover:bg-gray-50 border-b last:border-0"
+                                        className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted border-b last:border-0"
                                       >
                                         <span className="font-medium">{r.rating}</span>
-                                        <span className="text-gray-400 ml-2">{r.category} · {r.group}</span>
+                                        <span className="text-muted-foreground ml-2">{r.category} · {r.group}</span>
                                       </button>
                                     ))}
                                   </div>
@@ -436,7 +436,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                               <div>
                                 <span className="font-medium">{endorsement.rating}</span>
                                 {b1Sub && (
-                                  <span className="text-xs text-gray-400 ml-2">({b1Sub})</span>
+                                  <span className="text-xs text-muted-foreground ml-2">({b1Sub})</span>
                                 )}
                               </div>
                             )}
@@ -542,7 +542,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                               <button
                                 type="button"
                                 onClick={() => removeEndorsement(rowIndex)}
-                                className="text-gray-400 hover:text-red-500 text-lg leading-none"
+                                className="text-muted-foreground hover:text-red-500 text-lg leading-none"
                                 title="Remove"
                               >
                                 &times;
@@ -556,7 +556,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
                 </table>
               </div>
 
-              <p className="text-xs text-gray-400 mt-3">
+              <p className="text-xs text-muted-foreground mt-3">
                 Category A authorisations are granted by the approved organisation, not by CAA licence endorsement.
               </p>
             </div>

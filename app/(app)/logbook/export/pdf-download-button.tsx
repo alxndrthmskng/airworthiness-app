@@ -246,7 +246,7 @@ export function PdfDownloadButton({ entries, meta }: Props) {
       type="button"
       onClick={handleDownload}
       disabled={loading}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold border border-gray-300 rounded-md text-gray-700 hover:bg-[#1565C0] hover:text-white hover:border-[#1565C0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-bold border rounded-md text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wide"
     >
       {loading ? (
         <>

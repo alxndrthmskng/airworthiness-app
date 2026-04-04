@@ -41,50 +41,50 @@ export default async function CertificatePage({ params }: Props) {
         id="certificate"
         className="min-h-screen flex items-center justify-center aw-gradient print:bg-white p-8"
       >
-        <div className="w-full max-w-2xl bg-white border-4 border-double border-gray-800 rounded-2xl p-12 text-center shadow-xl print:shadow-none">
+        <div className="w-full max-w-2xl bg-card border-4 border-double border-foreground rounded-2xl p-12 text-center shadow-xl print:shadow-none">
 
           <div className="mb-8">
-            <p className="text-sm uppercase tracking-widest text-gray-500 mb-2">
+            <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">
               Certificate of Achievement
             </p>
-            <div className="w-16 h-0.5 bg-gray-800 mx-auto" />
+            <div className="w-16 h-0.5 bg-foreground mx-auto" />
           </div>
 
-          <p className="text-gray-600 text-lg mb-3">This certifies that</p>
+          <p className="text-muted-foreground text-lg mb-3">This certifies that</p>
 
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
+          <h1 className="text-4xl font-bold text-foreground mb-3">
             {cert.recipient_name ?? 'Unknown'}
           </h1>
 
-          <p className="text-gray-600 text-lg mb-3">
+          <p className="text-muted-foreground text-lg mb-3">
             has successfully completed
           </p>
 
-          <h2 className="text-2xl font-semibold text-gray-800 mb-8">
+          <h2 className="text-2xl font-semibold text-foreground mb-8">
             {(cert.courses as any)?.title}
           </h2>
 
           <div className="flex items-center gap-4 mb-8">
-            <div className="flex-1 h-px bg-gray-300" />
+            <div className="flex-1 h-px bg-border" />
             <span className="text-2xl">🏆</span>
-            <div className="flex-1 h-px bg-gray-300" />
+            <div className="flex-1 h-px bg-border" />
           </div>
 
-          <div className="flex justify-between items-end text-sm text-gray-500">
+          <div className="flex justify-between items-end text-sm text-muted-foreground">
             <div className="text-left">
-              <p className="font-medium text-gray-700">Date issued</p>
+              <p className="font-medium text-foreground">Date issued</p>
               <p>{issuedDate}</p>
             </div>
             <div className="text-right">
-              <p className="font-medium text-gray-700">Certificate ID</p>
+              <p className="font-medium text-foreground">Certificate ID</p>
               <p className="font-mono text-xs">{token.slice(0, 16).toUpperCase()}</p>
             </div>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-xs text-gray-400">
+          <div className="mt-8 pt-6 border-t border-border">
+            <p className="text-xs text-muted-foreground">
               Verify this certificate at{' '}
-              <span className="font-mono text-gray-500 break-all">{verifyUrl}</span>
+              <span className="font-mono text-muted-foreground break-all">{verifyUrl}</span>
             </p>
           </div>
 

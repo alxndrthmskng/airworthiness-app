@@ -3,6 +3,7 @@ import { Alexandria } from 'next/font/google'
 import './globals.css'
 import { CookieBanner } from '@/components/cookie-banner'
 import { ScrollToTop } from '@/components/scroll-to-top'
+import { ThemeProvider } from '@/components/theme-provider'
 
 const alexandria = Alexandria({
   subsets: ['latin'],
@@ -21,11 +22,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${alexandria.variable} antialiased`} style={{ fontFamily: 'var(--font-alexandria), sans-serif' }}>
-        {children}
-        <CookieBanner />
-        <ScrollToTop />
+        <ThemeProvider>
+          {children}
+          <CookieBanner />
+          <ScrollToTop />
+        </ThemeProvider>
       </body>
     </html>
   )
