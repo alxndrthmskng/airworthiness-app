@@ -121,6 +121,9 @@ function getCategoryForRating(rating: string): string | null {
 interface Approval {
   type: string
   reference: string
+  certifyingStaff: boolean
+  arcSignatory: boolean
+  instructor: boolean
 }
 
 function toggleCategoryInList(categories: string[], cat: string): string[] {
@@ -153,7 +156,7 @@ export function CompleteProfileForm() {
   const [lastName, setLastName] = useState('')
   const [hasLicence, setHasLicence] = useState<'yes' | 'no' | ''>('')
   const [licences, setLicences] = useState<LicenceEntry[]>([{ number: '', categories: [], endorsements: [{ ...EMPTY_ENDORSEMENT }], showTypeRatings: false, typeSearch: '', activeSearchRow: null }])
-  const [employers, setEmployers] = useState<{ name: string; startDate: string; endDate: string; approvals: Approval[] }[]>([{ name: '', startDate: '', endDate: '', approvals: [{ type: '', reference: '' }] }])
+  const [employers, setEmployers] = useState<{ name: string; startDate: string; endDate: string; approvals: Approval[] }[]>([{ name: '', startDate: '', endDate: '', approvals: [{ type: '', reference: '', certifyingStaff: false, arcSignatory: false, instructor: false }] }])
   const [marketingOptIn, setMarketingOptIn] = useState(true)
   const [recruitmentOptIn, setRecruitmentOptIn] = useState(false)
   const [licenceFrontPath, setLicenceFrontPath] = useState<string | null>(null)
@@ -231,7 +234,7 @@ export function CompleteProfileForm() {
   }
 
   // Employer approval helpers
-  function updateEmployerApproval(empIndex: number, appIndex: number, field: keyof Approval, value: string) {
+  function updateEmployerApproval(empIndex: number, appIndex: number, field: keyof Approval, value: string | boolean) {
     setEmployers(prev => prev.map((e, i) => {
       if (i !== empIndex) return e
       return { ...e, approvals: e.approvals.map((a, j) => j === appIndex ? { ...a, [field]: value } : a) }
@@ -248,7 +251,7 @@ export function CompleteProfileForm() {
   function addEmployerApproval(empIndex: number) {
     setEmployers(prev => prev.map((e, i) => {
       if (i !== empIndex) return e
-      return { ...e, approvals: [...e.approvals, { type: '', reference: '' }] }
+      return { ...e, approvals: [...e.approvals, { type: '', reference: '', certifyingStaff: false, arcSignatory: false, instructor: false }] }
     }))
   }
 
@@ -267,12 +270,20 @@ export function CompleteProfileForm() {
     }
   }
 
+  async function handleDeleteLicencePhoto(side: 'front' | 'back') {
+    const path = side === 'front' ? licenceFrontPath : licenceBackPath
+    if (!path) return
+    await supabase.storage.from('module-certificates').remove([path])
+    if (side === 'front') setLicenceFrontPath(null)
+    else setLicenceBackPath(null)
+  }
+
   async function handleSubmit() {
     setLoading(true)
     setError('')
 
     if (!firstName.trim() || !lastName.trim()) {
-      setError('First name and last name are required.')
+      setError('Required information is missing.')
       setLoading(false)
       return
     }
@@ -403,7 +414,7 @@ export function CompleteProfileForm() {
               className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
             />
             <div>
-              <span className="text-sm font-medium text-foreground">Part 66 Aircraft Maintenance Licence</span>
+              <span className="text-sm font-medium text-foreground">Aircraft Maintenance Licence (Part 66)</span>
               <p className="text-xs text-muted-foreground mt-0.5">This may be issued by any competent authority (e.g. UK.66.123456A).</p>
             </div>
           </label>
@@ -411,46 +422,56 @@ export function CompleteProfileForm() {
           {/* Licence Photo Upload */}
           {hasLicence === 'yes' && (
             <div className="space-y-3">
-              <p className="text-sm font-semibold text-foreground mb-1">Licence Photo</p>
+              <p className="text-sm font-semibold text-foreground mb-1">Licence Photo(s)</p>
               <p className="text-xs text-muted-foreground mb-3">Upload a photo of the front and back of your licence.</p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground mb-1.5 block">Front</Label>
-                  <label className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-border hover:border-foreground/40 transition-colors cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,application/pdf"
-                      className="hidden"
-                      onChange={e => {
-                        const file = e.target.files?.[0]
-                        if (file) handleLicencePhotoUpload('front', file)
-                      }}
-                    />
-                    {licenceFrontPath ? (
-                      <span className="text-xs text-green-600 font-medium">Uploaded</span>
-                    ) : (
+                  {licenceFrontPath ? (
+                    <div className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-green-300 dark:border-green-700">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-green-600 font-medium">Uploaded</span>
+                        <button type="button" onClick={() => handleDeleteLicencePhoto('front')} className="text-xs text-red-500 hover:text-red-700">Delete</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-border hover:border-foreground/40 transition-colors cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,application/pdf"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (file) handleLicencePhotoUpload('front', file)
+                        }}
+                      />
                       <span className="text-xs text-muted-foreground">Upload front</span>
-                    )}
-                  </label>
+                    </label>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground mb-1.5 block">Back</Label>
-                  <label className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-border hover:border-foreground/40 transition-colors cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,application/pdf"
-                      className="hidden"
-                      onChange={e => {
-                        const file = e.target.files?.[0]
-                        if (file) handleLicencePhotoUpload('back', file)
-                      }}
-                    />
-                    {licenceBackPath ? (
-                      <span className="text-xs text-green-600 font-medium">Uploaded</span>
-                    ) : (
+                  {licenceBackPath ? (
+                    <div className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-green-300 dark:border-green-700">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-green-600 font-medium">Uploaded</span>
+                        <button type="button" onClick={() => handleDeleteLicencePhoto('back')} className="text-xs text-red-500 hover:text-red-700">Delete</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-border hover:border-foreground/40 transition-colors cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,application/pdf"
+                        className="hidden"
+                        onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (file) handleLicencePhotoUpload('back', file)
+                        }}
+                      />
                       <span className="text-xs text-muted-foreground">Upload back</span>
-                    )}
-                  </label>
+                    </label>
+                  )}
                 </div>
               </div>
             </div>
@@ -470,7 +491,7 @@ export function CompleteProfileForm() {
                           Licence Number {licences.length > 1 && `(${index + 1})`} <span className="text-muted-foreground/60">Optional</span>
                         </Label>
                         <Input
-                          placeholder="e.g. UK.66.12345"
+                          placeholder="e.g. UK.66.123456A"
                           value={licence.number}
                           onChange={e => updateLicenceNumber(index, e.target.value)}
                           className="h-12 rounded-xl border-border"
@@ -624,7 +645,7 @@ export function CompleteProfileForm() {
 
           {/* Employer section */}
           <div>
-            <p className="text-sm font-semibold text-foreground mb-3">Employer(s)</p>
+            <p className="text-sm font-semibold text-foreground mb-3">Employer(s) <span className="text-muted-foreground/60 font-normal">Required</span></p>
             <div className="space-y-4">
               {employers.map((emp, i) => (
                 <div key={i} className="space-y-3">
@@ -705,7 +726,6 @@ export function CompleteProfileForm() {
 
                   {/* Organisation Approval within employer */}
                   <div className="mt-2">
-                    <p className="text-sm font-semibold text-foreground mb-1">Organisation Approval</p>
                     <div className="space-y-3">
                       {emp.approvals.map((approval, aIdx) => (
                         <div key={aIdx} className="space-y-2">
@@ -713,14 +733,14 @@ export function CompleteProfileForm() {
                           <div className="flex gap-2">
                             <div className="flex-1">
                               <Label className="text-sm font-medium text-muted-foreground mb-1.5 block">
-                                Approval Type {emp.approvals.length > 1 && `(${aIdx + 1})`} <span className="text-muted-foreground/60">Optional</span>
+                                Approval Type {emp.approvals.length > 1 && `(${aIdx + 1})`} <span className="text-muted-foreground/60">Required</span>
                               </Label>
                               <select
                                 value={approval.type}
                                 onChange={e => updateEmployerApproval(i, aIdx, 'type', e.target.value)}
                                 className="w-full h-12 rounded-xl border border-border bg-background px-3 text-sm focus:outline-none"
                               >
-                                <option value="">Select approval type</option>
+                                <option value="">e.g. Maintenance (Part 145)</option>
                                 {APPROVAL_TYPES.map(type => (
                                   <option key={type} value={type}>{type}</option>
                                 ))}
@@ -750,6 +770,43 @@ export function CompleteProfileForm() {
                               className="h-12 rounded-xl border-border"
                             />
                           </div>
+                          {/* Conditional role checkboxes */}
+                          {approval.type === 'Maintenance (Part 145)' && (
+                            <label className="flex items-start gap-3 cursor-pointer mt-2">
+                              <input
+                                type="checkbox"
+                                checked={approval.certifyingStaff}
+                                onChange={e => updateEmployerApproval(i, aIdx, 'certifyingStaff', e.target.checked)}
+                                className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                              />
+                              <div>
+                                <span className="text-sm font-medium text-foreground">Certifying Staff or Support Staff</span>
+                                <p className="text-xs text-muted-foreground mt-0.5">Staff that hold an authorisation with certifying privileges.</p>
+                              </div>
+                            </label>
+                          )}
+                          {approval.type === 'Management (Part M/CAMO)' && (
+                            <label className="flex items-start gap-3 cursor-pointer mt-2">
+                              <input
+                                type="checkbox"
+                                checked={approval.arcSignatory}
+                                onChange={e => updateEmployerApproval(i, aIdx, 'arcSignatory', e.target.checked)}
+                                className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                              />
+                              <span className="text-sm font-medium text-foreground">Airworthiness Review Certificate Signatory</span>
+                            </label>
+                          )}
+                          {approval.type === 'Training (Part 147)' && (
+                            <label className="flex items-start gap-3 cursor-pointer mt-2">
+                              <input
+                                type="checkbox"
+                                checked={approval.instructor}
+                                onChange={e => updateEmployerApproval(i, aIdx, 'instructor', e.target.checked)}
+                                className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                              />
+                              <span className="text-sm font-medium text-foreground">Instructor</span>
+                            </label>
+                          )}
                         </div>
                       ))}
                       <button
@@ -765,7 +822,7 @@ export function CompleteProfileForm() {
               ))}
               <button
                 type="button"
-                onClick={() => setEmployers(prev => [...prev, { name: '', startDate: '', endDate: '', approvals: [{ type: '', reference: '' }] }])}
+                onClick={() => setEmployers(prev => [...prev, { name: '', startDate: '', endDate: '', approvals: [{ type: '', reference: '', certifyingStaff: false, arcSignatory: false, instructor: false }] }])}
                 className="text-xs font-semibold text-foreground hover:underline"
               >
                 + Add Employer
