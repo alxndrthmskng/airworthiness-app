@@ -381,7 +381,6 @@ export function CompleteProfileForm({ mode = 'create', initialData }: CompletePr
       type_ratings: hasLicence === 'yes' ? allEndorsements : [],
       industry: employers.flatMap(e => e.approvals).filter(a => a.type).map(a => a.type).join(', ') || null,
       aml_photo_path: licenceFrontPath,
-      aml_photo_back_path: licenceBackPath,
     }
 
     if (mode === 'create') {
