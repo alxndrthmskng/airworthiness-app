@@ -24,7 +24,7 @@ export default async function AppLayout({
     <>
       <AppSidebar />
       <main className="md:ml-60 min-h-screen bg-background">
-        <div className="max-w-4xl mx-auto px-6 pt-6 pb-8">
+        <div className="max-w-4xl mx-auto pl-14 pr-6 md:px-6 pt-6 pb-8">
           {children}
         </div>
       </main>

@@ -212,7 +212,7 @@ export function DashboardEditor(props: DashboardEditorProps) {
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-foreground">
-          {props.fullName}
+          Dashboard
         </h1>
         <button
           onClick={() => editing ? handleSave() : setEditing(true)}
