@@ -457,14 +457,8 @@ export function CompleteProfileForm({ mode = 'create', initialData }: CompletePr
     router.push('/dashboard')
   }
 
-  const Wrapper = mode === 'create' ? ({ children }: { children: React.ReactNode }) => (
-    <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md">{children}</div>
-    </div>
-  ) : ({ children }: { children: React.ReactNode }) => <>{children}</>
-
-  return (
-    <Wrapper>
+  const content = (
+    <>
         {mode === 'create' && (
           <div className="text-center mb-8">
             <h1 className="text-2xl font-semibold text-foreground tracking-tight">Complete your profile</h1>
@@ -1029,6 +1023,16 @@ export function CompleteProfileForm({ mode = 'create', initialData }: CompletePr
             </p>
           )}
         </form>
-    </Wrapper>
+    </>
   )
+
+  if (mode === 'create') {
+    return (
+      <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-16">
+        <div className="w-full max-w-md">{content}</div>
+      </div>
+    )
+  }
+
+  return content
 }
