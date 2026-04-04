@@ -428,7 +428,7 @@ export function CompleteProfileForm({ mode = 'create', initialData }: CompletePr
       return
     }
 
-    router.push('/profile')
+    router.push('/dashboard')
   }
 
   const Wrapper = mode === 'create' ? ({ children }: { children: React.ReactNode }) => (

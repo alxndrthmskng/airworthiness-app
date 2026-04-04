@@ -48,9 +48,9 @@ export function MarkCompleteButton({ moduleId, courseSlug, isCompleted, nextModu
     setLoading(false)
 
     if (nextModuleId) {
-      router.push(`/courses/${courseSlug}/modules/${nextModuleId}`)
+      router.push(`/training/${courseSlug}/modules/${nextModuleId}`)
     } else {
-      router.push(`/courses/${courseSlug}`)
+      router.push(`/training/${courseSlug}`)
     }
 
     router.refresh()

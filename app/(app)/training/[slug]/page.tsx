@@ -66,7 +66,7 @@ export default async function CoursePage({ params }: Props) {
       <div className="max-w-3xl mx-auto px-4 py-12">
 
         {/* Back */}
-        <Link href="/courses" className="text-sm text-blue-600 hover:underline mb-6 block">
+        <Link href="/training" className="text-sm text-blue-600 hover:underline mb-6 block">
           ← Back to courses
         </Link>
 
@@ -120,7 +120,7 @@ export default async function CoursePage({ params }: Props) {
                 const isCompleted = completedIds.has(module.id)
 
                 return (
-                  <Link key={module.id} href={`/courses/${slug}/modules/${module.id}`}>
+                  <Link key={module.id} href={`/training/${slug}/modules/${module.id}`}>
                     <div className="bg-card rounded-xl border p-4 hover:shadow-md flex justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm
@@ -161,7 +161,7 @@ export default async function CoursePage({ params }: Props) {
                     <p className="text-blue-700 mt-1 mb-4">
                       Ready to take the exam and earn your certificate?
                     </p>
-                    <Link href={`/courses/${slug}/exam`}>
+                    <Link href={`/training/${slug}/exam`}>
                       <Button>Take the exam →</Button>
                     </Link>
                   </>

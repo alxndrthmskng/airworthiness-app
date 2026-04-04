@@ -49,7 +49,7 @@ export default async function ModulePage({ params }: Props) {
       <div className="max-w-2xl mx-auto px-4 py-12">
 
         {/* Breadcrumb */}
-        <Link href={`/courses/${slug}`} className="text-sm text-blue-600 hover:underline mb-6 block">
+        <Link href={`/training/${slug}`} className="text-sm text-blue-600 hover:underline mb-6 block">
           ← Back to course
         </Link>
 
@@ -74,13 +74,13 @@ export default async function ModulePage({ params }: Props) {
 
           <div className="flex justify-between">
             {prevModule ? (
-              <Link href={`/courses/${slug}/modules/${prevModule.id}`}
+              <Link href={`/training/${slug}/modules/${prevModule.id}`}
                 className="text-sm text-blue-600 hover:underline">
                 ← {prevModule.title}
               </Link>
             ) : <span />}
             {nextModule && (
-              <Link href={`/courses/${slug}/modules/${nextModule.id}`}
+              <Link href={`/training/${slug}/modules/${nextModule.id}`}
                 className="text-sm text-blue-600 hover:underline">
                 {nextModule.title} →
               </Link>

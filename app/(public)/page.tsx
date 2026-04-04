@@ -13,7 +13,7 @@ export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (user) redirect('/profile')
+  if (user) redirect('/dashboard')
 
   return (
     <div className="min-h-screen">

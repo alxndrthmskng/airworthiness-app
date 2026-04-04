@@ -15,7 +15,7 @@ export default async function CompleteProfilePage() {
     .single()
 
   if (profile?.profile_completed_at) {
-    redirect('/profile')
+    redirect('/dashboard')
   }
 
   return <CompleteProfileForm />

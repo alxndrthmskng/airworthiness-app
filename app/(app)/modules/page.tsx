@@ -204,7 +204,7 @@ export default async function ProgressPage({
                   {group.cats.map(catValue => (
                     <Link
                       key={catValue}
-                      href={`/progress?category=${catValue}`}
+                      href={`/modules?category=${catValue}`}
                       className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
                         selectedCategory === catValue
                           ? 'bg-foreground text-background border-foreground'

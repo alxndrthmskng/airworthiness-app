@@ -15,7 +15,7 @@ import {
 } from '@/lib/logbook/constants'
 import { MassInput } from './mass-input'
 import { AtaChart } from './ata-chart'
-import { BtcToggle } from '@/app/(app)/progress/btc-toggle'
+import { BtcToggle } from '@/app/(app)/modules/btc-toggle'
 
 export const metadata: Metadata = { title: 'Digital Logbook | Airworthiness' }
 

@@ -39,7 +39,7 @@ export default async function ExamPage({ params }: Props) {
   const allCompleted = modules?.every(m => completedIds.has(m.id))
 
   if (!allCompleted) {
-    redirect(`/courses/${slug}`)
+    redirect(`/training/${slug}`)
   }
 
   // Check if user already passed this exam
@@ -54,7 +54,7 @@ export default async function ExamPage({ params }: Props) {
       <div className="min-h-screen aw-gradient flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-xl font-semibold text-foreground">No exam available yet</h1>
-          <Link href={`/courses/${slug}`} className="text-blue-600 hover:underline mt-2 block">
+          <Link href={`/training/${slug}`} className="text-blue-600 hover:underline mt-2 block">
             ← Back to course
           </Link>
         </div>
@@ -71,7 +71,7 @@ export default async function ExamPage({ params }: Props) {
     .single()
 
   if (existingPass) {
-    redirect(`/courses/${slug}`)
+    redirect(`/training/${slug}`)
   }
 
   // Get questions and answers (shuffle answer order)
@@ -84,7 +84,7 @@ export default async function ExamPage({ params }: Props) {
   return (
     <div className="min-h-screen aw-gradient">
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <Link href={`/courses/${slug}`}
+        <Link href={`/training/${slug}`}
           className="text-sm text-blue-600 hover:underline mb-6 block">
           ← Back to course
         </Link>

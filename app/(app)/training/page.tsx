@@ -32,7 +32,7 @@ export default async function CoursesPage() {
       {courses && courses.length > 0 && (
         <div className="space-y-2 mb-10">
           {courses.map(course => (
-            <Link key={course.id} href={`/courses/${course.slug}`}>
+            <Link key={course.id} href={`/training/${course.slug}`}>
               <div className="flex items-center justify-between px-4 py-3.5 rounded-lg hover:bg-muted transition-colors border border-transparent hover:border-border">
                 <div>
                   <p className="text-sm font-medium text-foreground">{course.title}</p>
