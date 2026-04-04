@@ -72,6 +72,7 @@ export function QuickAdd() {
   const [taskTypes, setTaskTypes] = useState<string[]>([])
   const [taskDetail, setTaskDetail] = useState('')
   const [aircraftFocused, setAircraftFocused] = useState(false)
+  const [ataFocused, setAtaFocused] = useState(false)
   const [taskTypeFocused, setTaskTypeFocused] = useState(false)
 
   const firstInputRef = useRef<HTMLInputElement>(null)
@@ -110,11 +111,12 @@ export function QuickAdd() {
   }, [aircraftSearch, aircraftFocused])
 
   const filteredAta = useMemo(() => {
-    if (!ataSearch.trim()) return []
-    const q = ataSearch.toLowerCase()
     const selected = new Set(ataChapters)
+    if (!ataSearch.trim() && !ataFocused) return []
+    if (!ataSearch.trim()) return ATA_2200_CHAPTERS.filter(c => !selected.has(c.value)).slice(0, 8)
+    const q = ataSearch.toLowerCase()
     return ATA_2200_CHAPTERS.filter(c => !selected.has(c.value) && (c.label.toLowerCase().includes(q) || c.value.includes(q))).slice(0, 8)
-  }, [ataSearch, ataChapters])
+  }, [ataSearch, ataChapters, ataFocused])
 
   function reset() {
     setDate(todayDDMMYYYY())
@@ -212,15 +214,7 @@ export function QuickAdd() {
       {/* Expanded form */}
       <div className={`transition-all duration-200 ease-out origin-bottom-right ${open ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 translate-y-2 pointer-events-none'}`}>
         <div className="w-[26rem] bg-popover border border-border/50 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-visible mb-3">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 pt-5 pb-3">
-            <span className="text-sm font-semibold text-foreground">Add Logbook Task</span>
-            <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground p-0.5 rounded-lg hover:bg-muted transition-colors">
-              <X className="w-4 h-4" strokeWidth={1.5} />
-            </button>
-          </div>
-
-          <div className="px-5 pb-5 space-y-2.5" onKeyDown={handleKeyDown}>
+          <div className="px-5 pt-5 pb-5 space-y-2.5" onKeyDown={handleKeyDown}>
             {/* 1. Date */}
             <div className="relative">
               <input
@@ -278,19 +272,21 @@ export function QuickAdd() {
               className={`${inputClass} [&:not(:placeholder-shown)]:uppercase`}
             />
 
-            {/* 4. ATA Group (multi-select) */}
+            {/* 4. Task Group (multi-select) */}
             <div className="relative">
               <input
                 type="text"
                 value={ataSearch}
                 onChange={e => setAtaSearch(e.target.value)}
-                placeholder="ATA Group"
+                onFocus={() => setAtaFocused(true)}
+                onBlur={() => setTimeout(() => setAtaFocused(false), 150)}
+                placeholder="Task Group"
                 className={inputClass}
               />
               {filteredAta.length > 0 && (
                 <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-xl shadow-lg max-h-40 overflow-y-auto">
                   {filteredAta.map(c => (
-                    <button key={c.value} type="button" onClick={() => { setAtaChapters(prev => [...prev, c.value]); setAtaSearch('') }} className="w-full text-left px-3 py-2 text-xs hover:bg-muted border-b last:border-0">
+                    <button key={c.value} type="button" onClick={() => { setAtaChapters(prev => [...prev, c.value]); setAtaSearch(''); setAtaFocused(false) }} className="w-full text-left px-3 py-2 text-xs hover:bg-muted border-b last:border-0">
                       {c.label}
                     </button>
                   ))}
@@ -369,7 +365,7 @@ export function QuickAdd() {
                 disabled={saving || !taskDetail.trim() || hasDateError}
                 className="w-full py-2 text-xs font-medium bg-foreground text-background rounded-xl hover:bg-foreground/90 disabled:opacity-40 transition-colors"
               >
-                {saving ? 'Saving...' : 'Add Task'}
+                {saving ? 'Saving...' : 'Add Logbook Task'}
               </button>
             </div>
           </div>
