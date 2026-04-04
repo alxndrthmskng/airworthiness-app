@@ -522,7 +522,7 @@ export function CompleteProfileForm() {
                         onChange={() => toggleTypeRatings(index)}
                         className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                       />
-                      <span className="text-sm font-medium text-muted-foreground">I have aircraft type ratings on this licence</span>
+                      <span className="text-sm font-medium text-muted-foreground">Aircraft Type Rating(s)</span>
                     </label>
 
                     {/* Type Ratings cards */}
@@ -553,29 +553,23 @@ export function CompleteProfileForm() {
                                 <div className="flex items-center gap-3">
                                   <span className="text-sm font-medium text-muted-foreground w-6 shrink-0">B1</span>
                                   <div className="flex-1"><DateInput value={endorsement.b1Date} onChange={v => updateEndorsementDate(index, rowIndex, 'b1Date', v)} filled={!!endorsement.b1Date} /></div>
-                                  {endorsement.b1Date && (
-                                    <button type="button" onClick={() => updateEndorsementDate(index, rowIndex, 'b1Date', '')} className="text-muted-foreground hover:text-red-500 transition-colors shrink-0" title="Clear date">
-                                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                  )}
+                                  <button type="button" onClick={() => updateEndorsementDate(index, rowIndex, 'b1Date', '')} className="text-muted-foreground hover:text-red-500 transition-colors shrink-0" title="Clear date">
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                  </button>
                                 </div>
                                 <div className="flex items-center gap-3">
                                   <span className="text-sm font-medium text-muted-foreground w-6 shrink-0">B2</span>
                                   <div className="flex-1"><DateInput value={endorsement.b2Date} onChange={v => updateEndorsementDate(index, rowIndex, 'b2Date', v)} filled={!!endorsement.b2Date} /></div>
-                                  {endorsement.b2Date && (
-                                    <button type="button" onClick={() => updateEndorsementDate(index, rowIndex, 'b2Date', '')} className="text-muted-foreground hover:text-red-500 transition-colors shrink-0" title="Clear date">
-                                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                  )}
+                                  <button type="button" onClick={() => updateEndorsementDate(index, rowIndex, 'b2Date', '')} className="text-muted-foreground hover:text-red-500 transition-colors shrink-0" title="Clear date">
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                  </button>
                                 </div>
                                 <div className="flex items-center gap-3">
                                   <span className="text-sm font-medium text-muted-foreground w-6 shrink-0">C</span>
                                   <div className="flex-1"><DateInput value={endorsement.cDate} onChange={v => updateEndorsementDate(index, rowIndex, 'cDate', v)} filled={!!endorsement.cDate} /></div>
-                                  {endorsement.cDate && (
-                                    <button type="button" onClick={() => updateEndorsementDate(index, rowIndex, 'cDate', '')} className="text-muted-foreground hover:text-red-500 transition-colors shrink-0" title="Clear date">
-                                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                  )}
+                                  <button type="button" onClick={() => updateEndorsementDate(index, rowIndex, 'cDate', '')} className="text-muted-foreground hover:text-red-500 transition-colors shrink-0" title="Clear date">
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -591,7 +585,7 @@ export function CompleteProfileForm() {
                               setLicenceTypeSearch(index, e.target.value)
                             }}
                             onFocus={() => setLicenceActiveSearchRow(index, emptyRowIndex)}
-                            placeholder="Search aircraft type to add..."
+                            placeholder="e.g. Boeing 737-600/700/800/900 (CFM56)"
                             className="text-sm h-12 rounded-xl"
                           />
                           {filtered.length > 0 && (
@@ -620,7 +614,7 @@ export function CompleteProfileForm() {
                   onClick={addLicence}
                   className="text-xs font-semibold text-foreground hover:underline"
                 >
-                  + Add another licence
+                  + Add Licence
                 </button>
               </div>
             </div>
