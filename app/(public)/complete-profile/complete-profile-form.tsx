@@ -19,14 +19,12 @@ const IMPLIED_CATEGORIES: Record<string, string[]> = {
 }
 
 const APPROVAL_TYPES = [
-  'Part 145 (Aircraft Maintenance)',
-  'Part 145 (Engine Maintenance)',
-  'Part 145 (Component Maintenance)',
-  'Part CAMO (Continuing Airworthiness Management)',
-  'Part 147 (Aircraft Maintenance Training)',
-  'Part 21 Subpart G (Production)',
-  'Part 21 Subpart J (Design)',
+  'Design (Part 21J)',
+  'Maintenance (Part 145)',
+  'Management (Part M/CAMO)',
   'Other',
+  'Production (Part 21G)',
+  'Training (Part 147)',
 ]
 
 interface LicenceEntry {
@@ -158,6 +156,8 @@ export function CompleteProfileForm() {
   const [employers, setEmployers] = useState<{ name: string; startDate: string; endDate: string; approvals: Approval[] }[]>([{ name: '', startDate: '', endDate: '', approvals: [{ type: '', reference: '' }] }])
   const [marketingOptIn, setMarketingOptIn] = useState(true)
   const [recruitmentOptIn, setRecruitmentOptIn] = useState(false)
+  const [licenceFrontPath, setLicenceFrontPath] = useState<string | null>(null)
+  const [licenceBackPath, setLicenceBackPath] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -252,6 +252,21 @@ export function CompleteProfileForm() {
     }))
   }
 
+  async function handleLicencePhotoUpload(side: 'front' | 'back', file: File) {
+    if (file.size > 5 * 1024 * 1024) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const ext = file.name.split('.').pop() || 'jpg'
+    const path = `${user.id}/licence-${side}-${Date.now()}.${ext}`
+    const { error } = await supabase.storage
+      .from('module-certificates')
+      .upload(path, file, { contentType: file.type, upsert: false })
+    if (!error) {
+      if (side === 'front') setLicenceFrontPath(path)
+      else setLicenceBackPath(path)
+    }
+  }
+
   async function handleSubmit() {
     setLoading(true)
     setError('')
@@ -295,6 +310,13 @@ export function CompleteProfileForm() {
       return
     }
 
+    if (licenceFrontPath || licenceBackPath) {
+      await supabase.from('profiles').update({
+        aml_photo_path: licenceFrontPath,
+        aml_photo_back_path: licenceBackPath,
+      }).eq('id', user.id)
+    }
+
     const validEmployers = employers.filter(e => e.name.trim())
     if (validEmployers.length > 0) {
       await supabase.from('employment_periods').insert(
@@ -331,7 +353,7 @@ export function CompleteProfileForm() {
             <p className="text-xs text-muted-foreground mb-3">If you hold an Aircraft Maintenance Licence, this should match.</p>
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="firstName" className="text-sm font-medium text-muted-foreground">First Name</Label>
+                <Label htmlFor="firstName" className="text-sm font-medium text-muted-foreground">First Name <span className="text-muted-foreground/60">Required</span></Label>
                 <Input
                   id="firstName"
                   value={firstName}
@@ -352,7 +374,7 @@ export function CompleteProfileForm() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="lastName" className="text-sm font-medium text-muted-foreground">Last Name</Label>
+                <Label htmlFor="lastName" className="text-sm font-medium text-muted-foreground">Last Name <span className="text-muted-foreground/60">Required</span></Label>
                 <Input
                   id="lastName"
                   value={lastName}
@@ -394,6 +416,54 @@ export function CompleteProfileForm() {
               </button>
             </div>
           </div>
+
+          {/* Licence Photo Upload */}
+          {hasLicence === 'yes' && (
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-foreground mb-1">Licence Photo</p>
+              <p className="text-xs text-muted-foreground mb-3">Upload a photo of the front and back of your licence.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground mb-1.5 block">Front</Label>
+                  <label className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-border hover:border-foreground/40 transition-colors cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,application/pdf"
+                      className="hidden"
+                      onChange={e => {
+                        const file = e.target.files?.[0]
+                        if (file) handleLicencePhotoUpload('front', file)
+                      }}
+                    />
+                    {licenceFrontPath ? (
+                      <span className="text-xs text-green-600 font-medium">Uploaded</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Upload front</span>
+                    )}
+                  </label>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground mb-1.5 block">Back</Label>
+                  <label className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-border hover:border-foreground/40 transition-colors cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,application/pdf"
+                      className="hidden"
+                      onChange={e => {
+                        const file = e.target.files?.[0]
+                        if (file) handleLicencePhotoUpload('back', file)
+                      }}
+                    />
+                    {licenceBackPath ? (
+                      <span className="text-xs text-green-600 font-medium">Uploaded</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Upload back</span>
+                    )}
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Licence details — each licence has its own number + categories */}
           {hasLicence === 'yes' && (
@@ -576,7 +646,7 @@ export function CompleteProfileForm() {
 
           {/* Employer section */}
           <div>
-            <p className="text-sm font-semibold text-foreground mb-3">Employer <span className="text-muted-foreground/60 font-normal">Optional</span></p>
+            <p className="text-sm font-semibold text-foreground mb-3">Employer(s)</p>
             <div className="space-y-4">
               {employers.map((emp, i) => (
                 <div key={i} className="space-y-3">
@@ -607,7 +677,7 @@ export function CompleteProfileForm() {
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-sm font-medium text-muted-foreground">Start Date</Label>
+                    <Label className="text-sm font-medium text-muted-foreground">Start Date <span className="text-muted-foreground/60">Required</span></Label>
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <DateInput
@@ -631,7 +701,7 @@ export function CompleteProfileForm() {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-sm font-medium text-muted-foreground">End Date <span className="text-muted-foreground/60">Leave blank if current</span></Label>
+                    <Label className="text-sm font-medium text-muted-foreground">End Date <span className="text-muted-foreground/60">Optional</span></Label>
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <DateInput
@@ -658,7 +728,6 @@ export function CompleteProfileForm() {
                   {/* Organisation Approval within employer */}
                   <div className="mt-2">
                     <p className="text-sm font-semibold text-foreground mb-1">Organisation Approval</p>
-                    <p className="text-xs text-muted-foreground mb-3">The type of approval and reference number held by this organisation.</p>
                     <div className="space-y-3">
                       {emp.approvals.map((approval, aIdx) => (
                         <div key={aIdx} className="space-y-2">
