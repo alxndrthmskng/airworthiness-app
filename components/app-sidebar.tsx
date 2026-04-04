@@ -252,7 +252,7 @@ export function AppSidebar() {
       <div
         className={`md:hidden fixed inset-0 z-50 transition-opacity duration-200 ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
       >
-        <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
+        <div className="absolute inset-0" onClick={() => setMobileOpen(false)} />
         <aside className={`absolute top-0 left-0 w-60 h-full bg-background border-r border-border/50 shadow-lg flex flex-col transition-transform duration-200 ease-out ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           {/* Brand + close */}
           <div className="px-3 pt-6 pb-4 flex items-center justify-between">
