@@ -573,11 +573,8 @@ export function CompleteProfileForm() {
 
           {/* Organisation section */}
           <div>
-            <p className="text-sm font-semibold text-foreground mb-3">Organisation</p>
+            <p className="text-sm font-semibold text-foreground mb-1">Organisation <span className="text-muted-foreground/60 font-normal">Optional</span></p>
             <div className="space-y-1.5">
-              <Label htmlFor="employer" className="text-sm font-medium text-muted-foreground">
-                Organisation <span className="text-muted-foreground/60">Optional</span>
-              </Label>
               <Input
                 id="employer"
                 placeholder="e.g. British Airways"
