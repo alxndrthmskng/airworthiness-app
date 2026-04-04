@@ -17,7 +17,7 @@ export default async function AssessmentPage() {
     .single()
 
   if (profile?.competency_completed_at) {
-    redirect('/profile')
+    redirect('/dashboard')
   }
 
   return (

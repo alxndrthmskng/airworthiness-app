@@ -167,7 +167,7 @@ function MobileMenu({
               </Link>
             )}
             {loaded && user && (
-              <Link href="/profile" onClick={onClose}>
+              <Link href="/dashboard" onClick={onClose}>
                 <Button variant="outline" className="w-full font-semibold">
                   Account
                 </Button>
@@ -187,18 +187,18 @@ export function Navbar() {
 
   const professionalsItems = user
     ? [
-        { label: 'Module Tracker', href: '/progress' },
+        { label: 'Module Tracker', href: '/modules' },
         { label: 'Digital Logbook', href: '/logbook' },
-        { label: 'Continuation Training', href: '/courses' },
-        { label: 'Dashboard', href: '/profile' },
+        { label: 'Continuation Training', href: '/training' },
+        { label: 'Dashboard', href: '/dashboard' },
       ]
     : [
-        { label: 'Module Tracker', href: '/progress' },
+        { label: 'Module Tracker', href: '/modules' },
         { label: 'Digital Logbook', href: '/logbook' },
-        { label: 'Continuation Training', href: '/courses' },
+        { label: 'Continuation Training', href: '/training' },
       ]
 
-  const professionalsActive = ['/progress', '/logbook', '/courses', '/profile'].some(
+  const professionalsActive = ['/modules', '/logbook', '/training', '/dashboard'].some(
     p => pathname === p || pathname.startsWith(p + '/')
   )
 
@@ -228,7 +228,7 @@ export function Navbar() {
             )}
 
             {loaded && user && (
-              <Link href="/profile">
+              <Link href="/dashboard">
                 <Button variant="outline" size="sm" className="font-semibold">
                   Account
                 </Button>

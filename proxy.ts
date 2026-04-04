@@ -36,7 +36,8 @@ export async function proxy(request: NextRequest) {
     (request.nextUrl.pathname.startsWith('/dashboard') ||
       request.nextUrl.pathname.startsWith('/logbook') ||
       request.nextUrl.pathname.startsWith('/profile') ||
-      request.nextUrl.pathname.startsWith('/progress') ||
+      request.nextUrl.pathname.startsWith('/modules') ||
+      request.nextUrl.pathname.startsWith('/training') ||
       request.nextUrl.pathname.startsWith('/complete-profile'))
   ) {
     return NextResponse.redirect(new URL('/signup', request.url))
@@ -47,7 +48,7 @@ export async function proxy(request: NextRequest) {
     (request.nextUrl.pathname.startsWith('/login') ||
       request.nextUrl.pathname.startsWith('/signup'))
   ) {
-    return NextResponse.redirect(new URL('/profile', request.url))
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return supabaseResponse
@@ -58,8 +59,8 @@ export const config = {
     '/dashboard/:path*',
     '/logbook/:path*',
     '/profile/:path*',
-    '/progress/:path*',
-    '/courses/:path*',
+    '/modules/:path*',
+    '/training/:path*',
     '/complete-profile',
     '/login',
     '/signup',

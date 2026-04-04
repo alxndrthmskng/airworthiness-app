@@ -113,7 +113,7 @@ export function AssessmentForm() {
 
         <div className="mt-6">
           {passed ? (
-            <Button onClick={() => router.push('/profile')}>
+            <Button onClick={() => router.push('/dashboard')}>
               Back to Profile →
             </Button>
           ) : (

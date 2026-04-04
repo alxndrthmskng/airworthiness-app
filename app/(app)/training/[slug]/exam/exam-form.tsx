@@ -135,7 +135,7 @@ if (passed && attempt) {
             </p>
             <Button
               variant="outline"
-              onClick={() => router.push(`/courses/${courseSlug}`)}>
+              onClick={() => router.push(`/training/${courseSlug}`)}>
               Back to course
             </Button>
           </div>

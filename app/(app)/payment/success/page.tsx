@@ -13,7 +13,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
   const { session_id } = await searchParams
 
   if (!session_id) {
-    redirect('/profile')
+    redirect('/dashboard')
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
@@ -43,7 +43,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
           <p className="text-muted-foreground mb-8">
             We could not confirm this payment yet. If you have been charged, please contact us and we will resolve it.
           </p>
-          <Link href="/profile">
+          <Link href="/dashboard">
             <Button className="w-full">Back to profile</Button>
           </Link>
         </div>
@@ -63,7 +63,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
           <p className="text-muted-foreground mb-8">
             This payment session does not belong to the current user. Please contact us if you believe this is an error.
           </p>
-          <Link href="/profile">
+          <Link href="/dashboard">
             <Button className="w-full">Back to profile</Button>
           </Link>
         </div>
@@ -103,7 +103,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
         <p className="text-muted-foreground mb-8">
           Thank you for your support. All advertisements have been removed from your account. Enjoy the clean experience.
         </p>
-        <Link href="/profile">
+        <Link href="/dashboard">
           <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/80">Go to your profile</Button>
         </Link>
       </div>

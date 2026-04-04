@@ -17,11 +17,11 @@ import {
 } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/profile', icon: User },
-  { label: 'Manage Profile', href: '/manage-profile', icon: UserCog },
+  { label: 'Dashboard', href: '/dashboard', icon: User },
+  { label: 'Manage Profile', href: '/profile', icon: UserCog },
   { label: 'Digital Logbook', href: '/logbook', icon: BookOpen },
-  { label: 'Module Tracker', href: '/progress', icon: ClipboardList },
-  { label: 'Continuation Training', href: '/courses', icon: GraduationCap },
+  { label: 'Module Tracker', href: '/modules', icon: ClipboardList },
+  { label: 'Continuation Training', href: '/training', icon: GraduationCap },
   { label: 'Competency Assessment', href: '', icon: ShieldCheck, comingSoon: true },
 ]
 
@@ -71,8 +71,8 @@ export function AppSidebar() {
   }, [mobileOpen])
 
   function isActive(href: string) {
-    if (href === '/profile' && pathname === '/profile') return true
-    if (href === '/profile') return false
+    if (href === '/dashboard' && pathname === '/dashboard') return true
+    if (href === '/dashboard') return false
     return pathname === href || pathname.startsWith(href + '/')
   }
 
