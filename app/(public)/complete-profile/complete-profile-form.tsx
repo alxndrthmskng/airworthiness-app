@@ -95,7 +95,7 @@ function DateInput({ value, onChange, filled }: { value: string | null, onChange
   return (
     <input
       type="text"
-      placeholder="dd/mm/yyyy"
+      placeholder="DD/MM/YYYY"
       value={display}
       onChange={handleChange}
       onBlur={handleBlur}
@@ -145,7 +145,7 @@ export function CompleteProfileForm() {
   const [lastName, setLastName] = useState('')
   const [hasLicence, setHasLicence] = useState<'yes' | 'no' | ''>('')
   const [licences, setLicences] = useState<LicenceEntry[]>([{ number: '', categories: [], endorsements: [{ ...EMPTY_ENDORSEMENT }], showTypeRatings: false, typeSearch: '', activeSearchRow: null }])
-  const [employer, setEmployer] = useState('')
+  const [employers, setEmployers] = useState<{ name: string; startDate: string; endDate: string }[]>([{ name: '', startDate: '', endDate: '' }])
   const [approvals, setApprovals] = useState<Approval[]>([{ type: '', reference: '' }])
   const [marketingOptIn, setMarketingOptIn] = useState(true)
   const [recruitmentOptIn, setRecruitmentOptIn] = useState(false)
@@ -277,12 +277,16 @@ export function CompleteProfileForm() {
       return
     }
 
-    if (employer.trim()) {
-      await supabase.from('employment_periods').insert({
-        user_id: user.id,
-        employer: employer.trim(),
-        start_date: new Date().toISOString().split('T')[0],
-      })
+    const validEmployers = employers.filter(e => e.name.trim())
+    if (validEmployers.length > 0) {
+      await supabase.from('employment_periods').insert(
+        validEmployers.map(e => ({
+          user_id: user.id,
+          employer: e.name.trim(),
+          start_date: e.startDate || new Date().toISOString().split('T')[0],
+          end_date: e.endDate || null,
+        }))
+      )
     }
 
     await supabase.auth.updateUser({ data: { full_name: fullName } })
@@ -377,7 +381,6 @@ export function CompleteProfileForm() {
           {hasLicence === 'yes' && (
             <div>
               <p className="text-sm font-semibold text-foreground mb-3">Licence Details</p>
-              <p className="text-xs text-muted-foreground mb-3">Used to track your module exam progress and generate your continuation training record.</p>
               <div className="space-y-4">
                 {licences.map((licence, index) => (
                   <div key={index} className="space-y-3">
@@ -471,17 +474,17 @@ export function CompleteProfileForm() {
                               </button>
                               <p className="text-sm font-semibold text-foreground">{endorsement.rating}</p>
                               <div className="space-y-2 mt-3">
-                                <div>
-                                  <p className="text-xs font-medium text-muted-foreground mb-1">B1</p>
-                                  <DateInput value={endorsement.b1Date} onChange={v => updateEndorsementDate(index, rowIndex, 'b1Date', v)} filled={!!endorsement.b1Date} />
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm font-medium text-muted-foreground w-6 shrink-0">B1</span>
+                                  <div className="flex-1"><DateInput value={endorsement.b1Date} onChange={v => updateEndorsementDate(index, rowIndex, 'b1Date', v)} filled={!!endorsement.b1Date} /></div>
                                 </div>
-                                <div>
-                                  <p className="text-xs font-medium text-muted-foreground mb-1">B2</p>
-                                  <DateInput value={endorsement.b2Date} onChange={v => updateEndorsementDate(index, rowIndex, 'b2Date', v)} filled={!!endorsement.b2Date} />
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm font-medium text-muted-foreground w-6 shrink-0">B2</span>
+                                  <div className="flex-1"><DateInput value={endorsement.b2Date} onChange={v => updateEndorsementDate(index, rowIndex, 'b2Date', v)} filled={!!endorsement.b2Date} /></div>
                                 </div>
-                                <div>
-                                  <p className="text-xs font-medium text-muted-foreground mb-1">C</p>
-                                  <DateInput value={endorsement.cDate ?? cDateValue} onChange={v => updateEndorsementDate(index, rowIndex, 'cDate', v)} filled={!!(endorsement.cDate ?? cDateValue)} />
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm font-medium text-muted-foreground w-6 shrink-0">C</span>
+                                  <div className="flex-1"><DateInput value={endorsement.cDate ?? cDateValue} onChange={v => updateEndorsementDate(index, rowIndex, 'cDate', v)} filled={!!(endorsement.cDate ?? cDateValue)} /></div>
                                 </div>
                               </div>
                             </div>
@@ -541,17 +544,65 @@ export function CompleteProfileForm() {
 
           <div className="h-px bg-border" />
 
-          {/* Organisation section */}
+          {/* Employer section */}
           <div>
-            <p className="text-sm font-semibold text-foreground mb-1">Organisation <span className="text-muted-foreground/60 font-normal">Optional</span></p>
-            <div className="space-y-1.5">
-              <Input
-                id="employer"
-                placeholder="e.g. British Airways"
-                value={employer}
-                onChange={e => setEmployer(e.target.value)}
-                className="h-12 rounded-xl border-border"
-              />
+            <p className="text-sm font-semibold text-foreground mb-3">Employer <span className="text-muted-foreground/60 font-normal">Optional</span></p>
+            <div className="space-y-4">
+              {employers.map((emp, i) => (
+                <div key={i} className="space-y-3">
+                  {i > 0 && <div className="h-px bg-border" />}
+                  <div className="flex gap-2">
+                    <div className="flex-1 space-y-1.5">
+                      <Label className="text-sm font-medium text-muted-foreground">
+                        Organisation {employers.length > 1 && `(${i + 1})`}
+                      </Label>
+                      <Input
+                        placeholder="e.g. British Airways"
+                        value={emp.name}
+                        onChange={e => setEmployers(prev => prev.map((p, j) => j === i ? { ...p, name: e.target.value } : p))}
+                        className="h-12 rounded-xl border-border"
+                      />
+                    </div>
+                    {employers.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setEmployers(prev => prev.filter((_, j) => j !== i))}
+                        className="self-end h-12 px-3 text-muted-foreground hover:text-red-500 transition-colors"
+                        title="Remove"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium text-muted-foreground">Start Date</Label>
+                    <Input
+                      type="date"
+                      value={emp.startDate}
+                      onChange={e => setEmployers(prev => prev.map((p, j) => j === i ? { ...p, startDate: e.target.value } : p))}
+                      className="h-12 rounded-xl border-border"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium text-muted-foreground">End Date <span className="text-muted-foreground/60">Leave blank if current</span></Label>
+                    <Input
+                      type="date"
+                      value={emp.endDate}
+                      onChange={e => setEmployers(prev => prev.map((p, j) => j === i ? { ...p, endDate: e.target.value } : p))}
+                      className="h-12 rounded-xl border-border"
+                    />
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setEmployers(prev => [...prev, { name: '', startDate: '', endDate: '' }])}
+                className="text-xs font-semibold text-foreground hover:underline"
+              >
+                + Add another employer
+              </button>
             </div>
           </div>
 
