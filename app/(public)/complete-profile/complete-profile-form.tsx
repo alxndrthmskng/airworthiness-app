@@ -470,7 +470,6 @@ export function CompleteProfileForm() {
                                 </svg>
                               </button>
                               <p className="text-sm font-semibold text-foreground">{endorsement.rating}</p>
-                              {b1Sub && <p className="text-xs text-muted-foreground mt-0.5">{b1Sub}</p>}
                               <div className="space-y-2 mt-3">
                                 <div>
                                   <p className="text-xs font-medium text-muted-foreground mb-1">B1</p>
