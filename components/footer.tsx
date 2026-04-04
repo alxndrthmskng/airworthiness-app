@@ -8,9 +8,6 @@ export function Footer() {
           {/* Company */}
           <div>
             <h3 className="text-foreground font-bold text-sm tracking-tight mb-3">Airworthiness Limited</h3>
-            <p className="text-xs leading-relaxed">
-              The digital platform for aviation engineering professionals and initial and continuing airworthiness organisations.
-            </p>
           </div>
 
           {/* Professionals */}
