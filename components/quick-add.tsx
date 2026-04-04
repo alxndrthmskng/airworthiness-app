@@ -6,14 +6,6 @@ import { createClient } from '@/lib/supabase/client'
 import { UK_TYPE_RATINGS } from '@/lib/profile/type-ratings'
 import { Plus, X, Check } from 'lucide-react'
 
-type MaintenanceType = 'base_maintenance' | 'line_maintenance' | 'engine_maintenance' | 'component_maintenance'
-
-const EXPERIENCE_TYPES: { value: MaintenanceType; label: string }[] = [
-  { value: 'base_maintenance', label: 'Base' },
-  { value: 'line_maintenance', label: 'Line' },
-  { value: 'component_maintenance', label: 'Component' },
-]
-
 function groupToCategory(group: string): string | null {
   if (group === 'Turbine Aeroplane') return 'aeroplane_turbine'
   if (group === 'Piston Aeroplane') return 'aeroplane_piston'
@@ -35,6 +27,22 @@ function parseDateInput(ddmmyyyy: string): string {
   return ddmmyyyy
 }
 
+function validateDate(display: string): string | null {
+  const digits = display.replace(/[^\d]/g, '')
+  if (digits.length === 0) return null
+  if (digits.length < 8) return 'Invalid date'
+  const d = parseInt(digits.slice(0, 2), 10)
+  const m = parseInt(digits.slice(2, 4), 10)
+  const y = parseInt(digits.slice(4, 8), 10)
+  if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1900) return 'Invalid date'
+  const parsed = new Date(y, m - 1, d)
+  if (isNaN(parsed.getTime()) || parsed.getFullYear() !== y || parsed.getMonth() !== m - 1 || parsed.getDate() !== d) return 'Invalid date'
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  if (parsed > today) return 'Invalid date'
+  return null
+}
+
 export function QuickAdd() {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -44,10 +52,10 @@ export function QuickAdd() {
   // Form fields
   const [taskDetail, setTaskDetail] = useState('')
   const [date, setDate] = useState(todayDDMMYYYY)
+  const [dateError, setDateError] = useState<string | null>(null)
   const [aircraftType, setAircraftType] = useState('')
   const [aircraftSearch, setAircraftSearch] = useState('')
   const [registration, setRegistration] = useState('')
-  const [experienceType, setExperienceType] = useState<MaintenanceType>('line_maintenance')
 
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -91,19 +99,27 @@ export function QuickAdd() {
   function reset() {
     setTaskDetail('')
     setDate(todayDDMMYYYY())
+    setDateError(null)
+    setAircraftType('')
     setAircraftSearch('')
     setRegistration('')
   }
 
+  function handleDateBlur() {
+    const err = validateDate(date)
+    setDateError(err)
+  }
+
   async function handleSave() {
     if (!taskDetail.trim()) return
+    const err = validateDate(date)
+    if (err) { setDateError(err); return }
 
     setSaving(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setSaving(false); return }
 
-    // Get employer
     const { data: employment } = await supabase
       .from('employment_periods')
       .select('employer')
@@ -113,14 +129,13 @@ export function QuickAdd() {
 
     const employer = employment?.[0]?.employer ?? ''
 
-    // Derive aircraft category from type
     const found = UK_TYPE_RATINGS.find(t => t.rating === aircraftType)
     const aircraftCategory = found ? (groupToCategory(found.group) ?? 'aeroplane_turbine') : 'aeroplane_turbine'
 
     const { error } = await supabase.from('logbook_entries').insert({
       user_id: user.id,
       task_date: parseDateInput(date),
-      maintenance_type: experienceType,
+      maintenance_type: 'line_maintenance',
       aircraft_category: aircraftCategory,
       aircraft_registration: registration.toUpperCase() || 'N/A',
       aircraft_type: aircraftType || 'N/A',
@@ -129,7 +144,7 @@ export function QuickAdd() {
       job_number: '',
       description: taskDetail.trim(),
       employer,
-      category: experienceType === 'base_maintenance' ? 'base_maintenance' : 'line_maintenance',
+      category: 'line_maintenance',
       duration_hours: 1,
       supervised: true,
       status: 'draft',
@@ -141,12 +156,10 @@ export function QuickAdd() {
       setSaved(true)
       reset()
       router.refresh()
-      // Stay open for batch entry — focus back on input
       setTimeout(() => inputRef.current?.focus(), 50)
     }
   }
 
-  // Handle keyboard
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Escape') {
       setOpen(false)
@@ -157,6 +170,8 @@ export function QuickAdd() {
     }
   }
 
+  const hasDateError = dateError !== null
+
   return (
     <div ref={panelRef} className="fixed bottom-6 right-6 z-50">
       {/* Expanded form */}
@@ -164,7 +179,7 @@ export function QuickAdd() {
         <div className="w-80 bg-popover border border-border rounded-2xl shadow-xl overflow-hidden mb-3">
           {/* Header */}
           <div className="flex items-center justify-between px-4 pt-4 pb-2">
-            <span className="text-sm font-semibold text-foreground">Quick Add Task</span>
+            <span className="text-sm font-semibold text-foreground">Add Logbook Task</span>
             <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground p-0.5 rounded-lg hover:bg-muted transition-colors">
               <X className="w-4 h-4" strokeWidth={1.5} />
             </button>
@@ -176,51 +191,52 @@ export function QuickAdd() {
               ref={inputRef}
               value={taskDetail}
               onChange={e => setTaskDetail(e.target.value)}
-              placeholder="What did you work on?"
-              rows={2}
-              className="w-full text-sm px-3 py-2.5 border border-border rounded-xl bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none placeholder:text-muted-foreground/50"
+              placeholder="e.g. I performed [Task Type] on [Part or System] in accordance with [Maintenance Data]."
+              rows={3}
+              className="w-full text-sm px-3 py-2.5 border border-border rounded-xl bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none placeholder:text-muted-foreground/40 placeholder:text-xs"
             />
 
-            {/* Date + Experience type row */}
-            <div className="flex gap-2">
+            {/* Date */}
+            <div>
               <input
                 type="text"
                 value={date}
-                onChange={e => setDate(e.target.value.replace(/[^\d/]/g, '').slice(0, 10))}
+                onChange={e => { setDate(e.target.value.replace(/[^\d/]/g, '').slice(0, 10)); setDateError(null) }}
+                onBlur={handleDateBlur}
                 placeholder="DD/MM/YYYY"
                 maxLength={10}
-                className="w-28 text-xs text-center px-2 py-2 border border-border rounded-xl bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                className={`w-full text-xs text-center px-3 py-2 border rounded-xl bg-background focus:outline-none focus:ring-1 focus:ring-ring ${hasDateError ? 'border-red-400 bg-red-50 text-red-700' : 'border-border'}`}
               />
-              <div className="flex gap-1 flex-1">
-                {EXPERIENCE_TYPES.map(t => (
-                  <button
-                    key={t.value}
-                    type="button"
-                    onClick={() => setExperienceType(t.value)}
-                    className={`flex-1 text-xs py-2 rounded-xl border transition-colors ${
-                      experienceType === t.value
-                        ? 'bg-foreground text-background border-foreground'
-                        : 'bg-background text-muted-foreground border-border hover:border-foreground/30'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
+              {hasDateError && (
+                <div className="flex items-center justify-end mt-1">
+                  <X className="w-3 h-3 text-red-500" strokeWidth={2} />
+                </div>
+              )}
             </div>
 
             {/* Aircraft type */}
             <div className="relative">
-              <input
-                type="text"
-                value={aircraftType ? aircraftType : aircraftSearch}
-                onChange={e => {
-                  setAircraftSearch(e.target.value)
-                  if (aircraftType) setAircraftType('')
-                }}
-                placeholder="Aircraft type"
-                className="w-full text-xs px-3 py-2 border border-border rounded-xl bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={aircraftType ? aircraftType : aircraftSearch}
+                  onChange={e => {
+                    setAircraftSearch(e.target.value)
+                    if (aircraftType) setAircraftType('')
+                  }}
+                  placeholder="Aircraft type"
+                  className="w-full text-xs px-3 py-2 pr-8 border border-border rounded-xl bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                {(aircraftType || aircraftSearch) && (
+                  <button
+                    type="button"
+                    onClick={() => { setAircraftType(''); setAircraftSearch('') }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  </button>
+                )}
+              </div>
               {filteredTypes.length > 0 && !aircraftType && (
                 <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-xl shadow-lg max-h-40 overflow-y-auto">
                   {filteredTypes.map(r => (
@@ -234,7 +250,6 @@ export function QuickAdd() {
                       className="w-full text-left px-3 py-2 text-xs hover:bg-muted border-b last:border-0"
                     >
                       <span className="font-medium">{r.rating}</span>
-                      <span className="text-muted-foreground ml-2">{r.group}</span>
                     </button>
                   ))}
                 </div>
@@ -246,7 +261,7 @@ export function QuickAdd() {
               type="text"
               value={registration}
               onChange={e => setRegistration(e.target.value)}
-              placeholder="Registration (e.g. G-ABCD)"
+              placeholder="e.g. G-ABCD"
               className="w-full text-xs px-3 py-2 border border-border rounded-xl bg-background focus:outline-none focus:ring-1 focus:ring-ring uppercase"
             />
 
@@ -264,7 +279,7 @@ export function QuickAdd() {
                 )}
                 <button
                   onClick={handleSave}
-                  disabled={saving || !taskDetail.trim()}
+                  disabled={saving || !taskDetail.trim() || hasDateError}
                   className="px-4 py-1.5 text-xs font-medium bg-foreground text-background rounded-lg hover:bg-foreground/90 disabled:opacity-40 transition-colors"
                 >
                   {saving ? 'Saving...' : 'Add Task'}
@@ -283,7 +298,7 @@ export function QuickAdd() {
             ? 'bg-muted text-muted-foreground rotate-45'
             : 'bg-foreground text-background hover:bg-foreground/90'
         }`}
-        aria-label={open ? 'Close quick add' : 'Quick add task'}
+        aria-label={open ? 'Close quick add' : 'Add logbook task'}
       >
         <Plus className="w-5 h-5" strokeWidth={2} />
       </button>
