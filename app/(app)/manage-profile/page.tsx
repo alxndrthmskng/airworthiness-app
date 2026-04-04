@@ -26,7 +26,7 @@ export default async function ManageProfilePage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, aml_licence_number, aml_categories, type_ratings, aml_photo_path, aml_photo_back_path, industry')
+    .select('full_name, aml_licence_number, aml_categories, type_ratings, aml_photo_path, industry')
     .eq('id', user.id)
     .single()
 
@@ -87,7 +87,7 @@ export default async function ManageProfilePage() {
     licences,
     employers,
     licenceFrontPath: profile.aml_photo_path ?? null,
-    licenceBackPath: profile.aml_photo_back_path ?? null,
+    licenceBackPath: null,
   }
 
   return (
