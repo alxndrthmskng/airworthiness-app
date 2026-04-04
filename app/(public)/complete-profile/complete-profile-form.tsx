@@ -471,7 +471,7 @@ export function CompleteProfileForm() {
                               </button>
                               <p className="text-sm font-semibold text-foreground">{endorsement.rating}</p>
                               {b1Sub && <p className="text-xs text-muted-foreground mt-0.5">{b1Sub}</p>}
-                              <div className="grid grid-cols-2 gap-3 mt-3">
+                              <div className="space-y-2 mt-3">
                                 <div>
                                   <p className="text-xs font-medium text-muted-foreground mb-1">B1</p>
                                   <DateInput value={endorsement.b1Date} onChange={v => updateEndorsementDate(index, rowIndex, 'b1Date', v)} filled={!!endorsement.b1Date} />
@@ -479,10 +479,6 @@ export function CompleteProfileForm() {
                                 <div>
                                   <p className="text-xs font-medium text-muted-foreground mb-1">B2</p>
                                   <DateInput value={endorsement.b2Date} onChange={v => updateEndorsementDate(index, rowIndex, 'b2Date', v)} filled={!!endorsement.b2Date} />
-                                </div>
-                                <div>
-                                  <p className="text-xs font-medium text-muted-foreground mb-1">B3</p>
-                                  <DateInput value={endorsement.b3Date} onChange={v => updateEndorsementDate(index, rowIndex, 'b3Date', v)} filled={!!endorsement.b3Date} />
                                 </div>
                                 <div>
                                   <p className="text-xs font-medium text-muted-foreground mb-1">C</p>
