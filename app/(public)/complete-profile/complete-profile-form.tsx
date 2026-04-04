@@ -100,7 +100,7 @@ function DateInput({ value, onChange, filled }: { value: string | null, onChange
       onChange={handleChange}
       onBlur={handleBlur}
       maxLength={10}
-      className={`w-full h-10 rounded-md border px-1 text-[11px] text-center ${filled ? 'bg-green-50 border-green-300 text-green-800' : 'bg-gray-50 border-gray-200 text-gray-400 placeholder:text-gray-300'}`}
+      className={`w-full h-10 rounded-md border px-1 text-xs text-center ${filled ? 'bg-green-50 border-green-300 text-green-800 dark:bg-green-950 dark:border-green-700 dark:text-green-100' : 'bg-muted border-border text-muted-foreground placeholder:text-muted-foreground/60'}`}
     />
   )
 }
@@ -295,8 +295,8 @@ export function CompleteProfileForm() {
       <div className="w-full max-w-md">
 
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-black tracking-tight">Complete your profile</h1>
-          <p className="text-sm text-gray-500 mt-2">
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Complete your profile</h1>
+          <p className="text-sm text-muted-foreground mt-2">
             We need a few details to set up your profile.
           </p>
         </div>
@@ -305,56 +305,56 @@ export function CompleteProfileForm() {
 
           {/* Name section */}
           <div>
-            <p className="text-xs font-bold text-black mb-3">Your Full Name</p>
-            <p className="text-[11px] text-gray-400 mb-3">If you hold a Part 66 licence, this should match the name on your licence.</p>
-            <div className="grid grid-cols-2 gap-3">
+            <p className="text-sm font-semibold text-foreground mb-3">Your Full Name</p>
+            <p className="text-xs text-muted-foreground mb-3">If you hold a Part 66 licence, this should match the name on your licence.</p>
+            <div className="space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="firstName" className="text-xs text-gray-500">First Name</Label>
+                <Label htmlFor="firstName" className="text-sm font-medium text-muted-foreground">First Name</Label>
                 <Input
                   id="firstName"
                   value={firstName}
                   onChange={e => setFirstName(e.target.value)}
-                  className="h-12 rounded-xl border-gray-300 focus:border-black focus:ring-black"
+                  className="h-12 rounded-xl border-border"
                   autoFocus
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="lastName" className="text-xs text-gray-500">Last Name</Label>
+                <Label htmlFor="lastName" className="text-sm font-medium text-muted-foreground">Last Name</Label>
                 <Input
                   id="lastName"
                   value={lastName}
                   onChange={e => setLastName(e.target.value)}
-                  className="h-12 rounded-xl border-gray-300 focus:border-black focus:ring-black"
+                  className="h-12 rounded-xl border-border"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="middleNames" className="text-sm font-medium text-muted-foreground">
+                  Middle Name(s) <span className="text-muted-foreground/60">Optional</span>
+                </Label>
+                <Input
+                  id="middleNames"
+                  value={middleNames}
+                  onChange={e => setMiddleNames(e.target.value)}
+                  className="h-12 rounded-xl border-border"
                 />
               </div>
             </div>
-            <div className="space-y-1.5 mt-3">
-              <Label htmlFor="middleNames" className="text-xs text-gray-500">
-                Middle Name(s) <span className="text-gray-300">Optional</span>
-              </Label>
-              <Input
-                id="middleNames"
-                value={middleNames}
-                onChange={e => setMiddleNames(e.target.value)}
-                className="h-12 rounded-xl border-gray-300 focus:border-black focus:ring-black"
-              />
-            </div>
           </div>
 
-          <div className="h-px bg-gray-100" />
+          <div className="h-px bg-border" />
 
           {/* Licence question */}
           <div>
-            <p className="text-xs font-bold text-black mb-1">Do you hold a Part 66 Aircraft Maintenance Licence?</p>
-            <p className="text-[11px] text-gray-400 mb-3">This may be issued by any competent authority (e.g. UK.66.123456A).</p>
+            <p className="text-sm font-semibold text-foreground mb-1">Do you hold a Part 66 Aircraft Maintenance Licence?</p>
+            <p className="text-xs text-muted-foreground mb-3">This may be issued by any competent authority (e.g. UK.66.123456A).</p>
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setHasLicence('yes')}
-                className={`flex-1 h-12 rounded-xl text-sm font-bold transition-colors ${
+                className={`flex-1 h-12 rounded-xl text-sm font-semibold transition-colors ${
                   hasLicence === 'yes'
-                    ? 'bg-black text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
                 Yes
@@ -362,10 +362,10 @@ export function CompleteProfileForm() {
               <button
                 type="button"
                 onClick={() => { setHasLicence('no'); setLicences([{ number: '', categories: [], endorsements: [{ ...EMPTY_ENDORSEMENT }], showTypeRatings: false, typeSearch: '', activeSearchRow: null }]) }}
-                className={`flex-1 h-12 rounded-xl text-sm font-bold transition-colors ${
+                className={`flex-1 h-12 rounded-xl text-sm font-semibold transition-colors ${
                   hasLicence === 'no'
-                    ? 'bg-black text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
                 No
@@ -376,29 +376,29 @@ export function CompleteProfileForm() {
           {/* Licence details — each licence has its own number + categories */}
           {hasLicence === 'yes' && (
             <div>
-              <p className="text-xs font-bold text-black mb-3">Licence Details</p>
-              <p className="text-[11px] text-gray-400 mb-3">Used to track your module exam progress and generate your continuation training record.</p>
+              <p className="text-sm font-semibold text-foreground mb-3">Licence Details</p>
+              <p className="text-xs text-muted-foreground mb-3">Used to track your module exam progress and generate your continuation training record.</p>
               <div className="space-y-4">
                 {licences.map((licence, index) => (
                   <div key={index} className="space-y-3">
-                    {index > 0 && <div className="h-px bg-gray-200 my-1" />}
+                    {index > 0 && <div className="h-px bg-border my-1" />}
                     <div className="flex gap-2">
                       <div className="flex-1 space-y-1.5">
-                        <Label className="text-xs text-gray-500">
-                          Licence Number {licences.length > 1 && `(${index + 1})`} <span className="text-gray-300">Optional</span>
+                        <Label className="text-sm font-medium text-muted-foreground">
+                          Licence Number {licences.length > 1 && `(${index + 1})`} <span className="text-muted-foreground/60">Optional</span>
                         </Label>
                         <Input
                           placeholder="e.g. UK.66.12345"
                           value={licence.number}
                           onChange={e => updateLicenceNumber(index, e.target.value)}
-                          className="h-12 rounded-xl border-gray-300 focus:border-black focus:ring-black"
+                          className="h-12 rounded-xl border-border"
                         />
                       </div>
                       {licences.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeLicence(index)}
-                          className="self-end h-12 px-3 text-gray-400 hover:text-red-500 transition-colors"
+                          className="self-end h-12 px-3 text-muted-foreground hover:text-red-500 transition-colors"
                           title="Remove"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -409,7 +409,7 @@ export function CompleteProfileForm() {
                     </div>
 
                     <div>
-                      <p className="text-xs text-gray-500 mb-2">Categories{licences.length > 1 ? ` (${index + 1})` : ''}</p>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">Categories{licences.length > 1 ? ` (${index + 1})` : ''}</p>
                       <div className="flex flex-wrap gap-2">
                         {AML_CATEGORIES.map(cat => {
                           const isSelected = licence.categories.includes(cat.value)
@@ -418,10 +418,10 @@ export function CompleteProfileForm() {
                               key={cat.value}
                               type="button"
                               onClick={() => toggleLicenceCategory(index, cat.value)}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
+                              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
                                 isSelected
-                                  ? 'bg-black text-white'
-                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
                               }`}
                               title={cat.label}
                             >
@@ -438,9 +438,9 @@ export function CompleteProfileForm() {
                         type="checkbox"
                         checked={licence.showTypeRatings}
                         onChange={() => toggleTypeRatings(index)}
-                        className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                       />
-                      <span className="text-xs text-gray-500">I have aircraft type ratings on this licence</span>
+                      <span className="text-sm font-medium text-muted-foreground">I have aircraft type ratings on this licence</span>
                     </label>
 
                     {/* Type Ratings table */}
@@ -448,16 +448,16 @@ export function CompleteProfileForm() {
                       const firstCDate = licence.endorsements.find(e => e.cDate)?.cDate ?? null
                       return (
                       <div className="mt-3">
-                        <p className="text-xs text-gray-500 mb-2">Enter the date each type was endorsed on this licence.</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Enter the date each type was endorsed on this licence.</p>
                         <div className="overflow-x-auto border rounded-lg">
                           <table className="w-full text-sm border-collapse">
                             <thead>
-                              <tr className="border-b border-gray-200 bg-gray-50">
-                                <th className="text-left py-2 px-2 font-semibold text-gray-700 min-w-[320px] text-xs">Aircraft Type</th>
-                                <th className="text-center py-2 px-2 font-semibold text-gray-700 w-[115px] text-xs">B1</th>
-                                <th className="text-center py-2 px-2 font-semibold text-gray-700 w-[115px] text-xs">B2</th>
-                                <th className="text-center py-2 px-2 font-semibold text-gray-700 w-[115px] text-xs">B3</th>
-                                <th className="text-center py-2 px-2 font-semibold text-gray-700 w-[115px] text-xs">C</th>
+                              <tr className="border-b border-border bg-muted">
+                                <th className="text-left py-2 px-2 font-semibold text-foreground min-w-[320px] text-xs">Aircraft Type</th>
+                                <th className="text-center py-2 px-2 font-semibold text-foreground w-[115px] text-xs">B1</th>
+                                <th className="text-center py-2 px-2 font-semibold text-foreground w-[115px] text-xs">B2</th>
+                                <th className="text-center py-2 px-2 font-semibold text-foreground w-[115px] text-xs">B3</th>
+                                <th className="text-center py-2 px-2 font-semibold text-foreground w-[115px] text-xs">C</th>
                                 <th className="w-[30px]"></th>
                               </tr>
                             </thead>
@@ -469,7 +469,7 @@ export function CompleteProfileForm() {
                                 const cDateValue = endorsement.cDate ?? (firstCDate && !isEmptyRow ? firstCDate : null)
 
                                 return (
-                                  <tr key={rowIndex} className="border-b border-gray-100">
+                                  <tr key={rowIndex} className="border-b border-border">
                                     <td className="py-2 px-2">
                                       {isEmptyRow ? (
                                         <div className="relative">
@@ -484,16 +484,16 @@ export function CompleteProfileForm() {
                                             className="text-sm h-12"
                                           />
                                           {filtered.length > 0 && (
-                                            <div className="absolute z-10 mt-1 w-full min-w-[360px] bg-white border rounded-lg shadow-lg max-h-80 overflow-y-auto">
+                                            <div className="absolute z-10 mt-1 w-full min-w-[360px] bg-background border rounded-lg shadow-lg max-h-80 overflow-y-auto">
                                               {filtered.map(r => (
                                                 <button
                                                   key={`${r.category}-${r.rating}`}
                                                   type="button"
                                                   onClick={() => selectAircraftType(index, rowIndex, r.rating)}
-                                                  className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 border-b last:border-0"
+                                                  className="w-full text-left px-4 py-3 text-sm hover:bg-muted border-b last:border-0"
                                                 >
                                                   <span className="font-medium">{r.rating}</span>
-                                                  <span className="text-gray-400 ml-2 text-xs">{r.category} · {r.group}</span>
+                                                  <span className="text-muted-foreground ml-2 text-xs">{r.category} · {r.group}</span>
                                                 </button>
                                               ))}
                                             </div>
@@ -502,34 +502,34 @@ export function CompleteProfileForm() {
                                       ) : (
                                         <div>
                                           <span className="font-medium text-xs">{endorsement.rating}</span>
-                                          {b1Sub && <span className="text-[10px] text-gray-400 ml-1">({b1Sub})</span>}
+                                          {b1Sub && <span className="text-[10px] text-muted-foreground ml-1">({b1Sub})</span>}
                                         </div>
                                       )}
                                     </td>
                                     <td className="py-2 px-1">
                                       {isEmptyRow ? (
-                                        <div className="h-10 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center text-[10px] text-gray-400">-</div>
+                                        <div className="h-10 rounded-md bg-muted border border-border flex items-center justify-center text-[10px] text-muted-foreground">-</div>
                                       ) : (
                                         <DateInput value={endorsement.b1Date} onChange={v => updateEndorsementDate(index, rowIndex, 'b1Date', v)} filled={!!endorsement.b1Date} />
                                       )}
                                     </td>
                                     <td className="py-2 px-1">
                                       {isEmptyRow ? (
-                                        <div className="h-10 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center text-[10px] text-gray-400">-</div>
+                                        <div className="h-10 rounded-md bg-muted border border-border flex items-center justify-center text-[10px] text-muted-foreground">-</div>
                                       ) : (
                                         <DateInput value={endorsement.b2Date} onChange={v => updateEndorsementDate(index, rowIndex, 'b2Date', v)} filled={!!endorsement.b2Date} />
                                       )}
                                     </td>
                                     <td className="py-2 px-1">
                                       {isEmptyRow ? (
-                                        <div className="h-10 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center text-[10px] text-gray-400">-</div>
+                                        <div className="h-10 rounded-md bg-muted border border-border flex items-center justify-center text-[10px] text-muted-foreground">-</div>
                                       ) : (
                                         <DateInput value={endorsement.b3Date} onChange={v => updateEndorsementDate(index, rowIndex, 'b3Date', v)} filled={!!endorsement.b3Date} />
                                       )}
                                     </td>
                                     <td className="py-2 px-1">
                                       {isEmptyRow ? (
-                                        <div className="h-10 rounded-md bg-gray-50 border border-gray-200 flex items-center justify-center text-[10px] text-gray-400">-</div>
+                                        <div className="h-10 rounded-md bg-muted border border-border flex items-center justify-center text-[10px] text-muted-foreground">-</div>
                                       ) : (
                                         <DateInput value={endorsement.cDate ?? cDateValue} onChange={v => updateEndorsementDate(index, rowIndex, 'cDate', v)} filled={!!(endorsement.cDate ?? cDateValue)} />
                                       )}
@@ -537,7 +537,7 @@ export function CompleteProfileForm() {
                                     <td className="py-2 px-1">
                                       {!isEmptyRow && (
                                         <button type="button" onClick={() => removeEndorsement(index, rowIndex)}
-                                          className="text-gray-400 hover:text-red-500 text-sm">&times;</button>
+                                          className="text-muted-foreground hover:text-red-500 text-sm">&times;</button>
                                       )}
                                     </td>
                                   </tr>
@@ -554,7 +554,7 @@ export function CompleteProfileForm() {
                 <button
                   type="button"
                   onClick={addLicence}
-                  className="text-xs font-bold text-black hover:underline"
+                  className="text-xs font-semibold text-foreground hover:underline"
                 >
                   + Add another licence
                 </button>
@@ -564,47 +564,47 @@ export function CompleteProfileForm() {
 
           {/* Unlicensed context */}
           {hasLicence === 'no' && (
-            <p className="text-[11px] text-gray-400 bg-gray-50 rounded-xl p-3">
+            <p className="text-xs text-muted-foreground bg-muted rounded-xl p-3">
               No problem. You can still use the digital logbook, continuation training tracker, and all other tools. You can add licence details later from your profile if you obtain one.
             </p>
           )}
 
-          <div className="h-px bg-gray-100" />
+          <div className="h-px bg-border" />
 
           {/* Organisation section */}
           <div>
-            <p className="text-xs font-bold text-black mb-3">Organisation</p>
+            <p className="text-sm font-semibold text-foreground mb-3">Organisation</p>
             <div className="space-y-1.5">
-              <Label htmlFor="employer" className="text-xs text-gray-500">
-                Organisation <span className="text-gray-300">Optional</span>
+              <Label htmlFor="employer" className="text-sm font-medium text-muted-foreground">
+                Organisation <span className="text-muted-foreground/60">Optional</span>
               </Label>
               <Input
                 id="employer"
                 placeholder="e.g. British Airways"
                 value={employer}
                 onChange={e => setEmployer(e.target.value)}
-                className="h-12 rounded-xl border-gray-300 focus:border-black focus:ring-black"
+                className="h-12 rounded-xl border-border"
               />
             </div>
           </div>
 
           {/* Approvals — repeatable */}
           <div>
-            <p className="text-xs font-bold text-black mb-1">Organisation Approval</p>
-            <p className="text-[11px] text-gray-400 mb-3">The type of approval and reference number held by your organisation.</p>
+            <p className="text-sm font-semibold text-foreground mb-1">Organisation Approval</p>
+            <p className="text-xs text-muted-foreground mb-3">The type of approval and reference number held by your organisation.</p>
             <div className="space-y-3">
               {approvals.map((approval, index) => (
                 <div key={index} className="space-y-2">
-                  {index > 0 && <div className="h-px bg-gray-200 mt-1" />}
+                  {index > 0 && <div className="h-px bg-border mt-1" />}
                   <div className="flex gap-2">
                     <div className="flex-1">
-                      <Label className="text-xs text-gray-500 mb-1.5 block">
-                        Approval Type {approvals.length > 1 && `(${index + 1})`} <span className="text-gray-300">Optional</span>
+                      <Label className="text-sm font-medium text-muted-foreground mb-1.5 block">
+                        Approval Type {approvals.length > 1 && `(${index + 1})`} <span className="text-muted-foreground/60">Optional</span>
                       </Label>
                       <select
                         value={approval.type}
                         onChange={e => updateApproval(index, 'type', e.target.value)}
-                        className="w-full h-12 rounded-xl border border-gray-300 bg-white px-3 text-sm focus:border-black focus:ring-black focus:outline-none"
+                        className="w-full h-12 rounded-xl border border-border bg-background px-3 text-sm focus:outline-none"
                       >
                         <option value="">Select approval type</option>
                         {APPROVAL_TYPES.map(type => (
@@ -616,7 +616,7 @@ export function CompleteProfileForm() {
                       <button
                         type="button"
                         onClick={() => removeApproval(index)}
-                        className="self-end h-12 px-3 text-gray-400 hover:text-red-500 transition-colors"
+                        className="self-end h-12 px-3 text-muted-foreground hover:text-red-500 transition-colors"
                         title="Remove"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -626,14 +626,14 @@ export function CompleteProfileForm() {
                     )}
                   </div>
                   <div>
-                    <Label className="text-xs text-gray-500 mb-1.5 block">
-                      Approval Reference {approvals.length > 1 && `(${index + 1})`} <span className="text-gray-300">Optional</span>
+                    <Label className="text-sm font-medium text-muted-foreground mb-1.5 block">
+                      Approval Reference {approvals.length > 1 && `(${index + 1})`} <span className="text-muted-foreground/60">Optional</span>
                     </Label>
                     <Input
                       placeholder="e.g. UK.145.0000"
                       value={approval.reference}
                       onChange={e => updateApproval(index, 'reference', e.target.value)}
-                      className="h-12 rounded-xl border-gray-300 focus:border-black focus:ring-black"
+                      className="h-12 rounded-xl border-border"
                     />
                   </div>
                 </div>
@@ -641,19 +641,19 @@ export function CompleteProfileForm() {
               <button
                 type="button"
                 onClick={addApproval}
-                className="text-xs font-bold text-black hover:underline"
+                className="text-xs font-semibold text-foreground hover:underline"
               >
                 + Add another approval
               </button>
             </div>
           </div>
 
-          <div className="h-px bg-gray-100" />
+          <div className="h-px bg-border" />
 
           {/* Consent */}
           <div className="space-y-3">
-            <p className="text-xs text-gray-500">
-              By continuing you agree to our <Link href="/terms" className="text-black font-bold hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-black font-bold hover:underline">Privacy Policy</Link>.
+            <p className="text-sm font-medium text-muted-foreground">
+              By continuing you agree to our <Link href="/terms" className="text-foreground font-semibold hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-foreground font-semibold hover:underline">Privacy Policy</Link>.
             </p>
 
             <label className="flex items-start gap-3 cursor-pointer">
@@ -661,9 +661,9 @@ export function CompleteProfileForm() {
                 type="checkbox"
                 checked={marketingOptIn}
                 onChange={e => setMarketingOptIn(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
               />
-              <span className="text-xs text-gray-500">
+              <span className="text-sm font-medium text-muted-foreground">
                 Keep me updated with product news, regulatory changes, and training resources. You can unsubscribe at any time.
               </span>
             </label>
@@ -673,10 +673,10 @@ export function CompleteProfileForm() {
                 type="checkbox"
                 checked={recruitmentOptIn}
                 onChange={e => setRecruitmentOptIn(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
               />
-              <span className="text-xs text-gray-500">
-                Share my profile with approved recruitment partners to receive relevant job opportunities and salary insights. See our <Link href="/privacy" className="text-black font-bold hover:underline">Privacy Policy</Link> for details.
+              <span className="text-sm font-medium text-muted-foreground">
+                Share my profile with approved recruitment partners to receive relevant job opportunities and salary insights.
               </span>
             </label>
           </div>
@@ -689,13 +689,13 @@ export function CompleteProfileForm() {
 
           <Button
             type="submit"
-            className="w-full h-12 bg-black text-white hover:bg-gray-800 font-bold rounded-xl"
+            className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/80 font-semibold rounded-xl"
             disabled={loading}
           >
             {loading ? 'Saving...' : 'Continue'}
           </Button>
 
-          <p className="text-[11px] text-gray-300 text-center leading-relaxed">
+          <p className="text-xs text-muted-foreground/60 text-center leading-relaxed">
             You can update these details at any time from your profile settings.
           </p>
         </form>
