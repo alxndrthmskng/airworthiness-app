@@ -72,12 +72,12 @@ export function EmploymentForm({ periods: initialPeriods }: Props) {
               <CardContent className="flex items-center justify-between py-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-gray-900">{period.employer}</p>
+                    <p className="font-medium text-foreground">{period.employer}</p>
                     {period.is_military && (
                       <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">Military / Non-Civil</span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     {new Date(period.start_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
                     {' \u2013 '}
                     {period.end_date
@@ -140,9 +140,9 @@ export function EmploymentForm({ periods: initialPeriods }: Props) {
               type="checkbox"
               checked={isMilitary}
               onChange={e => setIsMilitary(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
+              className="h-4 w-4 rounded border-border"
             />
-            <span className="text-sm text-gray-700">Military or non-civil aviation employer</span>
+            <span className="text-sm text-foreground">Military or non-civil aviation employer</span>
           </label>
 
           {error && <p className="text-sm text-red-500">{error}</p>}

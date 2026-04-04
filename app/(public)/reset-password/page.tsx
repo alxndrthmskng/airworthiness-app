@@ -48,13 +48,13 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-sm">
 
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Set new password</h1>
-          <p className="text-sm text-gray-500 mt-2">Enter your new password below.</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Set new password</h1>
+          <p className="text-sm text-muted-foreground mt-2">Enter your new password below.</p>
         </div>
 
         <form onSubmit={(e) => { e.preventDefault(); handleUpdatePassword() }} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs text-gray-500">New password</Label>
+            <Label htmlFor="password" className="text-sm font-medium text-muted-foreground">New password</Label>
             <Input
               id="password"
               type="password"
@@ -66,7 +66,7 @@ export default function ResetPasswordPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="confirm-password" className="text-xs text-gray-500">Confirm password</Label>
+            <Label htmlFor="confirm-password" className="text-sm font-medium text-muted-foreground">Confirm password</Label>
             <Input
               id="confirm-password"
               type="password"
@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
 
           <Button
             type="submit"
-            className="w-full h-12 bg-[#123456] text-white hover:bg-[#0e2a45] font-semibold rounded-xl"
+            className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/80 font-semibold rounded-xl"
             disabled={loading}
           >
             {loading ? 'Updating...' : 'Update password'}

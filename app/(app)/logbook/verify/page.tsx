@@ -87,20 +87,20 @@ export default async function VerifyPage({
           </Link>
         </div>
 
-        <div className="bg-white rounded-xl border p-4 mb-6">
-          <p className="text-sm text-gray-600">
+        <div className="bg-card rounded-xl border p-4 mb-6">
+          <p className="text-sm text-muted-foreground">
             <span className="font-medium">Your AML:</span> {profile.aml_licence_number}, Categories: {verifierCategories.join(', ') || 'None'}
           </p>
         </div>
 
         {entries.length === 0 ? (
-          <div className="bg-white rounded-xl border p-8 text-center text-gray-500">
+          <div className="bg-card rounded-xl border p-8 text-center text-muted-foreground">
             <p>No entries pending your verification.</p>
             <p className="text-sm mt-1">Entries will appear here when personnel at your employer submit them.</p>
           </div>
         ) : (
           <>
-            <div className="bg-white rounded-xl border overflow-hidden">
+            <div className="bg-card rounded-xl border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -126,12 +126,12 @@ export default async function VerifyPage({
                       </TableCell>
                       <TableCell>
                         <div>{entry.aircraft_type}</div>
-                        <div className="text-xs text-gray-500">{entry.aircraft_registration}</div>
+                        <div className="text-xs text-muted-foreground">{entry.aircraft_registration}</div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-sm text-gray-600">
+                      <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                         {label(ATA_CHAPTERS, entry.ata_chapter)}
                       </TableCell>
-                      <TableCell className="hidden md:table-cell text-sm text-gray-600">
+                      <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                         {label(MAINTENANCE_CATEGORIES, entry.category)}
                       </TableCell>
                       <TableCell>{Number(entry.duration_hours).toFixed(1)}</TableCell>

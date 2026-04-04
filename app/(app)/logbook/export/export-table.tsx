@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAtaLabel } from '@/lib/logbook/constants'
 import { createClient } from '@/lib/supabase/client'
-import { AdPlaceholder } from '@/components/ad-placeholder'
 
 function parseDateFilter(ddmmyyyy: string): string {
   const parts = ddmmyyyy.split('/')
@@ -224,14 +223,14 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
 
         {/* Licence Category */}
         <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Licence Category</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Licence Category</p>
           <div className="flex flex-wrap gap-2">
             {CATEGORY_ORDER.map(cat => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => toggleCategory(cat)}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${selectedCategories.has(cat) ? 'bg-[#1565C0] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${selectedCategories.has(cat) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
               >
                 {CATEGORY_LABELS[cat]}
               </button>
@@ -241,14 +240,14 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
 
         {/* Facility */}
         <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Facility</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Facility</p>
           <div className="flex flex-wrap gap-2">
             {['base_maintenance', 'line_maintenance'].map(f => (
               <button
                 key={f}
                 type="button"
                 onClick={() => toggleFacility(f)}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${selectedFacilities.has(f) ? 'bg-[#1565C0] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${selectedFacilities.has(f) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
               >
                 {FACILITY_LABELS[f]}
               </button>
@@ -259,9 +258,9 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
         {/* ATA Group */}
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">ATA Group</p>
-            <button type="button" onClick={() => setSelectedAta(new Set(allAta))} className="text-xs text-[#1565C0] hover:underline">All</button>
-            <button type="button" onClick={() => setSelectedAta(new Set())} className="text-xs text-gray-400 hover:underline">None</button>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">ATA Group</p>
+            <button type="button" onClick={() => setSelectedAta(new Set(allAta))} className="text-xs text-primary hover:underline">All</button>
+            <button type="button" onClick={() => setSelectedAta(new Set())} className="text-xs text-muted-foreground hover:underline">None</button>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {allAta.map(ata => (
@@ -269,7 +268,7 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                 key={ata}
                 type="button"
                 onClick={() => toggleAta(ata)}
-                className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors ${selectedAta.has(ata) ? 'bg-[#1565C0] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors ${selectedAta.has(ata) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
               >
                 {ata}
               </button>
@@ -279,7 +278,7 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
 
         {/* Date range */}
         <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Date Range</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Date Range</p>
           <div className="flex items-center gap-3">
             <input
               type="text"
@@ -287,28 +286,28 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
               onChange={e => setDateFrom(e.target.value.replace(/[^\d/]/g, '').slice(0, 10))}
               placeholder="DD/MM/YYYY"
               maxLength={10}
-              className="text-sm h-9 px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
+              className="text-sm h-9 px-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
             />
-            <span className="text-gray-400 text-sm">to</span>
+            <span className="text-muted-foreground text-sm">to</span>
             <input
               type="text"
               value={dateTo}
               onChange={e => setDateTo(e.target.value.replace(/[^\d/]/g, '').slice(0, 10))}
               placeholder="DD/MM/YYYY"
               maxLength={10}
-              className="text-sm h-9 px-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
+              className="text-sm h-9 px-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
             />
             {(dateFrom || dateTo) && (
-              <button type="button" onClick={() => { setDateFrom(''); setDateTo('') }} className="text-xs text-gray-400 hover:text-gray-600">Clear</button>
+              <button type="button" onClick={() => { setDateFrom(''); setDateTo('') }} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
             )}
           </div>
         </div>
 
         {/* Search */}
         <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Search</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Search</p>
           <div className="relative max-w-sm">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
             <input
@@ -316,10 +315,10 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder=""
-              className="w-full text-sm h-9 pl-8 pr-3 border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-sm h-9 pl-8 pr-3 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {search && (
-              <button type="button" onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs">✕</button>
+              <button type="button" onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs">✕</button>
             )}
           </div>
         </div>
@@ -327,11 +326,11 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
         {/* Columns toggle */}
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Columns</p>
-            <button type="button" onClick={() => setShowColPanel(v => !v)} className="text-xs text-[#1565C0] hover:underline">{showColPanel ? 'Hide' : 'Customise'}</button>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Columns</p>
+            <button type="button" onClick={() => setShowColPanel(v => !v)} className="text-xs text-primary hover:underline">{showColPanel ? 'Hide' : 'Customise'}</button>
           </div>
           {showColPanel && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-1">
+            <div className="bg-muted border rounded-lg p-3 space-y-1">
               {columns.map((col, idx) => (
                 <div key={col.key} className="flex items-center gap-2">
                   <input
@@ -341,27 +340,27 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                     id={`col-${col.key}`}
                     className="rounded"
                   />
-                  <label htmlFor={`col-${col.key}`} className="text-sm text-gray-700 flex-1 cursor-pointer">{col.label}</label>
-                  <button type="button" disabled={idx === 0} onClick={() => moveCol(col.key, -1)} className="text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs px-1">▲</button>
-                  <button type="button" disabled={idx === columns.length - 1} onClick={() => moveCol(col.key, 1)} className="text-gray-400 hover:text-gray-600 disabled:opacity-30 text-xs px-1">▼</button>
+                  <label htmlFor={`col-${col.key}`} className="text-sm text-foreground flex-1 cursor-pointer">{col.label}</label>
+                  <button type="button" disabled={idx === 0} onClick={() => moveCol(col.key, -1)} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs px-1">▲</button>
+                  <button type="button" disabled={idx === columns.length - 1} onClick={() => moveCol(col.key, 1)} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs px-1">▼</button>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <p className="text-xs text-gray-400">{totalFiltered} entries shown</p>
+        <p className="text-xs text-muted-foreground">{totalFiltered} entries shown</p>
       </div>
 
       {/* Grouped table */}
       {grouped.length === 0 ? (
-        <p className="text-gray-500 text-center py-8">No entries match the selected filters.</p>
+        <p className="text-muted-foreground text-center py-8">No entries match the selected filters.</p>
       ) : (
         <div className="space-y-8">
           {grouped.map(group => (
             <div key={group.category}>
               {/* Category heading */}
-              <h2 className="text-base font-bold text-gray-900 mb-3 pb-1 border-b-2 border-gray-300 print:text-sm">
+              <h2 className="text-base font-bold text-foreground mb-3 pb-1 border-b-2 border-border print:text-sm">
                 {group.label}
               </h2>
 
@@ -369,14 +368,14 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                 {group.ataGroups.map(({ ata, entries: ataEntries }, ataIdx) => (
                   <div key={ata}>
                     {/* ATA subheading */}
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 print:text-[10px]">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 print:text-[10px]">
                       {ata ? getAtaLabel(ata) : 'Uncategorised'}
                     </h3>
                     <div className="border rounded-lg print:border-black">
                       <table className="w-full text-sm print:text-xs border-separate border-spacing-0">
                         <thead>
-                          <tr className="bg-gray-50">
-                            <th className="w-8 px-1 py-2 border-b border-gray-200 print:hidden rounded-tl-lg" />
+                          <tr className="bg-muted">
+                            <th className="w-8 px-1 py-2 border-b border-border print:hidden rounded-tl-lg" />
                             {visibleCols.map((col, colIdx) => (
                               <th
                                 key={col.key}
@@ -385,9 +384,9 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                                 onDragOver={e => handleDragOver(e, col.key)}
                                 onDrop={() => handleDrop(col.key)}
                                 onDragEnd={() => { setDragging(null); setDragOver(null) }}
-                                className={`text-center px-3 py-2 text-xs font-semibold text-gray-600 whitespace-nowrap cursor-grab print:cursor-default print:px-1 select-none border-b border-l border-gray-200 print:border-gray-800 ${colIdx === visibleCols.length - 1 ? 'rounded-tr-lg' : ''} ${colIdx === 0 ? 'border-l-0' : ''} ${dragOver === col.key ? 'bg-blue-50' : ''} ${dragging === col.key ? 'opacity-50' : ''}`}
+                                className={`text-center px-3 py-2 text-xs font-semibold text-muted-foreground whitespace-nowrap cursor-grab print:cursor-default print:px-1 select-none border-b border-l border-border print:border-gray-800 ${colIdx === visibleCols.length - 1 ? 'rounded-tr-lg' : ''} ${colIdx === 0 ? 'border-l-0' : ''} ${dragOver === col.key ? 'bg-accent' : ''} ${dragging === col.key ? 'opacity-50' : ''}`}
                               >
-                                <span className="print:hidden mr-1 text-gray-300">⠿</span>
+                                <span className="print:hidden mr-1 text-muted-foreground/40">⠿</span>
                                 {col.label}
                               </th>
                             ))}
@@ -396,11 +395,11 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                         <tbody>
                           {ataEntries.map(entry => (
                             <tr key={entry.id}>
-                              <td className="px-1 py-2 text-center print:hidden border-t border-gray-200">
+                              <td className="px-1 py-2 text-center print:hidden border-t border-border">
                                 <button
                                   type="button"
                                   onClick={() => router.push('/logbook?edit=' + entry.id)}
-                                  className="text-gray-300 hover:text-blue-600 transition-colors"
+                                  className="text-muted-foreground/40 hover:text-blue-600 transition-colors"
                                   title="Edit entry"
                                 >
                                   <svg className="w-3.5 h-3.5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -411,11 +410,11 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                               {visibleCols.map(col => (
                                 <td
                                   key={col.key}
-                                  className={`px-3 py-2 print:px-1 text-center align-middle border-t border-l border-gray-200 print:border-gray-800 ${col.key === 'task_detail' ? 'max-w-xs' : col.key === 'task_type' ? 'max-w-[160px] w-[160px]' : 'whitespace-nowrap'} ${col.key === 'supervisor' ? 'w-32 min-w-[8rem]' : ''}`}
+                                  className={`px-3 py-2 print:px-1 text-center align-middle border-t border-l border-border print:border-gray-800 ${col.key === 'task_detail' ? 'max-w-xs' : col.key === 'task_type' ? 'max-w-[160px] w-[160px]' : 'whitespace-nowrap'} ${col.key === 'supervisor' ? 'w-32 min-w-[8rem]' : ''}`}
                                 >
                                   {col.key === 'task_type' ? (() => {
                                     const types = extractTaskTypes(entry.description)
-                                    if (types.length === 0) return <span className="text-gray-300">—</span>
+                                    if (types.length === 0) return <span className="text-muted-foreground/40">—</span>
                                     return (
                                       <div className="flex flex-wrap gap-1 justify-center items-center mx-auto">
                                         {types.map(t => (
@@ -430,7 +429,7 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                                         <button
                                           type="button"
                                           onMouseEnter={() => loadSignedUrl(entry.work_order_photo_path!)}
-                                          className="inline-flex items-center text-gray-400 hover:text-blue-500 transition-colors"
+                                          className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors"
                                           title="View evidence"
                                         >
                                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -438,11 +437,11 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" />
                                           </svg>
                                         </button>
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/photo:block z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-1.5">
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/photo:block z-50 bg-popover border rounded-lg shadow-xl p-1.5">
                                           {signedUrls[entry.work_order_photo_path] ? (
                                             <img src={signedUrls[entry.work_order_photo_path]} alt="Evidence" className="max-w-[220px] max-h-[220px] object-contain rounded" />
                                           ) : (
-                                            <div className="w-24 h-24 flex items-center justify-center text-xs text-gray-400">Loading...</div>
+                                            <div className="w-24 h-24 flex items-center justify-center text-xs text-muted-foreground">Loading...</div>
                                           )}
                                         </div>
                                       </div>
@@ -455,9 +454,6 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                         </tbody>
                       </table>
                     </div>
-                    {ataIdx < group.ataGroups.length - 1 && (
-                      <AdPlaceholder format="banner" className="print:hidden mt-4" />
-                    )}
                   </div>
                 ))}
               </div>

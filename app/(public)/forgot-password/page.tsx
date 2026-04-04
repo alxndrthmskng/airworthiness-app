@@ -38,8 +38,8 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-sm">
 
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Reset your password</h1>
-          <p className="text-sm text-gray-500 mt-2">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Reset your password</h1>
+          <p className="text-sm text-muted-foreground mt-2">
             Enter your email and we will send you a reset link.
           </p>
         </div>
@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-sm text-gray-600">Check your email for a password reset link.</p>
+            <p className="text-sm text-muted-foreground">Check your email for a password reset link.</p>
             <Link href="/login">
               <Button variant="outline" className="w-full h-12 rounded-xl font-semibold">Back to login</Button>
             </Link>
@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
         ) : (
           <form onSubmit={(e) => { e.preventDefault(); handleReset() }} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs text-gray-500">Email</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-muted-foreground">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -78,15 +78,15 @@ export default function ForgotPasswordPage() {
 
             <Button
               type="submit"
-              className="w-full h-12 bg-[#123456] text-white hover:bg-[#0e2a45] font-semibold rounded-xl"
+              className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/80 font-semibold rounded-xl"
               disabled={loading || !email}
             >
               {loading ? 'Sending...' : 'Send reset link'}
             </Button>
 
-            <p className="text-sm text-center text-gray-400">
+            <p className="text-sm text-center text-muted-foreground">
               Remember your password?{' '}
-              <Link href="/signup?mode=login" className="text-[#123456] font-medium hover:underline">
+              <Link href="/signup?mode=login" className="text-primary font-medium hover:underline">
                 Sign in
               </Link>
             </p>

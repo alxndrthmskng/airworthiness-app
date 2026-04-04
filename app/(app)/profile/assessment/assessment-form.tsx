@@ -73,13 +73,13 @@ export function AssessmentForm() {
     return (
       <div className="text-center py-8">
         <div className="text-5xl mb-4">{passed ? '🎉' : '😞'}</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           {passed ? 'Assessment Passed!' : 'Not quite there'}
         </h2>
-        <p className="text-gray-500 mb-2">
+        <p className="text-muted-foreground mb-2">
           You scored {score} out of {COMPETENCY_QUESTIONS.length} ({Math.round((score / COMPETENCY_QUESTIONS.length) * 100)}%)
         </p>
-        <p className="text-sm text-gray-400 mb-6">
+        <p className="text-sm text-muted-foreground mb-6">
           {passed
             ? 'You can now list your profile publicly for recruiters.'
             : `You need at least ${COMPETENCY_PASS_SCORE}% to pass. Review the questions below and try again.`}
@@ -92,7 +92,7 @@ export function AssessmentForm() {
             const isCorrect = userAnswer === q.correctIndex
             return (
               <div key={q.id} className={`p-4 rounded-lg border ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                <p className="font-medium text-gray-900 text-sm mb-1">
+                <p className="font-medium text-foreground text-sm mb-1">
                   {qi + 1}. {q.question}
                 </p>
                 <p className="text-sm">
@@ -131,7 +131,7 @@ export function AssessmentForm() {
       <div className="space-y-8">
         {COMPETENCY_QUESTIONS.map((q, qi) => (
           <div key={q.id}>
-            <p className="font-medium text-gray-900 mb-3">
+            <p className="font-medium text-foreground mb-3">
               {qi + 1}. {q.question}
             </p>
             <div className="space-y-2">
@@ -142,8 +142,8 @@ export function AssessmentForm() {
                   onClick={() => selectAnswer(q.id, oi)}
                   className={`w-full text-left px-4 py-3 rounded-lg border text-sm transition-colors ${
                     answers[q.id] === oi
-                      ? 'bg-gray-900 text-white border-gray-900'
-                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'bg-card text-foreground border-border hover:border-foreground/40'
                   }`}
                 >
                   {option}
@@ -159,7 +159,7 @@ export function AssessmentForm() {
       )}
 
       <div className="mt-8 flex items-center justify-between">
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted-foreground">
           {Object.keys(answers).length} of {COMPETENCY_QUESTIONS.length} answered
         </p>
         <Button onClick={handleSubmit} disabled={loading}>

@@ -1,7 +1,13 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { SignUpForm } from '@/components/signup-form'
+
+export const metadata: Metadata = {
+  title: 'Airworthiness | Free Tools for Aviation Engineers',
+  description: 'Free digital logbook, continuation training, module tracking, and competency assessment for UK Aircraft Maintenance Licence holders.',
+}
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -13,50 +19,50 @@ export default async function HomePage() {
     <div className="min-h-screen">
 
       {/* Hero with sign-up form */}
-      <section className="py-24 lg:py-40">
+      <section className="py-20 lg:py-32">
         <div className="max-w-2xl mx-auto px-6 text-center">
-          <h1 className="text-5xl lg:text-6xl font-extrabold text-gray-900 leading-[1.1] tracking-tight">
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground leading-tight tracking-tight">
             Your experience,<br />
             organised.
           </h1>
-          <p className="text-xl text-gray-500 leading-relaxed mt-8 mx-auto max-w-lg">
+          <p className="text-sm text-muted-foreground leading-relaxed mt-4 mx-auto max-w-lg">
             Free tools for aviation engineering professionals. Digital logbook, continuation training, module tracking, and more.
           </p>
-          <div className="mt-10 max-w-sm mx-auto">
+          <div className="mt-8 max-w-sm mx-auto">
             <SignUpForm />
           </div>
         </div>
       </section>
 
-      {/* Features — simple, no icons */}
-      <section className="border-t border-gray-100 py-20 lg:py-28">
+      {/* Features */}
+      <section className="border-t border-border py-16 lg:py-24">
         <div className="max-w-3xl mx-auto px-4">
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight text-center mb-16">
+          <h2 className="text-lg font-semibold text-foreground tracking-tight text-center mb-12">
             Everything an aviation engineer needs. Free.
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Continuation Training</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Continuation Training</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Human Factors, EWIS, and Fuel Tank Safety. Complete the course, pass the exam, receive a verifiable certificate.
               </p>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Digital Logbook</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Digital Logbook</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Record maintenance tasks in the format required by the Civil Aviation Authority. Build recency for licence applications.
               </p>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Module Tracker</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Module Tracker</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Track your Part 66 module exam progress across all categories. Upload certificates and monitor expiry dates.
               </p>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Competency Assessment</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Competency Assessment</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Practise core maintenance knowledge questions covering human factors, procedures, and regulations.
               </p>
             </div>
@@ -65,45 +71,45 @@ export default async function HomePage() {
       </section>
 
       {/* Consultancy */}
-      <section className="border-t border-gray-100 py-20 lg:py-28 bg-gray-50">
+      <section className="border-t border-border py-16 lg:py-24 bg-muted">
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-4">
+          <h2 className="text-lg font-semibold text-foreground tracking-tight mb-3">
             Consultancy for organisations
           </h2>
-          <p className="text-sm text-gray-500 max-w-xl mx-auto leading-relaxed mb-12">
+          <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed mb-10">
             We work with initial and continuing airworthiness organisations. Independent audits,
             safety advisory, crisis management, and nominated personnel coaching.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left max-w-2xl mx-auto">
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 text-sm mb-1">Independent Audits</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left max-w-2xl mx-auto">
+            <div className="bg-card rounded-xl border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Independent Audits</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Part 145, Part 147, Part 21G, and Part CAMO compliance audits.
               </p>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 text-sm mb-1">Safety Advisory</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+            <div className="bg-card rounded-xl border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Safety Advisory</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Safety Review Boards, Safety Action Groups, and management system advisory.
               </p>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 text-sm mb-1">Crisis Management</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+            <div className="bg-card rounded-xl border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Crisis Management</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Level 1 Response Plans and crisis management capability development.
               </p>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 text-sm mb-1">Personnel Coaching</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">
+            <div className="bg-card rounded-xl border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-1">Personnel Coaching</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Preparing nominated personnel for CAA acceptance interviews.
               </p>
             </div>
           </div>
 
-          <div className="mt-10">
-            <a href="mailto:contact@airworthiness.org.uk" className="text-sm font-semibold text-[#123456] hover:underline">
+          <div className="mt-8">
+            <a href="mailto:contact@airworthiness.org.uk" className="text-sm font-semibold text-primary hover:underline">
               contact@airworthiness.org.uk
             </a>
           </div>

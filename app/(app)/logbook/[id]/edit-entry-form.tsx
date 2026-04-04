@@ -197,7 +197,7 @@ export function EditEntryForm({ entry, employers }: Props) {
 
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={supervised} onChange={e => setSupervised(e.target.checked)} className="accent-blue-600 w-4 h-4" />
-            <span className="text-sm text-gray-700">This task was supervised</span>
+            <span className="text-sm text-foreground">This task was supervised</span>
           </label>
         </CardContent>
       </Card>

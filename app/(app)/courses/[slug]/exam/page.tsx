@@ -53,7 +53,7 @@ export default async function ExamPage({ params }: Props) {
     return (
       <div className="min-h-screen aw-gradient flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-gray-700">No exam available yet</h1>
+          <h1 className="text-xl font-semibold text-foreground">No exam available yet</h1>
           <Link href={`/courses/${slug}`} className="text-blue-600 hover:underline mt-2 block">
             ← Back to course
           </Link>
@@ -90,8 +90,8 @@ export default async function ExamPage({ params }: Props) {
         </Link>
 
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-foreground">{course.title}</h1>
+          <p className="text-muted-foreground mt-1">
             Final exam, {questions?.length} questions · Pass mark: {exam.pass_score}%
           </p>
         </div>

@@ -8,7 +8,7 @@ export default function AppLayout({
   return (
     <>
       <AppSidebar />
-      <main className="md:ml-60 min-h-screen bg-white">
+      <main className="md:ml-60 min-h-screen bg-background">
         {/* Mobile top padding for the mobile header */}
         <div className="md:hidden h-12" />
         <div className="max-w-4xl mx-auto px-6 py-8">

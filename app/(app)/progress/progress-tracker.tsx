@@ -12,13 +12,11 @@ import {
   VERIFICATION_STATUSES,
 } from '@/lib/progress/constants'
 import type { ExamRow } from '@/lib/progress/types'
-import { AdPlaceholder } from '@/components/ad-placeholder'
 
 interface ProgressTrackerProps {
   examRows: ExamRow[]
   selectedCategory: string
   userId: string
-  showAds?: boolean
 }
 
 // MCQ form state
@@ -42,7 +40,7 @@ interface EssayFormState {
 function scoreColor(score: string): string {
   const num = parseInt(score, 10)
   if (isNaN(num) || score === '') return ''
-  return num >= PASS_MARK ? 'bg-green-50 border-green-300 text-green-900' : 'bg-red-50 border-red-300 text-red-900'
+  return num >= PASS_MARK ? 'bg-green-50 border-green-300 text-green-900 dark:bg-green-950 dark:border-green-700 dark:text-green-100' : 'bg-red-50 border-red-300 text-red-900 dark:bg-red-950 dark:border-red-700 dark:text-red-100'
 }
 
 function initMcqForm(row: ExamRow): McqFormState {
@@ -67,7 +65,7 @@ function initEssayForm(row: ExamRow): EssayFormState {
   }
 }
 
-export function ProgressTracker({ examRows, selectedCategory, userId, showAds }: ProgressTrackerProps) {
+export function ProgressTracker({ examRows, selectedCategory, userId }: ProgressTrackerProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -296,11 +294,11 @@ export function ProgressTracker({ examRows, selectedCategory, userId, showAds }:
           <Card
             className={`${
               row.isExpired
-                ? 'border-red-200 bg-red-50/30'
+                ? 'border-red-200 bg-red-50/30 dark:border-red-800 dark:bg-red-950/30'
                 : examPassed
-                  ? 'border-green-200 bg-green-50/30'
+                  ? 'border-green-200 bg-green-50/30 dark:border-green-800 dark:bg-green-950/30'
                   : isEquivalent
-                    ? 'border-blue-200 bg-blue-50/30'
+                    ? 'border-blue-200 bg-blue-50/30 dark:border-blue-800 dark:bg-blue-950/30'
                     : ''
             }`}
           >
@@ -381,9 +379,6 @@ export function ProgressTracker({ examRows, selectedCategory, userId, showAds }:
               />
             )}
           </Card>
-          {showAds && index < examRows.length - 1 && (
-            <AdPlaceholder format="banner" className="my-2" />
-          )}
         </React.Fragment>
         )
       })}
@@ -418,7 +413,7 @@ function McqCardContent({
     <CardContent>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">
+          <label className="block text-xs font-medium text-muted-foreground mb-1">
             Part 147 Approval Reference
           </label>
           <Input
@@ -431,7 +426,7 @@ function McqCardContent({
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">
+          <label className="block text-xs font-medium text-muted-foreground mb-1">
             Certificate Reference
           </label>
           <Input
@@ -444,7 +439,7 @@ function McqCardContent({
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">
+          <label className="block text-xs font-medium text-muted-foreground mb-1">
             Issue Date
           </label>
           <Input
@@ -456,7 +451,7 @@ function McqCardContent({
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">
+          <label className="block text-xs font-medium text-muted-foreground mb-1">
             Mark (%)
           </label>
           <Input
@@ -491,7 +486,7 @@ function McqCardContent({
               if (file) onUpload(row.moduleId, file)
             }}
           />
-          <span className="inline-flex items-center px-3 py-1.5 rounded-md border text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+          <span className="inline-flex items-center px-3 py-1.5 rounded-md border text-xs font-medium text-muted-foreground hover:bg-muted transition-colors">
             {uploading
               ? 'Uploading...'
               : row.progress?.certificate_photo_path
@@ -555,7 +550,7 @@ function EssayCardContent({
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
               Part 147 Approval Reference
             </label>
             <Input
@@ -568,7 +563,7 @@ function EssayCardContent({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
               Certificate Reference
             </label>
             <Input
@@ -581,7 +576,7 @@ function EssayCardContent({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
               Issue Date
             </label>
             <Input
@@ -593,7 +588,7 @@ function EssayCardContent({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
               {form.essay_split ? 'Mark 1 (%)' : 'Mark (%)'}
             </label>
             <Input
@@ -615,9 +610,9 @@ function EssayCardContent({
               type="checkbox"
               checked={form.essay_split}
               onChange={e => onFieldChange(row.moduleId, 'essay_split', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
+              className="h-4 w-4 rounded border-border"
             />
-            <span className="text-xs text-gray-600">
+            <span className="text-xs text-muted-foreground">
               Split Essay Marks
             </span>
           </label>
@@ -627,7 +622,7 @@ function EssayCardContent({
           <div className="grid grid-cols-2 gap-4">
             <div />
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
                 Mark 2 (%)
               </label>
               <Input

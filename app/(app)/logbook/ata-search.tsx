@@ -47,9 +47,9 @@ export function AtaSearch({ selected, onChange }: AtaSearchProps) {
       {selectedLabels.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1">
           {selectedLabels.map(s => (
-            <span key={s.value} className="inline-flex items-center gap-1 bg-[#1565C0] text-white text-xs font-semibold px-2.5 py-1 rounded-lg">
+            <span key={s.value} className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 rounded-lg">
               {s.label}
-              <button type="button" onClick={() => remove(s.value)} className="text-white/70 hover:text-white">
+              <button type="button" onClick={() => remove(s.value)} className="text-primary-foreground/70 hover:text-primary-foreground">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -66,12 +66,12 @@ export function AtaSearch({ selected, onChange }: AtaSearchProps) {
         onChange={e => { setQuery(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
         placeholder=""
-        className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+        className="w-full px-3 py-1.5 border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
       />
 
       {/* Dropdown */}
       {open && filtered.length > 0 && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border rounded-lg shadow-lg max-h-48 overflow-y-auto">
           {filtered.map(ch => {
             const isSelected = selected.includes(ch.value)
             return (
@@ -80,8 +80,8 @@ export function AtaSearch({ selected, onChange }: AtaSearchProps) {
                 type="button"
                 onClick={() => add(ch.value)}
                 disabled={isSelected}
-                className={`block w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
-                  isSelected ? 'text-gray-300' : 'text-gray-700'
+                className={`block w-full text-left px-3 py-2 text-sm hover:bg-muted ${
+                  isSelected ? 'text-muted-foreground/40' : 'text-popover-foreground'
                 }`}
               >
                 {ch.label}

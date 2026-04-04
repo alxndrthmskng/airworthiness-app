@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import Script from 'next/script'
 import { Alexandria } from 'next/font/google'
 import './globals.css'
 import { CookieBanner } from '@/components/cookie-banner'
 import { ScrollToTop } from '@/components/scroll-to-top'
+import { ThemeProvider } from '@/components/theme-provider'
 
 const alexandria = Alexandria({
   subsets: ['latin'],
@@ -22,16 +22,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${alexandria.variable} antialiased`} style={{ fontFamily: 'var(--font-alexandria), sans-serif' }}>
-        <Script
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7968073666840898"
-          crossOrigin="anonymous"
-          strategy="beforeInteractive"
-        />
-        {children}
-        <CookieBanner />
-        <ScrollToTop />
+        <ThemeProvider>
+          {children}
+          <CookieBanner />
+          <ScrollToTop />
+        </ThemeProvider>
       </body>
     </html>
   )

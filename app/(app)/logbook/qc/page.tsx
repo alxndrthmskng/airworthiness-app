@@ -67,11 +67,11 @@ export default async function QcPage() {
         </div>
 
         {filteredEntries.length === 0 ? (
-          <div className="bg-white rounded-xl border p-8 text-center text-gray-500">
+          <div className="bg-card rounded-xl border p-8 text-center text-muted-foreground">
             <p>No entries pending QC review at your employer(s).</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border overflow-hidden">
+          <div className="bg-card rounded-xl border overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -97,12 +97,12 @@ export default async function QcPage() {
                     </TableCell>
                     <TableCell>
                       <div>{entry.aircraft_type}</div>
-                      <div className="text-xs text-gray-500">{entry.aircraft_registration}</div>
+                      <div className="text-xs text-muted-foreground">{entry.aircraft_registration}</div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-gray-600">
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                       {entry.job_number ?? '-'}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-gray-600">
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                       {label(ATA_CHAPTERS, entry.ata_chapter)}
                     </TableCell>
                     <TableCell>{Number(entry.duration_hours).toFixed(1)}</TableCell>

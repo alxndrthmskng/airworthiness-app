@@ -17,7 +17,7 @@ interface AtaChartProps {
 
 const btnClass = (active: boolean) =>
   `px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-    active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+    active ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:bg-muted/80'
   }`
 
 const CATEGORY_FILTERS: { value: string; label: string; cats: AircraftCategory[] }[] = [
@@ -92,7 +92,7 @@ export function AtaChart({ entries }: AtaChartProps) {
 
   if (entries.length === 0) {
     return (
-      <div className="bg-white rounded-xl p-6 mb-6 text-center text-gray-400">
+      <div className="bg-card rounded-xl p-6 mb-6 text-center text-muted-foreground">
         <p className="text-sm">Add logbook entries to see your ATA distribution chart.</p>
         <p className="text-xs mt-1">The practical experience shall involve a representative cross section of maintenance tasks on aircraft.</p>
       </div>
@@ -100,11 +100,11 @@ export function AtaChart({ entries }: AtaChartProps) {
   }
 
   return (
-    <div className="bg-white rounded-xl p-5 mb-6">
+    <div className="bg-card rounded-xl p-5 mb-6">
 
       {/* Licence Categories */}
       <div className="mb-4">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Licence Categories</p>
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Licence Categories</p>
         <div className="flex gap-2 flex-wrap">
           {CATEGORY_FILTERS.map(f => (
             <button key={f.value} onClick={() => setCatFilter(f.value)} className={btnClass(catFilter === f.value)}>
@@ -117,7 +117,7 @@ export function AtaChart({ entries }: AtaChartProps) {
 
       {/* Arrange */}
       <div className="mb-4">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Arrange</p>
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Arrange</p>
         <div className="flex gap-2 flex-wrap">
           {([['ata', 'ATA Order'], ['most', 'Most Tasks'], ['least', 'Least Tasks']] as const).map(([val, label]) => (
             <button key={val} onClick={() => setSortBy(val)} className={btnClass(sortBy === val)}>
@@ -131,7 +131,7 @@ export function AtaChart({ entries }: AtaChartProps) {
       <div className="flex" style={{ paddingTop: 12 }}>
         {/* Y-axis title + labels */}
         <div className="flex flex-col items-center mr-1">
-          <span className="text-[8px] text-gray-400 font-medium" style={{ writingMode: 'vertical-lr', transform: 'rotate(180deg)', marginBottom: 4 }}>Amount of Tasks</span>
+          <span className="text-[8px] text-muted-foreground font-medium" style={{ writingMode: 'vertical-lr', transform: 'rotate(180deg)', marginBottom: 4 }}>Amount of Tasks</span>
         </div>
         <div className="relative flex-shrink-0" style={{ width: 24, height: 250 }}>
           {yTicks.map(tick => {
@@ -139,7 +139,7 @@ export function AtaChart({ entries }: AtaChartProps) {
             return (
               <div
                 key={tick}
-                className="absolute text-[10px] leading-none text-gray-400 text-right flex items-center"
+                className="absolute text-[10px] leading-none text-muted-foreground text-right flex items-center"
                 style={{ top: `calc(${pct}% - 5px)`, left: 0, right: 2, height: 10 }}
               >
                 {tick}
@@ -150,12 +150,12 @@ export function AtaChart({ entries }: AtaChartProps) {
 
         {/* Bar area */}
         <div className="flex-1 min-w-0">
-          <div className="relative border-l border-b border-gray-300" style={{ height: 250 }}>
+          <div className="relative border-l border-b border-border" style={{ height: 250 }}>
 
             {yTicks.filter(t => t > 0).map(tick => (
               <div
                 key={`grid-${tick}`}
-                className="absolute left-0 right-0 border-t border-gray-100"
+                className="absolute left-0 right-0 border-t border-border"
                 style={{ bottom: `${(tick / maxCount) * 100}%` }}
               />
             ))}
@@ -198,16 +198,16 @@ export function AtaChart({ entries }: AtaChartProps) {
           <div className="flex gap-1 px-1" style={{ height: 24 }}>
             {ataCounts.map(({ code }) => (
               <div key={`label-${code}`} className="flex-1 flex items-start justify-center pt-1">
-                <span className="text-[9px] text-gray-500 font-medium">{code}</span>
+                <span className="text-[9px] text-muted-foreground font-medium">{code}</span>
               </div>
             ))}
           </div>
           {/* X-axis title */}
-          <p className="text-[8px] text-gray-400 font-medium text-center">ATA Chapters</p>
+          <p className="text-[8px] text-muted-foreground font-medium text-center">ATA Chapters</p>
         </div>
       </div>
 
-      <p className="text-xs text-gray-400 mt-3 text-center">
+      <p className="text-xs text-muted-foreground mt-3 text-center">
         The practical experience shall involve a representative cross section of maintenance tasks on aircraft.
       </p>
     </div>

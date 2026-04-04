@@ -60,7 +60,7 @@ export function TrainingDateInput({ slug, label }: TrainingDateInputProps) {
 
   return (
     <div className="mt-2 space-y-2">
-      <p className="text-sm text-gray-400">No certificate on record. If completed with another provider, enter the date below.</p>
+      <p className="text-sm text-muted-foreground">No certificate on record. If completed with another provider, enter the date below.</p>
       <div className="flex items-center gap-3">
         <Input
           type="date"
@@ -81,7 +81,7 @@ export function TrainingDateInput({ slug, label }: TrainingDateInputProps) {
               if (file) handleUpload(file)
             }}
           />
-          <span className="inline-flex items-center px-3 py-1.5 rounded-md border text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+          <span className="inline-flex items-center px-3 py-1.5 rounded-md border text-xs font-medium text-muted-foreground hover:bg-muted transition-colors">
             {uploading ? 'Uploading...' : 'Upload Certificate'}
           </span>
         </label>

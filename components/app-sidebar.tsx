@@ -78,7 +78,7 @@ export function AppSidebar() {
     <>
       {/* Brand */}
       <div className="px-5 pt-6 pb-8">
-        <Link href="/" className="text-xl text-white font-extrabold tracking-tight">
+        <Link href="/" className="text-xl text-sidebar-foreground font-extrabold tracking-tight">
           Airworthiness
         </Link>
       </div>
@@ -95,8 +95,8 @@ export function AppSidebar() {
                   href={item.href}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     active
-                      ? 'bg-white/10 text-white'
-                      : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+                      ? 'bg-sidebar-accent text-sidebar-foreground'
+                      : 'text-sidebar-foreground/50 hover:text-sidebar-foreground/80 hover:bg-sidebar-accent/50'
                   }`}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
@@ -111,10 +111,10 @@ export function AppSidebar() {
       {/* User section */}
       {loaded && user && (
         <div className="px-3 pb-4 mt-auto">
-          <div className="border-t border-white/10 pt-4">
+          <div className="border-t border-sidebar-border pt-4">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/40 hover:text-white/70 hover:bg-white/5 transition-colors w-full"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent/50 transition-colors w-full"
             >
               <LogOut className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
               Log out
@@ -128,18 +128,18 @@ export function AppSidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-60 bg-[#123456] min-h-screen fixed left-0 top-0 z-40">
+      <aside className="hidden md:flex flex-col w-60 bg-sidebar min-h-screen fixed left-0 top-0 z-40">
         {navContent}
       </aside>
 
       {/* Mobile header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-[#123456] px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="text-base text-white font-semibold tracking-tight">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar px-4 py-3 flex items-center justify-between">
+        <Link href="/" className="text-base text-sidebar-foreground font-semibold tracking-tight">
           Airworthiness
         </Link>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="text-white/60 hover:text-white p-1"
+          className="text-sidebar-foreground/60 hover:text-sidebar-foreground p-1"
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
         >
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -150,7 +150,7 @@ export function AppSidebar() {
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-40">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute top-0 left-0 w-60 h-full bg-[#123456] flex flex-col pt-14">
+          <aside className="absolute top-0 left-0 w-60 h-full bg-sidebar flex flex-col pt-14">
             {navContent}
           </aside>
         </div>

@@ -100,17 +100,17 @@ export function MilitaryExperience({
   }
 
   return (
-    <div className="bg-white rounded-xl p-5">
+    <div className="bg-card rounded-xl p-5">
       <label className="flex items-start gap-3 cursor-pointer">
         <input
           type="checkbox"
           checked={checked}
           onChange={e => setChecked(e.target.checked)}
-          className="h-5 w-5 rounded border-gray-300 mt-0.5 shrink-0"
+          className="h-5 w-5 rounded border-border mt-0.5 shrink-0"
         />
         <div>
-          <span className="text-sm font-medium text-gray-900">Military Experience</span>
-          <p className="text-xs text-gray-400">Up to four years of aircraft maintenance experience in the military may be counted towards the issue of a licence.</p>
+          <span className="text-sm font-medium text-foreground">Military Experience</span>
+          <p className="text-xs text-muted-foreground">Up to four years of aircraft maintenance experience in the military may be counted towards the issue of a licence.</p>
         </div>
       </label>
 
@@ -118,7 +118,7 @@ export function MilitaryExperience({
         <div className="mt-4 pl-8 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Start Date</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Start Date</label>
               <Input
                 type="date"
                 value={startDate}
@@ -127,7 +127,7 @@ export function MilitaryExperience({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">End Date (blank if current)</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">End Date (blank if current)</label>
               <Input
                 type="date"
                 value={endDate}
@@ -154,8 +154,8 @@ export function MilitaryExperience({
           </div>
 
           {cappedMilitary > 0 && (
-            <div className="border border-gray-200 rounded-lg p-4">
-              <p className="text-sm text-gray-900">
+            <div className="border border-border rounded-lg p-4">
+              <p className="text-sm text-foreground">
                 You have {formatDuration(cappedMilitary)} military experience{militaryMonths > 48 ? ' (4 year maximum)' : ''}, therefore you need {formatDuration(civilRemaining)} more civil experience for {selectedCategory}.
               </p>
             </div>

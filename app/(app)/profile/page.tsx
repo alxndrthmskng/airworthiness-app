@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
@@ -11,6 +12,8 @@ import type { ModuleExamProgress } from '@/lib/progress/types'
 import { ProfileEditor } from './profile-editor'
 import { ExternalTrainingForm } from './external-training-form'
 import { LogoutButton } from '../dashboard/logout-button'
+
+export const metadata: Metadata = { title: 'Profile | Airworthiness' }
 
 // Handle backward compatibility: convert old string[] type_ratings to TypeEndorsement[]
 function normaliseTypeRatings(raw: any): TypeEndorsement[] {
@@ -204,43 +207,43 @@ export default async function ProfilePage() {
     <div>
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">
             {fullName}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Your aircraft maintenance licence at a glance.</p>
+          <p className="text-sm text-muted-foreground mt-1">Your aircraft maintenance licence at a glance.</p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="rounded-xl border border-gray-100 p-6">
-            <p className="text-sm text-gray-500">Module Exams ({selectedCategory})</p>
+          <div className="rounded-xl border border-border p-6">
+            <p className="text-sm text-muted-foreground">Module Exams ({selectedCategory})</p>
             <p className="text-3xl font-bold mt-1">{passedModules}/{totalModules}</p>
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+            <div className="w-full bg-muted rounded-full h-2 mt-2">
               <div
                 className={`h-2 rounded-full transition-all ${progressPercent === 100 ? 'bg-green-500' : 'bg-amber-500'}`}
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <p className="text-xs text-gray-400 mt-1">{progressPercent}% complete</p>
+            <p className="text-xs text-muted-foreground mt-1">{progressPercent}% complete</p>
           </div>
-          <div className="rounded-xl border border-gray-100 p-6">
-            <p className="text-sm text-gray-500">Logbook Tasks</p>
+          <div className="rounded-xl border border-border p-6">
+            <p className="text-sm text-muted-foreground">Logbook Tasks</p>
             <p className="text-3xl font-bold mt-1">{logbookCount}</p>
           </div>
         </div>
 
         {/* Recency - same format as logbook */}
-        <div className="rounded-xl border border-gray-100 p-5 mb-4">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+        <div className="rounded-xl border border-border p-5 mb-4">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             Recency (6 Months / 2 Years)
           </p>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Tasks</span>
-                <span className="text-sm font-bold text-gray-900">{logbookCount} / 180</span>
+                <span className="text-sm text-muted-foreground">Tasks</span>
+                <span className="text-sm font-bold text-foreground">{logbookCount} / 180</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+              <div className="w-full bg-muted rounded-full h-1.5 mt-1">
                 <div
                   style={{ width: `${Math.min(100, (logbookCount / 180) * 100)}%`, backgroundColor: logbookCount >= 180 ? '#22c55e' : '#3b82f6' }}
                   className="h-1.5 rounded-full"
@@ -249,10 +252,10 @@ export default async function ProfilePage() {
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Days</span>
-                <span className="text-sm font-bold text-gray-900">{recencyStatus.totalDays} / {recencyStatus.requiredDays}</span>
+                <span className="text-sm text-muted-foreground">Days</span>
+                <span className="text-sm font-bold text-foreground">{recencyStatus.totalDays} / {recencyStatus.requiredDays}</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+              <div className="w-full bg-muted rounded-full h-1.5 mt-1">
                 <div
                   style={{ width: `${Math.min(100, (recencyStatus.totalDays / recencyStatus.requiredDays) * 100)}%`, backgroundColor: recencyStatus.isCurrent ? '#22c55e' : '#3b82f6' }}
                   className="h-1.5 rounded-full"
@@ -279,18 +282,18 @@ export default async function ProfilePage() {
                       <div>
                         <p className="text-base font-semibold">{training.label}</p>
                         {training.certificateDate ? (
-                          <p className="text-sm text-gray-500 mt-0.5">
+                          <p className="text-sm text-muted-foreground mt-0.5">
                             Completed {new Date(training.certificateDate).toLocaleDateString('en-GB', {
                               day: 'numeric', month: 'long', year: 'numeric'
                             })}
                             {extCert?.expiry_date && (
-                              <span className="text-gray-400"> · Expires {new Date(extCert.expiry_date).toLocaleDateString('en-GB', {
+                              <span className="text-muted-foreground"> · Expires {new Date(extCert.expiry_date).toLocaleDateString('en-GB', {
                                 day: 'numeric', month: 'long', year: 'numeric'
                               })}</span>
                             )}
                           </p>
                         ) : (
-                          <p className="text-sm text-gray-400 mt-0.5">No certificate on record</p>
+                          <p className="text-sm text-muted-foreground mt-0.5">No certificate on record</p>
                         )}
                       </div>
                       <Badge variant={training.isCurrent ? 'default' : 'destructive'}>
@@ -348,7 +351,7 @@ export default async function ProfilePage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Badge>Passed</Badge>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     Completed {new Date(profile.competency_completed_at!).toLocaleDateString('en-GB', {
                       day: 'numeric', month: 'long', year: 'numeric'
                     })}
@@ -358,7 +361,7 @@ export default async function ProfilePage() {
               </div>
             ) : (
               <div>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   10 multiple-choice questions covering core maintenance knowledge. You need 80% to pass.
                 </p>
                 <Link href="/profile/assessment">
@@ -379,7 +382,7 @@ export default async function ProfilePage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 {logbookCount > 0
                   ? `${logbookCount} tasks recorded`
                   : 'Record and verify your maintenance tasks'}

@@ -14,289 +14,127 @@ function AuthForm() {
   const searchParams = useSearchParams()
   const supabase = createClient()
 
-  const [mode, setMode] = useState<'signup' | 'login'>(
-    searchParams.get('mode') === 'login' ? 'login' : 'signup'
-  )
-  const [firstName, setFirstName] = useState('')
-  const [middleNames, setMiddleNames] = useState('')
-  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState(searchParams.get('email') || '')
-  const [confirmEmail, setConfirmEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
-
-  async function handleSubmit() {
-    setLoading(true)
-    setError('')
-
-    if (mode === 'signup') {
-      if (!firstName.trim() || !lastName.trim()) {
-        setError('First name and last name are required.')
-        setLoading(false)
-        return
-      }
-      if (email !== confirmEmail) {
-        setError('Email addresses do not match.')
-        setLoading(false)
-        return
-      }
-      if (password !== confirmPassword) {
-        setError('Passwords do not match.')
-        setLoading(false)
-        return
-      }
-      if (password.length < 6) {
-        setError('Password must be at least 6 characters.')
-        setLoading(false)
-        return
-      }
-
-      const fullName = [firstName.trim(), middleNames.trim(), lastName.trim()].filter(Boolean).join(' ')
-
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: fullName }
-        }
-      })
-      if (error) {
-        setError(error.message)
-        setLoading(false)
-        return
-      }
-      setSuccess(true)
-      setLoading(false)
-      return
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) {
-        setError(error.message)
-        setLoading(false)
-        return
-      }
-    }
-
-    router.push('/profile')
-  }
-
-  const [resendCountdown, setResendCountdown] = useState(60)
-  const [resending, setResending] = useState(false)
-  const [resent, setResent] = useState(false)
+  const [state, setState] = useState<'idle' | 'link_sent'>('idle')
+  const [resendCountdown, setResendCountdown] = useState(0)
 
   useEffect(() => {
-    if (!success) return
     if (resendCountdown <= 0) return
     const timer = setTimeout(() => setResendCountdown(c => c - 1), 1000)
     return () => clearTimeout(timer)
-  }, [success, resendCountdown])
+  }, [resendCountdown])
 
-  async function handleResendEmail() {
-    setResending(true)
-    setResent(false)
-    await supabase.auth.resend({ type: 'signup', email })
-    setResending(false)
-    setResent(true)
-    setResendCountdown(60)
+  async function handleSendMagicLink() {
+    setLoading(true)
+    setError('')
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/complete-profile`,
+      },
+    })
+    if (error) {
+      setError(error.message)
+    } else {
+      setState('link_sent')
+      setResendCountdown(60)
+    }
+    setLoading(false)
   }
 
-  if (success) {
+  function handleTryDifferentEmail() {
+    setState('idle')
+    setError('')
+    setResendCountdown(0)
+  }
+
+  // Sent state — magic link
+  if (state === 'link_sent') {
     return (
       <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4">
         <div className="w-full max-w-sm text-center">
-          <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-green-50 flex items-center justify-center">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-green-50 dark:bg-green-950 flex items-center justify-center">
             <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email</h2>
-          <p className="text-sm text-gray-500">
-            We have sent a confirmation link to <span className="font-medium text-gray-700">{email}</span>.
+          <h2 className="text-lg font-semibold text-foreground mb-2">Check your email</h2>
+          <p className="text-sm text-muted-foreground">
+            We sent a sign-in link to <span className="font-medium text-foreground">{email}</span>.
           </p>
-          <div className="mt-6">
-            {resent && (
-              <p className="text-sm text-green-600 mb-3">Email sent again.</p>
-            )}
+          <div className="mt-6 space-y-3">
             {resendCountdown > 0 ? (
-              <p className="text-sm text-gray-400">Resend available in {resendCountdown}s</p>
+              <p className="text-sm text-muted-foreground">Resend available in {resendCountdown}s</p>
             ) : (
               <button
-                onClick={handleResendEmail}
-                disabled={resending}
-                className="text-sm font-medium text-[#123456] hover:underline"
+                onClick={handleSendMagicLink}
+                disabled={loading}
+                className="text-sm font-semibold text-foreground hover:underline"
               >
-                {resending ? 'Sending...' : 'Resend confirmation email'}
+                {loading ? 'Sending...' : 'Resend magic link'}
               </button>
             )}
+            <div>
+              <button onClick={handleTryDifferentEmail} className="text-sm text-muted-foreground hover:underline">
+                Try a different email
+              </button>
+            </div>
           </div>
         </div>
       </div>
     )
   }
 
+  // Default — idle state
   return (
     <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
 
-        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-            {mode === 'signup' ? 'Create your account' : 'Welcome back'}
-          </h1>
-          <p className="text-sm text-gray-500 mt-2">
-            {mode === 'signup'
-              ? 'Free tools for aviation engineering professionals.'
-              : 'Sign in to your Airworthiness account.'}
-          </p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Sign in to Airworthiness</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            The digital platform for aviation engineering.</p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={(e) => { e.preventDefault(); handleSubmit() }} className="space-y-4">
-          {mode === 'signup' && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="firstName" className="text-xs text-gray-500">First name</Label>
-                  <Input
-                    id="firstName"
-                    placeholder="James"
-                    value={firstName}
-                    onChange={e => setFirstName(e.target.value)}
-                    className="h-12 rounded-xl"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="lastName" className="text-xs text-gray-500">Last name</Label>
-                  <Input
-                    id="lastName"
-                    placeholder="Smith"
-                    value={lastName}
-                    onChange={e => setLastName(e.target.value)}
-                    className="h-12 rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="middleNames" className="text-xs text-gray-500">Middle name(s) <span className="text-gray-300">optional</span></Label>
-                <Input
-                  id="middleNames"
-                  value={middleNames}
-                  onChange={e => setMiddleNames(e.target.value)}
-                  className="h-12 rounded-xl"
-                />
-              </div>
-            </>
-          )}
-
+        {/* Email OTP */}
+        <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-xs text-gray-500">Email</Label>
+            <Label htmlFor="email" className="text-sm font-medium text-foreground">Email</Label>
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder=""
               value={email}
               onChange={e => setEmail(e.target.value)}
               className="h-12 rounded-xl"
             />
           </div>
 
-          {mode === 'signup' && (
-            <div className="space-y-1.5">
-              <Label htmlFor="confirmEmail" className="text-xs text-gray-500">Confirm email</Label>
-              <Input
-                id="confirmEmail"
-                type="email"
-                placeholder="you@example.com"
-                value={confirmEmail}
-                onChange={e => setConfirmEmail(e.target.value)}
-                className="h-12 rounded-xl"
-              />
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs text-gray-500">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder={mode === 'signup' ? 'Minimum 6 characters' : 'Your password'}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="h-12 rounded-xl"
-            />
-          </div>
-
-          {mode === 'signup' && (
-            <div className="space-y-1.5">
-              <Label htmlFor="confirmPassword" className="text-xs text-gray-500">Confirm password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Re-enter your password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                className="h-12 rounded-xl"
-              />
-            </div>
-          )}
-
-          {mode === 'login' && (
-            <div className="flex justify-end">
-              <Link href="/forgot-password" className="text-xs text-gray-400 hover:text-gray-600">
-                Forgot password?
-              </Link>
-            </div>
-          )}
-
           {error && (
-            <div className="rounded-xl bg-red-50 border border-red-100 p-3">
+            <div className="rounded-xl bg-red-50 dark:bg-red-950 border border-red-100 dark:border-red-800 p-3">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
           <Button
-            type="submit"
-            className="w-full h-12 bg-[#123456] text-white hover:bg-[#0e2a45] font-semibold rounded-xl"
-            disabled={loading}
+            type="button"
+            onClick={handleSendMagicLink}
+            className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/80 font-semibold rounded-xl"
+            disabled={loading || !email}
           >
-            {loading
-              ? (mode === 'signup' ? 'Creating account...' : 'Signing in...')
-              : (mode === 'signup' ? 'Create account' : 'Sign in')}
+            {loading ? 'Sending...' : 'Log In or Sign Up'}
           </Button>
-        </form>
+        </div>
 
-        {/* Switch mode */}
-        <p className="text-sm text-gray-400 text-center mt-6">
-          {mode === 'signup' ? (
-            <>Already have an account?{' '}
-              <button type="button" onClick={() => { setMode('login'); setError('') }} className="text-[#123456] font-medium hover:underline">
-                Sign in
-              </button>
-            </>
-          ) : (
-            <>No account?{' '}
-              <button type="button" onClick={() => { setMode('signup'); setError('') }} className="text-[#123456] font-medium hover:underline">
-                Create one
-              </button>
-            </>
-          )}
+        <p className="text-xs text-muted-foreground/60 text-center mt-6 leading-relaxed">
+          By continuing you agree to our{' '}
+          <Link href="/terms" className="hover:underline">Terms</Link>
+          {' '}and{' '}
+          <Link href="/privacy" className="hover:underline">Privacy Policy</Link>.
         </p>
-
-        {mode === 'signup' && (
-          <p className="text-[11px] text-gray-300 text-center mt-4 leading-relaxed">
-            By creating an account you agree to our{' '}
-            <Link href="/terms" className="hover:underline">Terms</Link>
-            {' '}and{' '}
-            <Link href="/privacy" className="hover:underline">Privacy Policy</Link>.
-          </p>
-        )}
       </div>
     </div>
   )
@@ -306,7 +144,7 @@ export default function AuthPage() {
   return (
     <Suspense fallback={
       <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
-        <div className="text-gray-400 text-sm">Loading...</div>
+        <div className="text-muted-foreground text-sm">Loading...</div>
       </div>
     }>
       <AuthForm />

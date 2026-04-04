@@ -140,11 +140,11 @@
 }
 
 .aw-gradient {
-  background: #123456;
+  background: var(--primary);
 }
 
 .aw-gradient-light {
-  background: #ABCDEF;
+  background: var(--secondary);
 }
 
 @keyframes fade-in-up {
