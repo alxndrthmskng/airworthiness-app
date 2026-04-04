@@ -8,7 +8,6 @@ import {
   BookOpen,
   ClipboardList,
   GraduationCap,
-  ShieldCheck,
   User,
   LogOut,
   Settings,
@@ -23,7 +22,6 @@ const NAV_ITEMS = [
   { label: 'Digital Logbook', href: '/logbook', icon: BookOpen },
   { label: 'Module Tracker', href: '/modules', icon: ClipboardList },
   { label: 'Continuation Training', href: '/training', icon: GraduationCap },
-  { label: 'Competency Assessment', href: '', icon: ShieldCheck, comingSoon: true },
 ]
 
 function useUserProfile() {
