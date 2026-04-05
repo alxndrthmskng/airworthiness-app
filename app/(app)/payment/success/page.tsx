@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import { createClient as createSupabaseServerClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseAdminClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 interface Props {
   searchParams: Promise<{ session_id?: string }>
@@ -37,6 +38,9 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
     return (
       <div className="min-h-screen aw-gradient flex items-center justify-center">
         <div className="bg-card rounded-2xl border p-12 text-center max-w-md">
+          <div className="flex justify-center mb-4">
+            <SidebarTriggerInline />
+          </div>
           <h1 className="text-2xl font-semibold text-foreground mb-2">
             Payment not confirmed
           </h1>
@@ -57,6 +61,9 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
     return (
       <div className="min-h-screen aw-gradient flex items-center justify-center">
         <div className="bg-card rounded-2xl border p-12 text-center max-w-md">
+          <div className="flex justify-center mb-4">
+            <SidebarTriggerInline />
+          </div>
           <h1 className="text-2xl font-semibold text-foreground mb-2">
             Payment user mismatch
           </h1>
@@ -80,6 +87,9 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
     return (
       <div className="min-h-screen aw-gradient flex items-center justify-center">
         <div className="bg-card rounded-2xl border p-12 text-center max-w-md">
+          <div className="flex justify-center mb-4">
+            <SidebarTriggerInline />
+          </div>
           <h1 className="text-2xl font-semibold text-foreground mb-2">
             Payment received, but activation failed
           </h1>
@@ -97,6 +107,9 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
   return (
     <div className="min-h-screen aw-gradient flex items-center justify-center">
       <div className="bg-card rounded-2xl border p-12 text-center max-w-md">
+        <div className="flex justify-center mb-4">
+          <SidebarTriggerInline />
+        </div>
         <h1 className="text-2xl font-semibold text-foreground mb-2">
           Adverts removed
         </h1>

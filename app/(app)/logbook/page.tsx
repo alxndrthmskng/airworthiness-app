@@ -16,6 +16,7 @@ import {
 import { MassInput } from './mass-input'
 import { AtaChart } from './ata-chart'
 import { BtcToggle } from '@/app/(app)/modules/btc-toggle'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 export const metadata: Metadata = { title: 'Digital Logbook | Airworthiness' }
 
@@ -229,6 +230,7 @@ export default async function LogbookPage({
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 flex-wrap">
+            <SidebarTriggerInline />
             <h1 className="text-2xl font-semibold text-foreground">Digital Logbook</h1>
             <Link href="/logbook/export">
               <Button variant="outline" size="sm">View All Tasks</Button>

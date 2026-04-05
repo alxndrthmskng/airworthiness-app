@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { REQUIRED_TRAINING, RECENCY_REQUIRED_DAYS, RECENCY_PERIOD_YEARS, AML_CATEGORIES } from '@/lib/profile/constants'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -59,6 +60,10 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   return (
     <div className="min-h-screen aw-gradient">
       <div className="max-w-3xl mx-auto px-4 py-12">
+
+        <div className="mb-6">
+          <SidebarTriggerInline />
+        </div>
 
         {/* Header */}
         <div className="bg-card rounded-xl border p-8 mb-6">

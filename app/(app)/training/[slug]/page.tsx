@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { UpgradeButton } from '@/components/upgrade-button'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -66,9 +67,12 @@ export default async function CoursePage({ params }: Props) {
       <div className="max-w-3xl mx-auto px-4 py-12">
 
         {/* Back */}
-        <Link href="/training" className="text-sm text-foreground hover:underline mb-6 block">
-          ← Back to courses
-        </Link>
+        <div className="flex items-center gap-3 mb-6">
+          <SidebarTriggerInline />
+          <Link href="/training" className="text-sm text-foreground hover:underline">
+            ← Back to courses
+          </Link>
+        </div>
 
         {/* Header */}
         <div className="mb-8">

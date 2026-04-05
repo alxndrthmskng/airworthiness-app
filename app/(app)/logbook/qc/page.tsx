@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { ATA_CHAPTERS, MAINTENANCE_CATEGORIES } from '@/lib/logbook/constants'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 function label(list: readonly { value: string; label: string }[], value: string) {
   return list.find(i => i.value === value)?.label ?? value
@@ -54,16 +55,18 @@ export default async function QcPage() {
     <div className="min-h-screen aw-gradient">
       <div className="max-w-6xl mx-auto px-4 py-12">
 
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-semibold text-white">QC Review Queue</h1>
-            <p className="text-white/60 mt-1">
-              Cross-check that the individual and verifier were both on the job. Independent of the AML verification.
-            </p>
-          </div>
-          <Link href="/logbook">
-            <Button variant="outline">Back to Logbook</Button>
+        <div className="flex items-center gap-3 mb-6">
+          <SidebarTriggerInline />
+          <Link href="/logbook" className="text-sm text-foreground hover:underline">
+            ← Back to logbook
           </Link>
+        </div>
+
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-white">QC Review Queue</h1>
+          <p className="text-white/60 mt-1">
+            Cross-check that the individual and verifier were both on the job. Independent of the AML verification.
+          </p>
         </div>
 
         {filteredEntries.length === 0 ? (

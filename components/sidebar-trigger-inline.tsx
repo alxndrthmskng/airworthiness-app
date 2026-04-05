@@ -4,7 +4,7 @@ import { SidebarTrigger } from '@/components/app-sidebar'
 
 export function SidebarTriggerInline() {
   return (
-    <div className="md:hidden float-left -ml-8 mt-1.5 mr-2">
+    <div className="md:hidden shrink-0 h-8 flex items-center">
       <SidebarTrigger />
     </div>
   )

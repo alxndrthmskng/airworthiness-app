@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { CompleteProfileForm } from '@/app/(public)/complete-profile/complete-profile-form'
 import type { ProfileFormInitialData } from '@/app/(public)/complete-profile/complete-profile-form'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 export const metadata: Metadata = { title: 'Manage Profile | Airworthiness' }
 
@@ -99,9 +100,12 @@ export default async function ManageProfilePage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-foreground">
-          Manage Profile
-        </h1>
+        <div className="flex items-center gap-2">
+          <SidebarTriggerInline />
+          <h1 className="text-2xl font-semibold text-foreground">
+            Manage Profile
+          </h1>
+        </div>
       </div>
       <div className="max-w-md">
         <CompleteProfileForm mode="edit" initialData={initialData} />

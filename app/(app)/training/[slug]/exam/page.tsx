@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ExamForm } from './exam-form'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -53,10 +54,13 @@ export default async function ExamPage({ params }: Props) {
     return (
       <div className="min-h-screen aw-gradient flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-foreground">No exam available yet</h1>
-          <Link href={`/training/${slug}`} className="text-foreground hover:underline mt-2 block">
-            ← Back to course
-          </Link>
+          <div className="flex items-center gap-3 justify-center">
+            <SidebarTriggerInline />
+            <Link href={`/training/${slug}`} className="text-sm text-foreground hover:underline">
+              ← Back to course
+            </Link>
+          </div>
+          <h1 className="text-xl font-semibold text-foreground mt-4">No exam available yet</h1>
         </div>
       </div>
     )
@@ -84,10 +88,12 @@ export default async function ExamPage({ params }: Props) {
   return (
     <div className="min-h-screen aw-gradient">
       <div className="max-w-2xl mx-auto px-4 py-12">
-        <Link href={`/training/${slug}`}
-          className="text-sm text-foreground hover:underline mb-6 block">
-          ← Back to course
-        </Link>
+        <div className="flex items-center gap-3 mb-6">
+          <SidebarTriggerInline />
+          <Link href={`/training/${slug}`} className="text-sm text-foreground hover:underline">
+            ← Back to course
+          </Link>
+        </div>
 
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-foreground">{course.title}</h1>

@@ -14,6 +14,7 @@ import {
 } from '@/lib/progress/constants'
 import type { ModuleExamProgress, ExamRow } from '@/lib/progress/types'
 import { ProgressTracker } from './progress-tracker'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 export const metadata: Metadata = { title: 'Module Tracker | Airworthiness' }
 
@@ -186,7 +187,10 @@ export default async function ProgressPage({
     <div>
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-foreground">Module Tracker</h1>
+          <div className="flex items-center gap-2">
+            <SidebarTriggerInline />
+            <h1 className="text-2xl font-semibold text-foreground">Module Tracker</h1>
+          </div>
           <p className="text-sm text-muted-foreground mt-1">
             Track your Part 66 subject module examination progress.
           </p>

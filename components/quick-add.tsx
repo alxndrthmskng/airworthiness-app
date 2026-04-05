@@ -213,7 +213,7 @@ export function QuickAdd() {
     <div ref={panelRef} className="fixed bottom-6 right-6 z-50 max-w-[calc(100vw-3rem)] pointer-events-none">
       {/* Expanded form */}
       <div className={`transition-all duration-200 ease-out origin-bottom-right ${open ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 translate-y-2 pointer-events-none'}`}>
-        <div className="w-[26rem] bg-popover border border-border/50 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-visible mb-3">
+        <div className="w-[calc(100vw-3rem)] sm:w-[26rem] bg-popover border border-border/50 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-visible mb-3">
           <div className="px-5 pt-5 pb-5 space-y-2.5" onKeyDown={handleKeyDown}>
             {/* 1. Date */}
             <div className="relative">

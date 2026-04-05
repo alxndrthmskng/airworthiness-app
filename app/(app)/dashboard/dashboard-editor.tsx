@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Pencil, ArrowUp, ArrowDown, Eye, EyeOff, Check } from 'lucide-react'
 import { ExternalTrainingForm } from './external-training-form'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 import type { TrainingStatus } from '@/lib/profile/types'
 
 const ALL_WIDGET_IDS = ['module_exams', 'logbook_tasks', 'recency', 'recent_entries', 'continuation_training'] as const
@@ -161,8 +162,8 @@ export function DashboardEditor(props: DashboardEditorProps) {
                   const extCert = props.externalCerts?.find(c => c.training_slug === training.slug)
                   return (
                     <div key={training.slug} className="rounded-lg border p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
                           <p className="text-base font-semibold">{training.label}</p>
                           {training.certificateDate ? (
                             <p className="text-sm text-muted-foreground mt-0.5">
@@ -179,7 +180,7 @@ export function DashboardEditor(props: DashboardEditorProps) {
                             <p className="text-sm text-muted-foreground mt-0.5">No certificate on record</p>
                           )}
                         </div>
-                        <Badge variant={training.isCurrent ? 'default' : 'destructive'}>
+                        <Badge className="shrink-0" variant={training.isCurrent ? 'default' : 'destructive'}>
                           {training.isCurrent ? 'Current' : 'Expired'}
                         </Badge>
                       </div>
@@ -261,6 +262,7 @@ export function DashboardEditor(props: DashboardEditorProps) {
     <div>
       {/* Header */}
       <div className="mb-8 flex items-center gap-2">
+        <SidebarTriggerInline />
         <h1 className="text-2xl font-semibold text-foreground">
           Dashboard
         </h1>
