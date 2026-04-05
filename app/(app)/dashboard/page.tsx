@@ -69,6 +69,14 @@ export default async function ProfilePage() {
     .select('training_slug, completion_date, expiry_date, certificate_path')
     .eq('user_id', user.id)
 
+  // Fetch 10 most recent logbook entries
+  const { data: recentEntries } = await supabase
+    .from('logbook_entries')
+    .select('id, task_date, aircraft_type, aircraft_registration, description, status')
+    .eq('user_id', user.id)
+    .order('task_date', { ascending: false })
+    .limit(10)
+
   // Calculate training status (merge platform + external certificates)
   const now = new Date()
   const twoYearsAgo = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate())
@@ -209,6 +217,7 @@ export default async function ProfilePage() {
       trainingStatuses={trainingStatuses}
       allTrainingCurrent={allTrainingCurrent}
       externalCerts={externalCerts ?? []}
+      recentEntries={recentEntries ?? []}
       widgetConfig={profile.dashboard_widgets as any}
     />
   )
