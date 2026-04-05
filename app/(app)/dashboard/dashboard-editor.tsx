@@ -10,13 +10,14 @@ import { Pencil, ArrowUp, ArrowDown, Eye, EyeOff, Check } from 'lucide-react'
 import { ExternalTrainingForm } from './external-training-form'
 import type { TrainingStatus } from '@/lib/profile/types'
 
-const ALL_WIDGET_IDS = ['module_exams', 'logbook_tasks', 'recency', 'continuation_training'] as const
+const ALL_WIDGET_IDS = ['module_exams', 'logbook_tasks', 'recency', 'recent_entries', 'continuation_training'] as const
 type WidgetId = typeof ALL_WIDGET_IDS[number]
 
 const WIDGET_LABELS: Record<WidgetId, string> = {
   module_exams: 'Module Exams',
   logbook_tasks: 'Logbook Tasks',
   recency: 'Recency',
+  recent_entries: 'Most Recent Logbook Tasks',
   continuation_training: 'Continuation Training',
 }
 
@@ -38,6 +39,7 @@ interface DashboardEditorProps {
   trainingStatuses: TrainingStatus[]
   allTrainingCurrent: boolean
   externalCerts: { training_slug: string; completion_date: string | null; expiry_date: string | null; certificate_path: string | null }[]
+  recentEntries: { id: string; task_date: string; aircraft_type: string; aircraft_registration: string; description: string; status: string }[]
   widgetConfig: WidgetConfig | null
 }
 
@@ -194,6 +196,54 @@ export function DashboardEditor(props: DashboardEditorProps) {
                 <div className="mt-4">
                   <Link href="/training">
                     <Button size="sm">Complete Training</Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )
+      case 'recent_entries':
+        return (
+          <Card key={id}>
+            <CardHeader>
+              <CardTitle>Most Recent Logbook Tasks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {props.recentEntries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No logbook tasks recorded yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {props.recentEntries.map(entry => {
+                    const taskTypeMatch = entry.description?.match(/^\[([^\]]+)\]/)
+                    const taskTypes = taskTypeMatch ? taskTypeMatch[1] : null
+                    const detail = entry.description?.replace(/^\[[^\]]+\]\s*/, '') || ''
+                    const statusLabel = entry.status === 'verified' ? 'Verified' : entry.status === 'draft' ? 'Draft' : entry.status === 'pending_verification' ? 'Pending' : entry.status
+                    return (
+                      <div key={entry.id} className="flex items-start gap-3 py-2 border-b border-border last:border-0">
+                        <div className="text-xs text-muted-foreground whitespace-nowrap pt-0.5">
+                          {new Date(entry.task_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground truncate">{detail || entry.description}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {entry.aircraft_type !== 'N/A' && entry.aircraft_type}
+                            {entry.aircraft_type !== 'N/A' && entry.aircraft_registration !== 'N/A' && ' · '}
+                            {entry.aircraft_registration !== 'N/A' && entry.aircraft_registration}
+                            {taskTypes && ` · ${taskTypes}`}
+                          </p>
+                        </div>
+                        <Badge variant={entry.status === 'verified' ? 'default' : 'outline'} className="text-[10px] flex-shrink-0">
+                          {statusLabel}
+                        </Badge>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              {props.recentEntries.length > 0 && (
+                <div className="mt-3">
+                  <Link href="/logbook">
+                    <Button variant="outline" size="sm">View All Tasks</Button>
                   </Link>
                 </div>
               )}
