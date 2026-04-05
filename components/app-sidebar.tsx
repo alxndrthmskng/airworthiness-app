@@ -151,7 +151,7 @@ export function SidebarTrigger() {
   return (
     <button
       onClick={() => window.dispatchEvent(new CustomEvent('toggle-sidebar'))}
-      className="md:hidden text-foreground/60 hover:text-foreground rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+      className="md:hidden text-current opacity-60 hover:opacity-100 rounded-lg transition-colors flex-shrink-0"
       aria-label="Open menu"
     >
       <Menu className="w-5 h-5" />

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 export const metadata: Metadata = { title: 'Continuation Training | Airworthiness' }
 
@@ -25,7 +26,10 @@ export default async function CoursesPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-foreground">Continuation Training</h1>
+        <div className="flex items-center gap-2">
+          <SidebarTriggerInline />
+          <h1 className="text-2xl font-semibold text-foreground">Continuation Training</h1>
+        </div>
         <p className="text-sm text-muted-foreground mt-1">Browse professional learning courses</p>
       </div>
 

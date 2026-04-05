@@ -15,6 +15,7 @@ import { EditEntryForm } from './edit-entry-form'
 import { SubmitForVerification } from './submit-for-verification'
 import { VerificationActions } from './verification-actions'
 import { QcActions } from './qc-actions'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -92,6 +93,13 @@ export default async function LogbookEntryPage({ params }: Props) {
     return (
       <div className="min-h-screen aw-gradient">
         <div className="max-w-2xl mx-auto px-4 py-12">
+          <div className="flex items-center gap-3 mb-6">
+            <SidebarTriggerInline />
+            <Link href="/logbook" className="text-sm text-foreground hover:underline">
+              ← Back to logbook
+            </Link>
+          </div>
+
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-2xl font-semibold text-white">Edit Entry</h1>
             <Badge variant={statusInfo.color as 'default' | 'secondary' | 'outline' | 'destructive'}>
@@ -122,6 +130,13 @@ export default async function LogbookEntryPage({ params }: Props) {
   return (
     <div className="min-h-screen aw-gradient">
       <div className="max-w-2xl mx-auto px-4 py-12">
+
+        <div className="flex items-center gap-3 mb-6">
+          <SidebarTriggerInline />
+          <Link href="/logbook" className="text-sm text-foreground hover:underline">
+            ← Back to logbook
+          </Link>
+        </div>
 
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold text-white">Logbook Entry</h1>

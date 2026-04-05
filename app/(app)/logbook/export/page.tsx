@@ -8,6 +8,7 @@ import {
   RECENCY_DAY_THRESHOLD,
   EXPERIENCE_VALIDITY_YEARS,
 } from '@/lib/logbook/constants'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 export const metadata: Metadata = { title: 'Export Logbook | Airworthiness' }
 
@@ -132,6 +133,7 @@ export default async function ExportPage() {
         {/* Header */}
         <div className="mb-8 print:mb-4">
           <div className="flex items-center gap-3 mb-4">
+            <SidebarTriggerInline />
             <h1 className="text-2xl font-semibold text-foreground print:text-xl">
               Digital Logbook (CAP 741)
             </h1>

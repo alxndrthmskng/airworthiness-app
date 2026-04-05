@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { MarkCompleteButton } from './mark-complete-button'
+import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 interface Props {
   params: Promise<{ slug: string; moduleId: string }>
@@ -49,9 +50,12 @@ export default async function ModulePage({ params }: Props) {
       <div className="max-w-2xl mx-auto px-4 py-12">
 
         {/* Breadcrumb */}
-        <Link href={`/training/${slug}`} className="text-sm text-foreground hover:underline mb-6 block">
-          ← Back to course
-        </Link>
+        <div className="flex items-center gap-3 mb-6">
+          <SidebarTriggerInline />
+          <Link href={`/training/${slug}`} className="text-sm text-foreground hover:underline">
+            ← Back to course
+          </Link>
+        </div>
 
         {/* Module title */}
         <h1 className="text-2xl font-semibold text-white mb-6">{module.title}</h1>
