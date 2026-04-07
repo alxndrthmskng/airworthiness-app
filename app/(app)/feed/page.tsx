@@ -4,8 +4,20 @@ import { createClient } from '@/lib/supabase/server'
 import { isFeatureEnabledForUser } from '@/lib/feature-flags'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 import { Rss } from 'lucide-react'
+import { PostCard } from './post-card'
 
 export const metadata: Metadata = { title: 'Social Feed | Airworthiness' }
+
+interface FeedPost {
+  id: string
+  author_id: string
+  post_type: string
+  data: Record<string, unknown>
+  created_at: string
+  author_handle: string
+  author_display_name: string
+  author_avatar_path: string | null
+}
 
 export default async function FeedPage() {
   const supabase = await createClient()
@@ -21,25 +33,60 @@ export default async function FeedPage() {
         <h1 className="text-2xl font-semibold text-foreground">Social Feed</h1>
       </div>
 
-      {feedEnabled ? (
-        <div className="rounded-xl border border-border p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            The social feed will appear here once posts have been shared.
-          </p>
+      {feedEnabled ? <FeedContent userId={user.id} /> : <ComingSoon />}
+    </div>
+  )
+}
+
+async function FeedContent({ userId }: { userId: string }) {
+  const supabase = await createClient()
+  const { data: posts } = await supabase.rpc('get_feed', { p_limit: 50, p_before: null })
+  const list: FeedPost[] = (posts as FeedPost[]) ?? []
+
+  if (list.length === 0) {
+    return (
+      <div className="rounded-xl border border-border p-12 text-center">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+          <Rss className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
         </div>
-      ) : (
-        <div className="rounded-xl border border-border p-12 text-center">
-          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-            <Rss className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-          </div>
-          <h2 className="text-lg font-semibold text-foreground">Coming soon</h2>
-          <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
-            A professional feed for UK Aircraft Maintenance Licence holders. Share milestones,
-            celebrate type ratings, and stay in touch with the small industry. Engineer-to-engineer,
-            no operator data, no fluff.
-          </p>
-        </div>
-      )}
+        <h2 className="text-lg font-semibold text-foreground">No posts yet</h2>
+        <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+          Follow other engineers from their profile pages, or share your own milestones from the Module Tracker
+          and Continuation Training pages, to see them appear here.
+        </p>
+      </div>
+    )
+  }
+
+  // Resolve avatar URLs
+  const postsWithAvatars = list.map(post => ({
+    post,
+    avatarUrl: post.author_avatar_path
+      ? supabase.storage.from('public-profile-avatars').getPublicUrl(post.author_avatar_path).data.publicUrl
+      : null,
+  }))
+
+  return (
+    <div className="space-y-3 max-w-2xl">
+      {postsWithAvatars.map(({ post, avatarUrl }) => (
+        <PostCard key={post.id} post={post} avatarUrl={avatarUrl} isOwn={post.author_id === userId} />
+      ))}
+    </div>
+  )
+}
+
+function ComingSoon() {
+  return (
+    <div className="rounded-xl border border-border p-12 text-center">
+      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+        <Rss className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
+      </div>
+      <h2 className="text-lg font-semibold text-foreground">Coming soon</h2>
+      <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+        A professional feed for UK Aircraft Maintenance Licence holders. Share milestones,
+        celebrate type ratings, and stay in touch with the small industry. Engineer-to-engineer,
+        no operator data, no fluff.
+      </p>
     </div>
   )
 }
