@@ -193,14 +193,14 @@ export default async function PublicProfilePage({ params }: PageProps) {
             )}
             {followEnabled && (
               <div className="flex items-center gap-4 mt-3 text-sm">
-                <span>
+                <Link href={`/u/${profile.handle}/followers`} className="hover:underline">
                   <span className="font-semibold text-foreground">{followerCount}</span>
                   <span className="text-muted-foreground"> {followerCount === 1 ? 'follower' : 'followers'}</span>
-                </span>
-                <span>
+                </Link>
+                <Link href={`/u/${profile.handle}/following`} className="hover:underline">
                   <span className="text-muted-foreground">Following </span>
                   <span className="font-semibold text-foreground">{followingCount}</span>
-                </span>
+                </Link>
               </div>
             )}
           </div>
