@@ -1,13 +1,20 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { isFeatureEnabled } from '@/lib/feature-flags'
+import { Button } from '@/components/ui/button'
 
 interface PageProps {
   params: Promise<{ handle: string }>
 }
 
 const HANDLE_REGEX = /^[a-z0-9-]{3,30}$/
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://airworthiness.org.uk'
+
+// Allow Vercel/CDN to cache public profile pages for 60 seconds.
+// This bounds the propagation delay of profile updates and the kill switch.
+export const revalidate = 60
 
 /**
  * The public profile page.
@@ -22,18 +29,56 @@ const HANDLE_REGEX = /^[a-z0-9-]{3,30}$/
  */
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { handle } = await params
-  if (!HANDLE_REGEX.test(handle)) return { title: 'Profile not found' }
-  if (!(await isFeatureEnabled('social_profile'))) return { title: 'Profile not found' }
+  const notFoundMeta: Metadata = { title: 'Profile not found', robots: { index: false, follow: false } }
+
+  if (!HANDLE_REGEX.test(handle)) return notFoundMeta
+  if (!(await isFeatureEnabled('social_profile'))) return notFoundMeta
 
   const supabase = await createClient()
   const { data } = await supabase.rpc('get_public_profile', { p_handle: handle })
   const profile = data?.[0]
-  if (!profile) return { title: 'Profile not found' }
+  if (!profile) return notFoundMeta
 
-  const name = profile.display_name || profile.full_name || 'Engineer'
+  let name = profile.display_name || profile.full_name || 'Engineer'
+  if (profile.display_name_first_only && name.includes(' ')) {
+    name = name.split(' ')[0]
+  }
+
+  const canonical = `${SITE_URL}/u/${handle}`
+
+  // Build a description from available data — categories and type ratings count
+  const categories = (profile.aml_categories ?? []).join(', ')
+  const typeRatingCount = Array.isArray(profile.type_ratings) ? profile.type_ratings.length : 0
+  const descParts = []
+  if (categories) descParts.push(`UK CAA ${categories} licence holder`)
+  if (typeRatingCount > 0) descParts.push(`${typeRatingCount} type rating${typeRatingCount === 1 ? '' : 's'}`)
+  const description = descParts.length > 0
+    ? `${name} — ${descParts.join(' · ')}.`
+    : `${name} on Airworthiness.`
+
+  const ogImage = profile.avatar_path
+    ? supabase.storage.from('public-profile-avatars').getPublicUrl(profile.avatar_path).data.publicUrl
+    : undefined
+
   return {
     title: `${name} | Airworthiness`,
-    description: `${name} — UK Aircraft Maintenance Licence holder on Airworthiness.`,
+    description,
+    alternates: { canonical },
+    robots: { index: true, follow: true },
+    openGraph: {
+      title: name,
+      description,
+      url: canonical,
+      siteName: 'Airworthiness',
+      type: 'profile',
+      images: ogImage ? [{ url: ogImage, width: 512, height: 512, alt: name }] : undefined,
+    },
+    twitter: {
+      card: ogImage ? 'summary' : 'summary',
+      title: name,
+      description,
+      images: ogImage ? [ogImage] : undefined,
+    },
   }
 }
 
@@ -183,6 +228,16 @@ export default async function PublicProfilePage({ params }: PageProps) {
             This profile has not yet added any licence credentials.
           </p>
         )}
+
+        {/* Sign-up CTA */}
+        <section className="mt-16 pt-8 border-t border-border/60">
+          <p className="text-sm text-muted-foreground mb-3">
+            Airworthiness is a free professional tool for UK Aircraft Maintenance Licence holders.
+          </p>
+          <Link href="/">
+            <Button size="sm">Create your own profile</Button>
+          </Link>
+        </section>
       </div>
     </div>
   )
