@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 interface Props {
-  followerHandle: string
+  followerPublicId: string
 }
 
-export function FollowRequestActions({ followerHandle }: Props) {
+export function FollowRequestActions({ followerPublicId }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [done, setDone] = useState<'accepted' | 'declined' | null>(null)
@@ -18,7 +18,7 @@ export function FollowRequestActions({ followerHandle }: Props) {
       const res = await fetch('/api/follow/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ followerHandle, action }),
+        body: JSON.stringify({ followerPublicId, action }),
       })
       if (res.ok) {
         setDone(action === 'accept' ? 'accepted' : 'declined')

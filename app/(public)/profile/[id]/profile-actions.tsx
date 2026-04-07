@@ -2,18 +2,18 @@
 
 import { useState, useTransition, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { MoreHorizontal, Flag, Ban } from 'lucide-react'
+import { MoreHorizontal, Ban } from 'lucide-react'
 import { FollowButton } from './follow-button'
 
 interface Props {
-  targetHandle: string
+  targetPublicId: string
   initialFollowState: 'none' | 'pending' | 'active'
 }
 
 /**
  * Combined profile actions: follow button + overflow menu with block.
  */
-export function ProfileActions({ targetHandle, initialFollowState }: Props) {
+export function ProfileActions({ targetPublicId, initialFollowState }: Props) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
   const [pending, startTransition] = useTransition()
@@ -31,7 +31,7 @@ export function ProfileActions({ targetHandle, initialFollowState }: Props) {
   }, [menuOpen])
 
   function blockUser() {
-    if (!window.confirm(`Block @${targetHandle}? You won't see each other's profiles or posts. Existing follows in either direction will be removed.`)) {
+    if (!window.confirm(`Block this user? You won't see each other's profiles or posts. Existing follows in either direction will be removed.`)) {
       return
     }
     setMenuOpen(false)
@@ -39,10 +39,9 @@ export function ProfileActions({ targetHandle, initialFollowState }: Props) {
       const res = await fetch('/api/block', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetHandle }),
+        body: JSON.stringify({ targetPublicId }),
       })
       if (res.ok) {
-        // After blocking, the profile will be 404 to us — redirect home
         router.push('/feed')
       }
     })
@@ -50,7 +49,7 @@ export function ProfileActions({ targetHandle, initialFollowState }: Props) {
 
   return (
     <div className="flex items-center gap-2">
-      <FollowButton targetHandle={targetHandle} initialState={initialFollowState} />
+      <FollowButton targetPublicId={targetPublicId} initialState={initialFollowState} />
       <div ref={menuRef} className="relative">
         <button
           type="button"
@@ -69,7 +68,7 @@ export function ProfileActions({ targetHandle, initialFollowState }: Props) {
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted text-left"
             >
               <Ban className="w-4 h-4" strokeWidth={1.5} />
-              Block @{targetHandle}
+              Block user
             </button>
           </div>
         )}

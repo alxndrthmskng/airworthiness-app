@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 interface ListEntry {
   user_id: string
-  handle: string
+  public_id: string
   display_name: string
   avatar_path: string | null
   followed_since: string
@@ -30,7 +30,7 @@ export function FollowList({ entries, avatarUrlFor, emptyMessage }: Props) {
         return (
           <Link
             key={entry.user_id}
-            href={`/u/${entry.handle}`}
+            href={`/profile/${entry.public_id}`}
             className="rounded-xl border border-border p-4 flex items-center gap-3 hover:border-foreground/40 transition-colors"
           >
             {avatarUrl ? (
@@ -43,7 +43,6 @@ export function FollowList({ entries, avatarUrlFor, emptyMessage }: Props) {
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{entry.display_name}</p>
-              <p className="text-xs text-muted-foreground truncate">@{entry.handle}</p>
             </div>
           </Link>
         )

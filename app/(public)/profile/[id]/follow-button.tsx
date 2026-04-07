@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 interface Props {
-  targetHandle: string
+  targetPublicId: string
   initialState: 'none' | 'pending' | 'active'
 }
 
-export function FollowButton({ targetHandle, initialState }: Props) {
+export function FollowButton({ targetPublicId, initialState }: Props) {
   const router = useRouter()
   const [state, setState] = useState(initialState)
   const [pending, startTransition] = useTransition()
@@ -21,7 +21,7 @@ export function FollowButton({ targetHandle, initialState }: Props) {
       const res = await fetch('/api/follow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetHandle }),
+        body: JSON.stringify({ targetPublicId }),
       })
       if (!res.ok) {
         setState('none')
@@ -34,13 +34,13 @@ export function FollowButton({ targetHandle, initialState }: Props) {
   }
 
   async function unfollow() {
-    if (!window.confirm(`Unfollow @${targetHandle}?`)) return
+    if (!window.confirm('Unfollow this user?')) return
     setState('none')
     startTransition(async () => {
       const res = await fetch('/api/follow', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetHandle }),
+        body: JSON.stringify({ targetPublicId }),
       })
       if (!res.ok) {
         setState('active')

@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 interface Props {
-  handle: string
+  publicId: string
 }
 
-export function UnblockButton({ handle }: Props) {
+export function UnblockButton({ publicId }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
@@ -17,7 +17,7 @@ export function UnblockButton({ handle }: Props) {
       const res = await fetch('/api/block', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetHandle: handle }),
+        body: JSON.stringify({ targetPublicId: publicId }),
       })
       if (res.ok) router.refresh()
     })

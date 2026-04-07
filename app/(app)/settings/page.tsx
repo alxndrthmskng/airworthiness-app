@@ -22,7 +22,7 @@ export default async function SettingsPage() {
   // correct state on first paint.
   const { data: publicProfile } = await supabase
     .from('public_profiles')
-    .select('handle, is_public')
+    .select('public_id, is_public')
     .eq('user_id', user.id)
     .maybeSingle()
 

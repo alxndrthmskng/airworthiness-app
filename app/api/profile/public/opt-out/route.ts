@@ -6,8 +6,8 @@ import { logPrivacyEvent } from '@/lib/privacy-audit'
  * Opt out of the public profile feature.
  *
  * Sets is_public = false on the user's `public_profiles` row. The row
- * itself is preserved (along with the handle reservation) so the user
- * can re-enable later without losing their handle.
+ * itself is preserved (along with the assigned public_id) so the user
+ * can re-enable later without changing their permanent ID.
  *
  * Idempotent: opting out twice does not error.
  *

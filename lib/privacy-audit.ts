@@ -20,7 +20,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export type PrivacyEventCategory =
   | 'consent'         // Cookie consent, social opt-in, etc.
-  | 'profile'         // Profile visibility, handle changes
+  | 'profile'         // Profile visibility changes
   | 'social'          // Follow/unfollow, block, post visibility
   | 'data_export'     // SAR / data download requests
   | 'data_deletion'   // Account or content deletion

@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button'
 import { ProfileActions } from './profile-actions'
 
 interface PageProps {
-  params: Promise<{ handle: string }>
+  params: Promise<{ id: string }>
 }
 
-const HANDLE_REGEX = /^[a-z0-9-]{3,30}$/
+const PUBLIC_ID_REGEX = /^[0-9]{8}$/
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://airworthiness.org.uk'
 
 // Allow Vercel/CDN to cache public profile pages for 60 seconds.
@@ -21,22 +21,19 @@ export const revalidate = 60
  * The public profile page.
  *
  * Visible to anyone (logged in or not). Returns a generic 404 if:
- * - the handle does not match the format
- * - no profile with that handle exists
+ * - the id is not 8 digits
+ * - no profile with that id exists
  * - the profile exists but is_public = false
- *
- * The 404 is deliberately generic — we do not leak whether a handle is
- * "taken but private" vs "does not exist".
  */
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { handle } = await params
+  const { id } = await params
   const notFoundMeta: Metadata = { title: 'Profile not found', robots: { index: false, follow: false } }
 
-  if (!HANDLE_REGEX.test(handle)) return notFoundMeta
+  if (!PUBLIC_ID_REGEX.test(id)) return notFoundMeta
   if (!(await isFeatureEnabled('social_profile'))) return notFoundMeta
 
   const supabase = await createClient()
-  const { data } = await supabase.rpc('get_public_profile', { p_handle: handle })
+  const { data } = await supabase.rpc('get_public_profile', { p_public_id: id })
   const profile = data?.[0]
   if (!profile) return notFoundMeta
 
@@ -45,9 +42,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     name = name.split(' ')[0]
   }
 
-  const canonical = `${SITE_URL}/u/${handle}`
+  const canonical = `${SITE_URL}/profile/${id}`
 
-  // Build a description from available data — categories and type ratings count
   const categories = (profile.aml_categories ?? []).join(', ')
   const typeRatingCount = Array.isArray(profile.type_ratings) ? profile.type_ratings.length : 0
   const descParts = []
@@ -75,7 +71,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: ogImage ? [{ url: ogImage, width: 512, height: 512, alt: name }] : undefined,
     },
     twitter: {
-      card: ogImage ? 'summary' : 'summary',
+      card: 'summary',
       title: name,
       description,
       images: ogImage ? [ogImage] : undefined,
@@ -84,31 +80,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function PublicProfilePage({ params }: PageProps) {
-  const { handle } = await params
+  const { id } = await params
 
-  if (!HANDLE_REGEX.test(handle)) notFound()
-
-  // Kill switch: if the social_profile flag is off, all public profiles
-  // become 404 immediately. This is the incident response path — flipping
-  // the flag hides every public profile within 60 seconds.
+  if (!PUBLIC_ID_REGEX.test(id)) notFound()
   if (!(await isFeatureEnabled('social_profile'))) notFound()
 
   const supabase = await createClient()
 
-  // Single security-definer call returns only the public-safe fields,
-  // with is_public = true enforced inside the function.
-  const { data: rows } = await supabase.rpc('get_public_profile', { p_handle: handle })
+  const { data: rows } = await supabase.rpc('get_public_profile', { p_public_id: id })
   const profile = rows?.[0]
 
   if (!profile) notFound()
 
-  // Compute display name
   let displayName = profile.display_name || profile.full_name || 'Engineer'
   if (profile.display_name_first_only && displayName.includes(' ')) {
     displayName = displayName.split(' ')[0]
   }
 
-  // Type ratings — normalise the JSON-stringified entries from the existing schema
   const typeRatings: Array<{ rating: string }> = (() => {
     const raw = profile.type_ratings
     if (!Array.isArray(raw)) return []
@@ -130,17 +118,14 @@ export default async function PublicProfilePage({ params }: PageProps) {
       .filter((x): x is { rating: string } => x !== null && !!x.rating)
   })()
 
-  // Years in industry — separate security definer function so we don't have
-  // to expose employment_periods to anon
   let yearsInIndustry: number | null = null
   if (profile.show_years_in_industry) {
     const { data: years } = await supabase.rpc('get_public_profile_years_in_industry', {
-      p_handle: handle,
+      p_public_id: id,
     })
     if (typeof years === 'number') yearsInIndustry = years
   }
 
-  // Phase 2: follower / following counts and current user's follow state
   const followEnabled = await isFeatureEnabled('social_follow')
   let followerCount = 0
   let followingCount = 0
@@ -148,9 +133,9 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
   if (followEnabled) {
     const [{ data: fc }, { data: gc }, { data: fs }] = await Promise.all([
-      supabase.rpc('get_follower_count', { p_handle: handle }),
-      supabase.rpc('get_following_count', { p_handle: handle }),
-      supabase.rpc('get_follow_state', { p_handle: handle }),
+      supabase.rpc('get_follower_count', { p_public_id: id }),
+      supabase.rpc('get_following_count', { p_public_id: id }),
+      supabase.rpc('get_follow_state', { p_public_id: id }),
     ])
     if (typeof fc === 'number') followerCount = fc
     if (typeof gc === 'number') followingCount = gc
@@ -159,7 +144,6 @@ export default async function PublicProfilePage({ params }: PageProps) {
     }
   }
 
-  // Avatar URL from storage (public bucket, no signed URL needed)
   const avatarUrl = profile.avatar_path
     ? supabase.storage.from('public-profile-avatars').getPublicUrl(profile.avatar_path).data.publicUrl
     : null
@@ -167,7 +151,6 @@ export default async function PublicProfilePage({ params }: PageProps) {
   return (
     <div className="bg-background">
       <div className="max-w-3xl mx-auto px-6 py-12">
-        {/* Header */}
         <div className="flex items-start gap-5 mb-10">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -179,13 +162,13 @@ export default async function PublicProfilePage({ params }: PageProps) {
           ) : (
             <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center border border-border/60">
               <span className="text-2xl font-semibold text-muted-foreground">
-                {displayName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                {displayName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
               </span>
             </div>
           )}
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-semibold text-foreground">{displayName}</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">@{profile.handle}</p>
+            <p className="text-xs text-muted-foreground/70 mt-0.5 font-mono">#{profile.public_id}</p>
             {profile.show_employment_status && profile.employment_type && (
               <p className="text-sm text-muted-foreground mt-2 capitalize">
                 {profile.employment_type}
@@ -193,11 +176,11 @@ export default async function PublicProfilePage({ params }: PageProps) {
             )}
             {followEnabled && (
               <div className="flex items-center gap-4 mt-3 text-sm">
-                <Link href={`/u/${profile.handle}/followers`} className="hover:underline">
+                <Link href={`/profile/${profile.public_id}/followers`} className="hover:underline">
                   <span className="font-semibold text-foreground">{followerCount}</span>
                   <span className="text-muted-foreground"> {followerCount === 1 ? 'follower' : 'followers'}</span>
                 </Link>
-                <Link href={`/u/${profile.handle}/following`} className="hover:underline">
+                <Link href={`/profile/${profile.public_id}/following`} className="hover:underline">
                   <span className="text-muted-foreground">Following </span>
                   <span className="font-semibold text-foreground">{followingCount}</span>
                 </Link>
@@ -205,11 +188,10 @@ export default async function PublicProfilePage({ params }: PageProps) {
             )}
           </div>
           {followEnabled && followState !== 'self' && (
-            <ProfileActions targetHandle={profile.handle} initialFollowState={followState} />
+            <ProfileActions targetPublicId={profile.public_id} initialFollowState={followState} />
           )}
         </div>
 
-        {/* Licence categories */}
         {profile.aml_categories && profile.aml_categories.length > 0 && (
           <section className="mb-10">
             <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
@@ -228,7 +210,6 @@ export default async function PublicProfilePage({ params }: PageProps) {
           </section>
         )}
 
-        {/* Type rating trophy case — the centrepiece */}
         {typeRatings.length > 0 && (
           <section className="mb-10">
             <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
@@ -247,7 +228,6 @@ export default async function PublicProfilePage({ params }: PageProps) {
           </section>
         )}
 
-        {/* Optional sections */}
         {profile.show_years_in_industry && yearsInIndustry !== null && (
           <section className="mb-6">
             <p className="text-sm text-muted-foreground">
@@ -256,7 +236,6 @@ export default async function PublicProfilePage({ params }: PageProps) {
           </section>
         )}
 
-        {/* Empty state — if everything is empty/disabled */}
         {typeRatings.length === 0 &&
          (!profile.aml_categories || profile.aml_categories.length === 0) && (
           <p className="text-sm text-muted-foreground">
@@ -264,7 +243,6 @@ export default async function PublicProfilePage({ params }: PageProps) {
           </p>
         )}
 
-        {/* Sign-up CTA */}
         <section className="mt-16 pt-8 border-t border-border/60">
           <p className="text-sm text-muted-foreground mb-3">
             Airworthiness is a free professional tool for UK Aircraft Maintenance Licence holders.

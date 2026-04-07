@@ -5,7 +5,7 @@ import { logPrivacyEvent } from '@/lib/privacy-audit'
 /**
  * Block a user.
  *
- * Body: { targetHandle: string }
+ * Body: { targetPublicId: string }
  *
  * Effects:
  * - Inserts a row in blocks (blocker = current user, blocked = target)
@@ -23,14 +23,14 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const body = await request.json().catch(() => null)
-  if (!body || typeof body.targetHandle !== 'string') {
-    return NextResponse.json({ error: 'targetHandle is required' }, { status: 400 })
+  if (!body || typeof body.targetPublicId !== 'string') {
+    return NextResponse.json({ error: 'targetPublicId is required' }, { status: 400 })
   }
 
   const { data: target } = await supabase
     .from('public_profiles')
     .select('user_id')
-    .eq('handle', body.targetHandle)
+    .eq('public_id', body.targetPublicId)
     .maybeSingle()
 
   if (!target) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
   await logPrivacyEvent({
     eventType: 'user_blocked',
     eventCategory: 'social',
-    metadata: { target_handle: body.targetHandle },
+    metadata: { target_public_id: body.targetPublicId },
   })
 
   return NextResponse.json({ success: true })
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
 /**
  * Unblock a user.
  *
- * Body: { targetHandle: string }
+ * Body: { targetPublicId: string }
  *
  * Removes the block. Does NOT restore any follows that were torn down
  * when the block was created — the user has to follow again if they want.
@@ -76,14 +76,14 @@ export async function DELETE(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   const body = await request.json().catch(() => null)
-  if (!body || typeof body.targetHandle !== 'string') {
-    return NextResponse.json({ error: 'targetHandle is required' }, { status: 400 })
+  if (!body || typeof body.targetPublicId !== 'string') {
+    return NextResponse.json({ error: 'targetPublicId is required' }, { status: 400 })
   }
 
   const { data: target } = await supabase
     .from('public_profiles')
     .select('user_id')
-    .eq('handle', body.targetHandle)
+    .eq('public_id', body.targetPublicId)
     .maybeSingle()
 
   if (!target) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
@@ -99,7 +99,7 @@ export async function DELETE(request: Request) {
   await logPrivacyEvent({
     eventType: 'user_unblocked',
     eventCategory: 'social',
-    metadata: { target_handle: body.targetHandle },
+    metadata: { target_public_id: body.targetPublicId },
   })
 
   return NextResponse.json({ success: true })

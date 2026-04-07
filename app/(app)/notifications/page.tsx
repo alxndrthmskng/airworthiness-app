@@ -15,7 +15,7 @@ interface Notification {
   is_read: boolean
   created_at: string
   actor_id: string | null
-  actor_handle: string | null
+  actor_public_id: string | null
   actor_display_name: string | null
   actor_avatar_path: string | null
 }
@@ -81,7 +81,7 @@ export default async function NotificationsPage() {
             const avatarUrl = notif.actor_avatar_path
               ? supabase.storage.from('public-profile-avatars').getPublicUrl(notif.actor_avatar_path).data.publicUrl
               : null
-            const linkHref = notif.actor_handle ? `/u/${notif.actor_handle}` : '#'
+            const linkHref = notif.actor_public_id ? `/profile/${notif.actor_public_id}` : '#'
             return (
               <Link
                 key={notif.id}

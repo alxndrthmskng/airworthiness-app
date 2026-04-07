@@ -12,7 +12,7 @@ import { Sun, Moon, Monitor, Download, Mail, Shield, Globe } from 'lucide-react'
 import { DeleteAccountButton } from '@/app/(app)/dashboard/delete-account-button'
 
 interface PublicProfile {
-  handle: string
+  public_id: string
   is_public: boolean
 }
 
@@ -66,14 +66,10 @@ export function SettingsPanel({
       return
     }
     const data = await res.json()
-    setProfile({ handle: data.handle, is_public: true })
+    setProfile({ public_id: data.public_id, is_public: true })
     setShowOptInModal(false)
     setConsentChecked(false)
-    if (data.isNew) {
-      router.push('/settings/profile-handle')
-    } else {
-      router.refresh()
-    }
+    router.refresh()
   }
 
   async function handleOptOut() {
@@ -280,16 +276,13 @@ export function SettingsPanel({
                 <div className="rounded-lg bg-muted/40 border border-border/60 px-4 py-3">
                   <p className="text-xs text-muted-foreground">Your profile is public at</p>
                   <Link
-                    href={`/u/${profile.handle}`}
+                    href={`/profile/${profile.public_id}`}
                     className="text-sm font-medium text-foreground hover:underline break-all"
                   >
-                    airworthiness.org.uk/u/{profile.handle}
+                    airworthiness.org.uk/profile/{profile.public_id}
                   </Link>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Link href="/settings/profile-handle">
-                    <Button variant="outline" size="sm">Change handle</Button>
-                  </Link>
                   <Button variant="outline" size="sm" onClick={handleOptOut} disabled={socialBusy}>
                     Make private
                   </Button>

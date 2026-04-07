@@ -14,7 +14,7 @@ interface FeedPost {
   post_type: string
   data: Record<string, unknown>
   created_at: string
-  author_handle: string
+  author_public_id: string
   author_display_name: string
   author_avatar_path: string | null
 }
@@ -184,10 +184,10 @@ export function PostCard({ post, avatarUrl, photoUrls = [], isOwn }: Props) {
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <Link href={`/u/${post.author_handle}`} className="text-sm font-medium text-foreground hover:underline">
+          <Link href={`/profile/${post.author_public_id}`} className="text-sm font-medium text-foreground hover:underline">
             {post.author_display_name}
           </Link>
-          <p className="text-xs text-muted-foreground">@{post.author_handle} · {relativeTime(post.created_at)}</p>
+          <p className="text-xs text-muted-foreground">{relativeTime(post.created_at)}</p>
         </div>
         {isOwn && (
           <div className="relative" ref={menuRef}>

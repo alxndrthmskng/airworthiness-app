@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Discover engineers | Airworthiness' 
 
 interface SearchResult {
   user_id: string
-  handle: string
+  public_id: string
   display_name: string
   avatar_path: string | null
 }
@@ -66,7 +66,7 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
               name="q"
               aria-label="Search engineers"
               defaultValue={query}
-              placeholder="Search by name or handle (e.g. alex-king)"
+              placeholder="Search by name (e.g. Alex King)"
               autoFocus
               className="w-full pl-9 pr-3 py-2.5 border border-border rounded-xl bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/40"
             />
@@ -87,7 +87,7 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
                   return (
                     <Link
                       key={s.user_id}
-                      href={`/u/${s.handle}`}
+                      href={`/profile/${s.public_id}`}
                       className="rounded-xl border border-border p-4 flex items-center gap-3 hover:border-foreground/40 transition-colors"
                     >
                       {avatarUrl ? (
@@ -100,7 +100,7 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{s.display_name}</p>
-                        <p className="text-xs text-muted-foreground truncate">@{s.handle} · You may have worked together</p>
+                        <p className="text-xs text-muted-foreground truncate">You may have worked together</p>
                       </div>
                     </Link>
                   )
@@ -108,7 +108,7 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Search for other engineers by their handle or name to find profiles to follow.
+                Search for other engineers by name to find profiles to follow.
               </p>
             )}
           </>
@@ -135,7 +135,7 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
               return (
                 <Link
                   key={r.user_id}
-                  href={`/u/${r.handle}`}
+                  href={`/profile/${r.public_id}`}
                   className="rounded-xl border border-border p-4 flex items-center gap-3 hover:border-foreground/40 transition-colors"
                 >
                   {avatarUrl ? (
@@ -148,7 +148,6 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{r.display_name}</p>
-                    <p className="text-xs text-muted-foreground truncate">@{r.handle}</p>
                   </div>
                 </Link>
               )

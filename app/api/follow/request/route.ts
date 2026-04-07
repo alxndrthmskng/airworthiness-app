@@ -6,7 +6,7 @@ import { logPrivacyEvent } from '@/lib/privacy-audit'
 /**
  * Accept or decline a pending follow request.
  *
- * Body: { followerHandle: string, action: 'accept' | 'decline' }
+ * Body: { followerPublicId: string, action: 'accept' | 'decline' }
  *
  * - accept: sets status='active' on the row
  * - decline: deletes the row
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
   if (
     !body ||
-    typeof body.followerHandle !== 'string' ||
+    typeof body.followerPublicId !== 'string' ||
     (body.action !== 'accept' && body.action !== 'decline')
   ) {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const { data: follower } = await supabase
     .from('public_profiles')
     .select('user_id')
-    .eq('handle', body.followerHandle)
+    .eq('public_id', body.followerPublicId)
     .maybeSingle()
 
   if (!follower) {
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     await logPrivacyEvent({
       eventType: 'follow_accepted',
       eventCategory: 'social',
-      metadata: { follower_handle: body.followerHandle },
+      metadata: { follower_public_id: body.followerPublicId },
     })
 
     // Notify the original requester that their request was accepted
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     await logPrivacyEvent({
       eventType: 'follow_declined',
       eventCategory: 'social',
-      metadata: { follower_handle: body.followerHandle },
+      metadata: { follower_public_id: body.followerPublicId },
     })
   }
 

@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     post_type: string
     data: Record<string, unknown>
     created_at: string
-    author_handle: string
+    author_public_id: string
     author_display_name: string
     author_avatar_path: string | null
   }

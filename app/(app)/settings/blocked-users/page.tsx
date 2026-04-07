@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 import { UnblockButton } from './unblock-button'
@@ -9,7 +8,7 @@ export const metadata: Metadata = { title: 'Blocked users | Airworthiness' }
 
 interface BlockedUser {
   user_id: string
-  handle: string | null
+  public_id: string | null
   display_name: string | null
   avatar_path: string | null
   blocked_at: string
@@ -57,13 +56,8 @@ export default async function BlockedUsersPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{b.display_name ?? 'Unknown user'}</p>
-                    {b.handle && (
-                      <Link href={`/u/${b.handle}`} className="text-xs text-muted-foreground hover:text-foreground truncate block">
-                        @{b.handle}
-                      </Link>
-                    )}
                   </div>
-                  {b.handle && <UnblockButton handle={b.handle} />}
+                  {b.public_id && <UnblockButton publicId={b.public_id} />}
                 </div>
               )
             })}

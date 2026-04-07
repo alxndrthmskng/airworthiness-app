@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Follow requests | Airworthiness' }
 
 interface PendingRequest {
   follower_id: string
-  handle: string
+  public_id: string
   display_name: string
   avatar_path: string | null
   requested_at: string
@@ -50,7 +50,7 @@ export default async function FollowRequestsPage() {
                 : null
               return (
                 <div key={req.follower_id} className="rounded-xl border border-border p-4 flex items-center gap-4">
-                  <Link href={`/u/${req.handle}`} className="flex items-center gap-3 flex-1 min-w-0">
+                  <Link href={`/profile/${req.public_id}`} className="flex items-center gap-3 flex-1 min-w-0">
                     {avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover border border-border/60" />
@@ -61,10 +61,9 @@ export default async function FollowRequestsPage() {
                     )}
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{req.display_name}</p>
-                      <p className="text-xs text-muted-foreground truncate">@{req.handle}</p>
                     </div>
                   </Link>
-                  <FollowRequestActions followerHandle={req.handle} />
+                  <FollowRequestActions followerPublicId={req.public_id} />
                 </div>
               )
             })}
