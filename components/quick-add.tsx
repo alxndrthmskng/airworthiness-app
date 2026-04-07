@@ -220,7 +220,8 @@ export function QuickAdd() {
   }
 
   const hasDateError = dateError !== null
-  const inputClass = "w-full text-xs px-3 py-2 border border-border rounded-xl bg-background focus:outline-none focus:ring-1 focus:ring-ring text-center"
+  const inputClass = "w-full text-xs px-3 py-2 border border-border rounded-xl bg-background focus:outline-none focus:ring-1 focus:ring-ring text-center placeholder:text-muted-foreground/40"
+  const dropdownItemClass = "w-full text-left px-3 py-2 text-xs hover:bg-muted border-b last:border-0"
 
   return (
     <div ref={panelRef} className="fixed bottom-6 right-6 z-50 max-w-[calc(100vw-3rem)] pointer-events-none">
@@ -247,7 +248,35 @@ export function QuickAdd() {
               )}
             </div>
 
-            {/* 2. Aircraft Type Rating(s) */}
+            {/* 2. Licence Category */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setLicenceCategoryOpen(o => !o)}
+                onBlur={() => setTimeout(() => setLicenceCategoryOpen(false), 150)}
+                className={`${inputClass} ${licenceCategory ? '' : 'text-muted-foreground/40'}`}
+              >
+                {licenceCategory
+                  ? LICENCE_CATEGORIES.find(c => c.value === licenceCategory)?.label
+                  : 'Licence Category'}
+              </button>
+              {licenceCategoryOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-xl shadow-lg overflow-hidden">
+                  {LICENCE_CATEGORIES.map(c => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => { setLicenceCategory(c.value); setLicenceCategoryOpen(false) }}
+                      className={dropdownItemClass}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 3. Aircraft Type Rating(s) */}
             <div className="relative">
               <div className="relative">
                 <input
@@ -268,15 +297,15 @@ export function QuickAdd() {
               {filteredTypes.length > 0 && !aircraftType && (
                 <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-xl shadow-lg max-h-40 overflow-y-auto">
                   {filteredTypes.map(r => (
-                    <button key={`${r.category}-${r.rating}`} type="button" onClick={() => { setAircraftType(r.rating); setAircraftSearch(''); setAircraftFocused(false) }} className="w-full text-left px-3 py-2 text-xs hover:bg-muted border-b last:border-0">
-                      <span className="font-medium">{r.rating}</span>
+                    <button key={`${r.category}-${r.rating}`} type="button" onClick={() => { setAircraftType(r.rating); setAircraftSearch(''); setAircraftFocused(false) }} className={dropdownItemClass}>
+                      {r.rating}
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* 3. Aircraft Registration */}
+            {/* 4. Aircraft Registration */}
             <input
               type="text"
               value={registration}
@@ -284,34 +313,6 @@ export function QuickAdd() {
               placeholder="Aircraft Registration"
               className={`${inputClass} [&:not(:placeholder-shown)]:uppercase`}
             />
-
-            {/* 4. Licence Category */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setLicenceCategoryOpen(o => !o)}
-                onBlur={() => setTimeout(() => setLicenceCategoryOpen(false), 150)}
-                className={`${inputClass} ${licenceCategory ? '' : 'text-muted-foreground/60'}`}
-              >
-                {licenceCategory
-                  ? LICENCE_CATEGORIES.find(c => c.value === licenceCategory)?.label
-                  : 'Licence Category'}
-              </button>
-              {licenceCategoryOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-xl shadow-lg overflow-hidden">
-                  {LICENCE_CATEGORIES.map(c => (
-                    <button
-                      key={c.value}
-                      type="button"
-                      onClick={() => { setLicenceCategory(c.value); setLicenceCategoryOpen(false) }}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-muted border-b last:border-0"
-                    >
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
 
             {/* 5. Task Group(s) (multi-select) */}
             <div className="relative">
@@ -327,7 +328,7 @@ export function QuickAdd() {
               {filteredAta.length > 0 && (
                 <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-xl shadow-lg max-h-40 overflow-y-auto">
                   {filteredAta.map(c => (
-                    <button key={c.value} type="button" onClick={() => { setAtaChapters(prev => [...prev, c.value]); setAtaSearch(''); setAtaFocused(false) }} className="w-full text-left px-3 py-2 text-xs hover:bg-muted border-b last:border-0">
+                    <button key={c.value} type="button" onClick={() => { setAtaChapters(prev => [...prev, c.value]); setAtaSearch(''); setAtaFocused(false) }} className={dropdownItemClass}>
                       {c.label}
                     </button>
                   ))}
@@ -364,7 +365,7 @@ export function QuickAdd() {
               {filteredTaskTypes.length > 0 && (
                 <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-xl shadow-lg max-h-40 overflow-y-auto">
                   {filteredTaskTypes.map(t => (
-                    <button key={t} type="button" onClick={() => { setTaskTypes(prev => [...prev, t]); setTaskTypeSearch(''); setTaskTypeFocused(false) }} className="w-full text-left px-3 py-2 text-xs hover:bg-muted border-b last:border-0">
+                    <button key={t} type="button" onClick={() => { setTaskTypes(prev => [...prev, t]); setTaskTypeSearch(''); setTaskTypeFocused(false) }} className={dropdownItemClass}>
                       {t}
                     </button>
                   ))}
