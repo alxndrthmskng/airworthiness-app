@@ -45,11 +45,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'post_type is required' }, { status: 400 })
   }
 
-  if (!isValidPostType(body.post_type)) {
+  const postType: string = body.post_type
+  if (!isValidPostType(postType)) {
     return NextResponse.json({ error: 'Unknown post_type' }, { status: 400 })
   }
 
-  const validation = POST_TYPES[body.post_type].validate(body.data)
+  const validation = POST_TYPES[postType].validate(body.data)
   if (!validation.ok) {
     return NextResponse.json({ error: validation.error }, { status: 400 })
   }
