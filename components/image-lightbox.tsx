@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Props {
@@ -22,8 +22,14 @@ interface Props {
  */
 export function ImageLightbox({ urls, gridClassName }: Props) {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null)
 
-  const close = useCallback(() => setOpenIndex(null), [])
+  const close = useCallback(() => {
+    setOpenIndex(null)
+    // Restore focus to the thumbnail that opened the lightbox
+    triggerRef.current?.focus()
+  }, [])
   const prev = useCallback(() => {
     setOpenIndex(i => (i === null ? null : (i - 1 + urls.length) % urls.length))
   }, [urls.length])
@@ -40,6 +46,8 @@ export function ImageLightbox({ urls, gridClassName }: Props) {
     }
     document.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
+    // Move focus into the dialog so screen readers announce it and Tab is contained
+    closeBtnRef.current?.focus()
     return () => {
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
@@ -60,8 +68,9 @@ export function ImageLightbox({ urls, gridClassName }: Props) {
           <button
             key={i}
             type="button"
-            onClick={() => setOpenIndex(i)}
-            className="block w-full aspect-square overflow-hidden rounded-lg border border-border/60 hover:opacity-90 transition-opacity"
+            onClick={(e) => { triggerRef.current = e.currentTarget; setOpenIndex(i) }}
+            aria-label={`View photo ${i + 1} of ${urls.length}`}
+            className="block w-full aspect-square overflow-hidden rounded-lg border border-border/60 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-ring"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={url} alt="" className="w-full h-full object-cover" />
@@ -71,14 +80,18 @@ export function ImageLightbox({ urls, gridClassName }: Props) {
 
       {openIndex !== null && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Photo viewer"
           className="fixed inset-0 z-[90] bg-black/90 flex items-center justify-center p-4"
           onClick={close}
         >
           <button
+            ref={closeBtnRef}
             type="button"
             onClick={close}
-            className="absolute top-4 right-4 text-white/80 hover:text-white p-2"
-            aria-label="Close"
+            className="absolute top-4 right-4 text-white/80 hover:text-white p-2 focus:outline-none focus:ring-2 focus:ring-white rounded"
+            aria-label="Close photo viewer"
           >
             <X className="w-6 h-6" />
           </button>

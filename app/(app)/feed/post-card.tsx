@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ImageLightbox } from '@/components/image-lightbox'
@@ -120,8 +120,28 @@ export function PostCard({ post, avatarUrl, photoUrls = [], isOwn }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [editingNote, setEditingNote] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const menuBtnRef = useRef<HTMLButtonElement | null>(null)
 
   const isTaskShare = post.post_type === 'task_share'
+
+  useEffect(() => {
+    if (!menuOpen) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') { setMenuOpen(false); menuBtnRef.current?.focus() }
+    }
+    function onClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onClick)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onClick)
+    }
+  }, [menuOpen])
 
   function startEdit() {
     setMenuOpen(false)
@@ -170,22 +190,26 @@ export function PostCard({ post, avatarUrl, photoUrls = [], isOwn }: Props) {
           <p className="text-xs text-muted-foreground">@{post.author_handle} · {relativeTime(post.created_at)}</p>
         </div>
         {isOwn && (
-          <div className="relative">
+          <div className="relative" ref={menuRef}>
             <button
+              ref={menuBtnRef}
               type="button"
               onClick={() => setMenuOpen(o => !o)}
               className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted"
               aria-label="More actions"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
             >
-              <MoreHorizontal className="w-4 h-4" />
+              <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 mt-1 w-40 bg-popover border border-border rounded-xl shadow-lg overflow-hidden z-10">
+              <div role="menu" className="absolute right-0 mt-1 w-40 bg-popover border border-border rounded-xl shadow-lg overflow-hidden z-10">
                 {isTaskShare && (
                   <button
                     type="button"
                     onClick={startEdit}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted text-left"
+                    role="menuitem"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted text-left focus:outline-none focus:bg-muted"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     Edit note
@@ -209,7 +233,10 @@ export function PostCard({ post, avatarUrl, photoUrls = [], isOwn }: Props) {
 
       {editingNote !== null && (
         <div className="mt-3 space-y-2">
+          <label htmlFor={`edit-note-${post.id}`} className="sr-only">Edit note</label>
           <textarea
+            id={`edit-note-${post.id}`}
+            aria-label="Edit note"
             value={editingNote}
             onChange={e => setEditingNote(e.target.value.slice(0, MAX_TASK_NOTE_LENGTH))}
             rows={3}

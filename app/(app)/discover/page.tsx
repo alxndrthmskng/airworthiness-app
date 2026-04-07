@@ -58,10 +58,13 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
       <div className="max-w-2xl">
         <form action="/discover" method="GET" className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
+            <label htmlFor="discover-q" className="sr-only">Search engineers</label>
             <input
+              id="discover-q"
               type="search"
               name="q"
+              aria-label="Search engineers"
               defaultValue={query}
               placeholder="Search by name or handle (e.g. alex-king)"
               autoFocus

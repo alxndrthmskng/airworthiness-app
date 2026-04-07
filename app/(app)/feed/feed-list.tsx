@@ -67,7 +67,7 @@ export function FeedList({ initial, initialHasMore, currentUserId }: Props) {
       ))}
       {hasMore && (
         <div className="pt-4 text-center">
-          <Button variant="outline" size="sm" onClick={loadMore} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={loadMore} disabled={loading} aria-busy={loading}>
             {loading ? 'Loading...' : 'Load more'}
           </Button>
           {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
