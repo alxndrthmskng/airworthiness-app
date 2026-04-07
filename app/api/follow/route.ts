@@ -77,6 +77,13 @@ export async function POST(request: Request) {
     metadata: { target_handle: body.targetHandle },
   })
 
+  // Notify the followed user
+  await supabase.rpc('create_notification', {
+    p_recipient_id: target.user_id,
+    p_notification_type: status === 'active' ? 'new_follower' : 'follow_requested',
+    p_data: { target_handle: body.targetHandle },
+  })
+
   return NextResponse.json({ success: true, status })
 }
 

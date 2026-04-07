@@ -16,11 +16,13 @@ import {
   X,
   ChevronsUpDown,
   Rss,
+  Bell,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: User },
   { label: 'Social Feed', href: '/feed', icon: Rss },
+  { label: 'Notifications', href: '/notifications', icon: Bell },
   { label: 'Digital Logbook', href: '/logbook', icon: BookOpen },
   { label: 'Module Tracker', href: '/modules', icon: ClipboardList },
   { label: 'Continuation Training', href: '/training', icon: GraduationCap },
@@ -59,6 +61,26 @@ function useUserProfile() {
   }, [])
 
   return { user, profile, loaded }
+}
+
+function useUnreadNotificationCount(user: any): number {
+  const [count, setCount] = useState(0)
+  const pathname = usePathname()
+
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    const supabase = createClient()
+    async function load() {
+      const { data } = await supabase.rpc('get_unread_notification_count')
+      if (!cancelled && typeof data === 'number') setCount(data)
+    }
+    load()
+    // Refresh on path change so the badge clears after visiting /notifications
+    return () => { cancelled = true }
+  }, [user, pathname])
+
+  return count
 }
 
 function getInitials(fullName: string | null): string {
@@ -165,6 +187,7 @@ export function AppSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { user, profile, loaded } = useUserProfile()
+  const unreadCount = useUnreadNotificationCount(user)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   // Listen for external triggers
@@ -225,6 +248,7 @@ export function AppSidebar() {
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon
               const active = isActive(item.href)
+              const showBadge = item.href === '/notifications' && unreadCount > 0
 
               return (
                 <li key={item.href}>
@@ -237,7 +261,12 @@ export function AppSidebar() {
                     }`}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={1.5} />
-                    {item.label}
+                    <span className="flex-1">{item.label}</span>
+                    {showBadge && (
+                      <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-foreground text-background text-xs font-semibold">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
               )

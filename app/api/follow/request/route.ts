@@ -60,6 +60,13 @@ export async function POST(request: Request) {
       eventCategory: 'social',
       metadata: { follower_handle: body.followerHandle },
     })
+
+    // Notify the original requester that their request was accepted
+    await supabase.rpc('create_notification', {
+      p_recipient_id: follower.user_id,
+      p_notification_type: 'follow_accepted',
+      p_data: {},
+    })
   } else {
     const { error } = await supabase
       .from('follows')
