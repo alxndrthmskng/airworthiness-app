@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { isFeatureEnabled } from '@/lib/feature-flags'
 import { Button } from '@/components/ui/button'
-import { FollowButton } from './follow-button'
+import { ProfileActions } from './profile-actions'
 
 interface PageProps {
   params: Promise<{ handle: string }>
@@ -205,7 +205,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
             )}
           </div>
           {followEnabled && followState !== 'self' && (
-            <FollowButton targetHandle={profile.handle} initialState={followState} />
+            <ProfileActions targetHandle={profile.handle} initialFollowState={followState} />
           )}
         </div>
 

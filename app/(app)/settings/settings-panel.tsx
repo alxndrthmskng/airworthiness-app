@@ -308,14 +308,17 @@ export function SettingsPanel({
             {socialError && <p className="text-sm text-red-600">{socialError}</p>}
 
             {socialFollowEnabled && (
-              <div className="border-t border-border/60 pt-4">
-                <Link href="/settings/follow-requests" className="text-sm font-medium text-foreground hover:underline">
+              <div className="border-t border-border/60 pt-4 space-y-2">
+                <Link href="/settings/follow-requests" className="block text-sm font-medium text-foreground hover:underline">
                   Follow requests
                   {pendingFollowRequests > 0 && (
                     <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-foreground text-background text-xs">
                       {pendingFollowRequests}
                     </span>
                   )}
+                </Link>
+                <Link href="/settings/blocked-users" className="block text-sm font-medium text-foreground hover:underline">
+                  Blocked users
                 </Link>
               </div>
             )}

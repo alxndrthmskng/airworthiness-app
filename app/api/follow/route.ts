@@ -50,6 +50,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Cannot follow yourself' }, { status: 400 })
   }
 
+  // Check for blocks in either direction
+  const { data: blockExists } = await supabase
+    .from('blocks')
+    .select('blocker_id')
+    .or(`and(blocker_id.eq.${user.id},blocked_id.eq.${target.user_id}),and(blocker_id.eq.${target.user_id},blocked_id.eq.${user.id})`)
+    .maybeSingle()
+  if (blockExists) {
+    return NextResponse.json({ error: 'Cannot follow this user' }, { status: 403 })
+  }
+
   // Insert the follow row. For now all follows are immediate (active).
   // When private profiles land, this will branch on a privacy field.
   const status = 'active'
