@@ -30,7 +30,7 @@ If in doubt, treat it as an incident. False positives are cheap; false negatives
 - If unsure, assume it is real until proven otherwise.
 
 ### Step 2: Stop the bleeding
-- **If a single feature is affected**: flip the feature flag to disable it. The kill switch is at `/admin/feature-flags` (TODO: build this before Phase 1 ships).
+- **If a single feature is affected**: flip the feature flag to disable it. The kill switch is at `/admin/feature-flags`. Changes propagate within 60 seconds across all servers.
 - **If the whole platform is affected**: take the affected pages offline by disabling the route in Vercel, or by deploying a maintenance page.
 - **If a specific user account is the source** (e.g. a leaked photo from a single user): suspend the account by setting `auth.users.banned_until` in Supabase to a date 100 years in the future. This prevents login without deleting data.
 - **If a photo needs to come down urgently**: delete the row from `posts` and the file from Supabase Storage. The delete is permanent.
@@ -202,10 +202,10 @@ This section will be expanded with named roles (incident commander, comms lead, 
 
 These are blockers — the plan does not work without them.
 
-- [ ] **Feature flag / kill switch system** — a way to disable a feature in seconds, without a deploy
+- [x] **Feature flag / kill switch system** — at `/admin/feature-flags`, gated by `public.admins` table. Audit logged via Postgres trigger.
 - [ ] **Admin route** to suspend a user account
 - [ ] **Monitoring and alerting** — at minimum, error tracking (Sentry or similar) and uptime monitoring (Better Stack, Pingdom, etc.)
-- [ ] **Audit logging** — every privacy-sensitive action logged with user, time, and what changed
+- [ ] **Audit logging for privacy actions** — every privacy-sensitive action logged with user, time, and what changed (feature flags are done; profile/social actions are pending)
 - [ ] **Backup person identified** — a trusted second human who can flip the kill switch on instructions
 - [ ] **Public incidents page route** at `/incidents` ready to publish post-mortems
 

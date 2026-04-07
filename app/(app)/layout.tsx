@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppSidebar } from '@/components/app-sidebar'
 import { QuickAdd } from '@/components/quick-add'
+import { isFeatureEnabled } from '@/lib/feature-flags'
 
 export default async function AppLayout({
   children,
@@ -21,6 +22,8 @@ export default async function AppLayout({
 
   if (!profile?.profile_completed_at) redirect('/complete-profile')
 
+  const quickAddEnabled = await isFeatureEnabled('quick_add')
+
   return (
     <>
       <AppSidebar />
@@ -29,7 +32,7 @@ export default async function AppLayout({
           {children}
         </div>
       </main>
-      <QuickAdd />
+      {quickAddEnabled && <QuickAdd />}
     </>
   )
 }

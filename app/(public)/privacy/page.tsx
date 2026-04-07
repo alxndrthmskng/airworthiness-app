@@ -7,7 +7,7 @@ export default function PrivacyPolicyPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 py-16">
         <h1 className="text-2xl font-semibold text-foreground mb-2">Privacy Policy</h1>
-        <p className="text-sm text-muted-foreground mb-10">Last updated: 28 March 2026</p>
+        <p className="text-sm text-muted-foreground mb-10">Last updated: 7 April 2026</p>
 
         <div className="prose prose-gray prose-sm max-w-none space-y-6 text-foreground leading-relaxed">
           <section>
@@ -53,8 +53,8 @@ export default function PrivacyPolicyPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-foreground mt-8 mb-3">5. How We Store Your Data</h2>
-            <p>Your data is stored securely using Supabase (hosted within the EU/EEA) with encryption at rest and in transit. File uploads (licence photographs, certificates) are stored in Supabase Storage with row-level security policies. The website is served via Vercel.</p>
-            <p>We retain your personal data for as long as your account is active. If you delete your account, your data will be permanently removed within 30 days, except where retention is required by law.</p>
+            <p>Your data is stored securely using Supabase, hosted in Ireland (eu-west-1), with encryption at rest and in transit. File uploads (licence photographs, certificates) are stored in Supabase Storage in the same region with row-level security policies. The website is served via Vercel.</p>
+            <p>We retain your personal data for as long as your account is active. When you delete your account, your data is removed from our live systems immediately. Encrypted backups of the database are retained for 7 days as part of our disaster recovery process; your data may persist in these backups until they are rotated out, after which it is permanently deleted. Backups are stored within the EU and are not accessed except in the event of a database recovery.</p>
           </section>
 
           <section>
