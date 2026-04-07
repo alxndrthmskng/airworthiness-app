@@ -19,6 +19,14 @@ const TASK_TYPES = [
   'Troubleshooting',
 ] as const
 
+const LICENCE_CATEGORIES = [
+  { value: 'aeroplane_turbine', label: 'Aeroplane (Turbine)' },
+  { value: 'aeroplane_piston', label: 'Aeroplane (Piston)' },
+  { value: 'helicopter_turbine', label: 'Helicopter (Turbine)' },
+  { value: 'helicopter_piston', label: 'Helicopter (Piston)' },
+  { value: 'avionics', label: 'Avionics' },
+] as const
+
 function groupToCategory(group: string): string | null {
   if (group === 'Turbine Aeroplane') return 'aeroplane_turbine'
   if (group === 'Piston Aeroplane') return 'aeroplane_piston'
@@ -67,6 +75,8 @@ export function QuickAdd() {
   const [aircraftType, setAircraftType] = useState('')
   const [aircraftSearch, setAircraftSearch] = useState('')
   const [registration, setRegistration] = useState('')
+  const [licenceCategory, setLicenceCategory] = useState('')
+  const [licenceCategoryOpen, setLicenceCategoryOpen] = useState(false)
   const [ataSearch, setAtaSearch] = useState('')
   const [ataChapters, setAtaChapters] = useState<string[]>([])
   const [taskTypes, setTaskTypes] = useState<string[]>([])
@@ -124,6 +134,8 @@ export function QuickAdd() {
     setAircraftType('')
     setAircraftSearch('')
     setRegistration('')
+    setLicenceCategory('')
+    setLicenceCategoryOpen(false)
     setAtaSearch('')
     setAtaChapters([])
     setTaskTypes([])
@@ -168,7 +180,8 @@ export function QuickAdd() {
 
     const employer = employment?.[0]?.employer ?? ''
     const found = UK_TYPE_RATINGS.find(t => t.rating === aircraftType)
-    const aircraftCategory = found ? (groupToCategory(found.group) ?? 'aeroplane_turbine') : 'aeroplane_turbine'
+    const derivedCategory = found ? groupToCategory(found.group) : null
+    const aircraftCategory = licenceCategory || derivedCategory || 'aeroplane_turbine'
 
     const descriptionParts = [
       taskTypes.length > 0 ? `[${taskTypes.join(', ')}]` : '',
@@ -272,7 +285,35 @@ export function QuickAdd() {
               className={`${inputClass} [&:not(:placeholder-shown)]:uppercase`}
             />
 
-            {/* 4. Task Group (multi-select) */}
+            {/* 4. Licence Category */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setLicenceCategoryOpen(o => !o)}
+                onBlur={() => setTimeout(() => setLicenceCategoryOpen(false), 150)}
+                className={`${inputClass} ${licenceCategory ? '' : 'text-muted-foreground/60'}`}
+              >
+                {licenceCategory
+                  ? LICENCE_CATEGORIES.find(c => c.value === licenceCategory)?.label
+                  : 'Licence Category'}
+              </button>
+              {licenceCategoryOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-xl shadow-lg overflow-hidden">
+                  {LICENCE_CATEGORIES.map(c => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => { setLicenceCategory(c.value); setLicenceCategoryOpen(false) }}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-muted border-b last:border-0"
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 5. Task Group(s) (multi-select) */}
             <div className="relative">
               <input
                 type="text"
@@ -280,7 +321,7 @@ export function QuickAdd() {
                 onChange={e => setAtaSearch(e.target.value)}
                 onFocus={() => setAtaFocused(true)}
                 onBlur={() => setTimeout(() => setAtaFocused(false), 150)}
-                placeholder="Task Group"
+                placeholder="Task Group(s)"
                 className={inputClass}
               />
               {filteredAta.length > 0 && (
@@ -309,7 +350,7 @@ export function QuickAdd() {
               )}
             </div>
 
-            {/* 5. Task Type (multi-select, shows all on focus) */}
+            {/* 6. Task Type(s) (multi-select, shows all on focus) */}
             <div className="relative">
               <input
                 type="text"
@@ -317,7 +358,7 @@ export function QuickAdd() {
                 onChange={e => setTaskTypeSearch(e.target.value)}
                 onFocus={() => setTaskTypeFocused(true)}
                 onBlur={() => setTimeout(() => setTaskTypeFocused(false), 150)}
-                placeholder="Task Type"
+                placeholder="Task Type(s)"
                 className={inputClass}
               />
               {filteredTaskTypes.length > 0 && (
@@ -362,7 +403,7 @@ export function QuickAdd() {
                   : 'bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40'
               }`}
             >
-              {saving ? 'Saving...' : saved ? 'Added Successfully' : 'Add Logbook Task'}
+              {saving ? 'Saving...' : saved ? 'Added Successfully' : 'Add Task'}
             </button>
           </div>
         </div>
@@ -376,10 +417,10 @@ export function QuickAdd() {
             ? 'bg-muted text-muted-foreground rounded-full w-12 h-12 justify-center rotate-45'
             : 'bg-foreground text-background hover:bg-foreground/90 rounded-full px-5 h-12'
         }`}
-        aria-label={open ? 'Close' : 'Add logbook task'}
+        aria-label={open ? 'Close' : 'Add task'}
       >
         <Plus className="w-5 h-5 flex-shrink-0" strokeWidth={2} />
-        {!open && <span className="text-sm font-medium whitespace-nowrap">Add Logbook Task</span>}
+        {!open && <span className="text-sm font-medium whitespace-nowrap">Add Task</span>}
       </button>
     </div>
   )
