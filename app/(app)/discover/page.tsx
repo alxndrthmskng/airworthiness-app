@@ -15,6 +15,10 @@ interface SearchResult {
   avatar_path: string | null
 }
 
+interface SuggestedFollow extends SearchResult {
+  shared_employer_count: number
+}
+
 interface PageProps {
   searchParams: Promise<{ q?: string }>
 }
@@ -35,6 +39,13 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
   if (query.length >= 2) {
     const { data } = await supabase.rpc('search_profiles', { p_query: query, p_limit: 20 })
     results = (data as SearchResult[]) ?? []
+  }
+
+  // Suggested follows — only shown when there's no search query
+  let suggestions: SuggestedFollow[] = []
+  if (query.length === 0) {
+    const { data } = await supabase.rpc('get_suggested_follows', { p_limit: 10 })
+    suggestions = (data as SuggestedFollow[]) ?? []
   }
 
   return (
@@ -60,9 +71,44 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
         </form>
 
         {query.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            Search for other engineers by their handle or name to find profiles to follow.
-          </p>
+          <>
+            {suggestions.length > 0 ? (
+              <div className="space-y-2 mb-6">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                  Suggested for you
+                </p>
+                {suggestions.map(s => {
+                  const avatarUrl = s.avatar_path
+                    ? supabase.storage.from('public-profile-avatars').getPublicUrl(s.avatar_path).data.publicUrl
+                    : null
+                  return (
+                    <Link
+                      key={s.user_id}
+                      href={`/u/${s.handle}`}
+                      className="rounded-xl border border-border p-4 flex items-center gap-3 hover:border-foreground/40 transition-colors"
+                    >
+                      {avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover border border-border/60" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-muted border border-border/60 flex items-center justify-center text-xs font-semibold text-muted-foreground">
+                          {s.display_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{s.display_name}</p>
+                        <p className="text-xs text-muted-foreground truncate">@{s.handle} · You may have worked together</p>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Search for other engineers by their handle or name to find profiles to follow.
+              </p>
+            )}
+          </>
         )}
 
         {query.length > 0 && query.length < 2 && (

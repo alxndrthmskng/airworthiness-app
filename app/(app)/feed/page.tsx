@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { isFeatureEnabledForUser } from '@/lib/feature-flags'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 import { Rss } from 'lucide-react'
-import { PostCard } from './post-card'
+import { FeedList } from './feed-list'
 
 export const metadata: Metadata = { title: 'Social Feed | Airworthiness' }
 
@@ -39,8 +39,9 @@ export default async function FeedPage() {
 }
 
 async function FeedContent({ userId }: { userId: string }) {
+  const PAGE_SIZE = 25
   const supabase = await createClient()
-  const { data: posts } = await supabase.rpc('get_feed', { p_limit: 50, p_before: null })
+  const { data: posts } = await supabase.rpc('get_feed', { p_limit: PAGE_SIZE, p_before: null })
   const list: FeedPost[] = (posts as FeedPost[]) ?? []
 
   if (list.length === 0) {
@@ -78,11 +79,11 @@ async function FeedContent({ userId }: { userId: string }) {
   })
 
   return (
-    <div className="space-y-3 max-w-2xl">
-      {postsWithMedia.map(({ post, avatarUrl, photoUrls }) => (
-        <PostCard key={post.id} post={post} avatarUrl={avatarUrl} photoUrls={photoUrls} isOwn={post.author_id === userId} />
-      ))}
-    </div>
+    <FeedList
+      initial={postsWithMedia}
+      initialHasMore={list.length === PAGE_SIZE}
+      currentUserId={userId}
+    />
   )
 }
 

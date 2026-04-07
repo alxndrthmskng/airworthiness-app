@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { AML_CATEGORIES } from '@/lib/profile/constants'
 import { UK_TYPE_RATINGS } from '@/lib/profile/type-ratings'
 import type { TypeEndorsement } from '@/lib/profile/types'
+import { ShareMilestonePrompt } from '@/components/share-milestone-prompt'
 
 const IMPLIED_CATEGORIES: Record<string, string[]> = {
   'B1.1': ['A1'],
@@ -235,6 +236,7 @@ export function CompleteProfileForm({ mode = 'create', initialData }: CompletePr
   const [recruitmentOptIn, setRecruitmentOptIn] = useState(false)
   const [licenceFrontPath, setLicenceFrontPath] = useState<string | null>(initialData?.licenceFrontPath ?? null)
   const [licenceBackPath, setLicenceBackPath] = useState<string | null>(initialData?.licenceBackPath ?? null)
+  const [newlyAddedRatings, setNewlyAddedRatings] = useState<string[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -453,6 +455,19 @@ export function CompleteProfileForm({ mode = 'create', initialData }: CompletePr
     await supabase.auth.updateUser({ data: { full_name: fullName } })
 
     if (mode === 'edit') {
+      // Detect newly added type ratings (compared to initialData) so we
+      // can offer to share each one to the feed.
+      const initialRatings = new Set<string>(
+        (initialData?.licences ?? [])
+          .flatMap(l => l.endorsements ?? [])
+          .map((e: any) => (e?.rating ?? '').trim())
+          .filter(Boolean)
+      )
+      const newRatings = allEndorsements
+        .map((e: any) => (e?.rating ?? '').trim())
+        .filter((r: string) => r && !initialRatings.has(r))
+      setNewlyAddedRatings(newRatings)
+
       setSaved(true)
       setLoading(false)
       router.refresh()
@@ -1011,6 +1026,17 @@ export function CompleteProfileForm({ mode = 'create', initialData }: CompletePr
               <p className="text-sm font-medium text-green-600">Profile Updated</p>
             </div>
           )}
+
+          {/* Phase 3: offer to share each newly added type rating */}
+          {newlyAddedRatings.map(rating => (
+            <ShareMilestonePrompt
+              key={rating}
+              postType="type_rating_added"
+              data={{ rating }}
+              preview={`New type rating: ${rating}`}
+              onDone={() => setNewlyAddedRatings(prev => prev.filter(r => r !== rating))}
+            />
+          ))}
 
           <Button
             type="submit"

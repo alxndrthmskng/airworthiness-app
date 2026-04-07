@@ -1,4 +1,12 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { ImageLightbox } from '@/components/image-lightbox'
+import { Button } from '@/components/ui/button'
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { MAX_TASK_NOTE_LENGTH } from '@/lib/post-types'
 
 interface FeedPost {
   id: string
@@ -36,7 +44,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function renderBody(post: FeedPost, photoUrls: string[]): React.ReactNode {
+function renderBody(post: FeedPost, photoUrls: string[], editingNote: string | null, setEditingNote: (v: string | null) => void) {
   const d = post.data as Record<string, unknown>
   switch (post.post_type) {
     case 'module_pass': {
@@ -95,26 +103,10 @@ function renderBody(post: FeedPost, photoUrls: string[]): React.ReactNode {
               ))}
             </div>
           )}
-          {note && (
+          {editingNote !== null ? null : note ? (
             <p className="text-sm text-foreground whitespace-pre-wrap">{note}</p>
-          )}
-          {photoUrls.length > 0 && (
-            <div className={`grid gap-1.5 mt-2 ${
-              photoUrls.length === 1 ? 'grid-cols-1'
-              : photoUrls.length === 2 ? 'grid-cols-2'
-              : 'grid-cols-2'
-            }`}>
-              {photoUrls.map((url, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={i}
-                  src={url}
-                  alt=""
-                  className="w-full aspect-square object-cover rounded-lg border border-border/60"
-                />
-              ))}
-            </div>
-          )}
+          ) : null}
+          {photoUrls.length > 0 && <ImageLightbox urls={photoUrls} />}
         </div>
       )
     }
@@ -124,6 +116,42 @@ function renderBody(post: FeedPost, photoUrls: string[]): React.ReactNode {
 }
 
 export function PostCard({ post, avatarUrl, photoUrls = [], isOwn }: Props) {
+  const router = useRouter()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [editingNote, setEditingNote] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const isTaskShare = post.post_type === 'task_share'
+
+  function startEdit() {
+    setMenuOpen(false)
+    const currentNote = (post.data as { note?: string }).note ?? ''
+    setEditingNote(currentNote)
+  }
+
+  async function saveNote() {
+    setBusy(true)
+    const res = await fetch(`/api/posts/${post.id}/note`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note: editingNote }),
+    })
+    setBusy(false)
+    if (res.ok) {
+      setEditingNote(null)
+      router.refresh()
+    }
+  }
+
+  async function deletePost() {
+    setMenuOpen(false)
+    if (!window.confirm('Delete this post? This cannot be undone.')) return
+    setBusy(true)
+    const res = await fetch(`/api/posts/${post.id}`, { method: 'DELETE' })
+    setBusy(false)
+    if (res.ok) router.refresh()
+  }
+
   return (
     <article className="rounded-xl border border-border p-5">
       <header className="flex items-center gap-3 mb-3">
@@ -142,10 +170,65 @@ export function PostCard({ post, avatarUrl, photoUrls = [], isOwn }: Props) {
           <p className="text-xs text-muted-foreground">@{post.author_handle} · {relativeTime(post.created_at)}</p>
         </div>
         {isOwn && (
-          <form action={`/api/posts/${post.id}`} method="DELETE" className="hidden" />
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen(o => !o)}
+              className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted"
+              aria-label="More actions"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 mt-1 w-40 bg-popover border border-border rounded-xl shadow-lg overflow-hidden z-10">
+                {isTaskShare && (
+                  <button
+                    type="button"
+                    onClick={startEdit}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted text-left"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit note
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={deletePost}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted text-left"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </header>
-      {renderBody(post, photoUrls)}
+
+      {renderBody(post, photoUrls, editingNote, setEditingNote)}
+
+      {editingNote !== null && (
+        <div className="mt-3 space-y-2">
+          <textarea
+            value={editingNote}
+            onChange={e => setEditingNote(e.target.value.slice(0, MAX_TASK_NOTE_LENGTH))}
+            rows={3}
+            className="w-full text-sm px-3 py-2 border border-border rounded-xl bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+            autoFocus
+          />
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">{MAX_TASK_NOTE_LENGTH - editingNote.length} characters left</p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setEditingNote(null)} disabled={busy}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={saveNote} disabled={busy}>
+                {busy ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   )
 }
