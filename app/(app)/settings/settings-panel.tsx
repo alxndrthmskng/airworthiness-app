@@ -1,19 +1,29 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Sun, Moon, Monitor, Download, Mail, Shield } from 'lucide-react'
+import { Sun, Moon, Monitor, Download, Mail, Shield, Globe } from 'lucide-react'
 import { DeleteAccountButton } from '@/app/(app)/dashboard/delete-account-button'
+
+interface PublicProfile {
+  handle: string
+  is_public: boolean
+}
 
 interface SettingsPanelProps {
   userEmail: string
+  socialProfileEnabled: boolean
+  publicProfile: PublicProfile | null
 }
 
-export function SettingsPanel({ userEmail }: SettingsPanelProps) {
+export function SettingsPanel({ userEmail, socialProfileEnabled, publicProfile }: SettingsPanelProps) {
+  const router = useRouter()
   const { theme, setTheme } = useTheme()
 
   // Change email
@@ -25,6 +35,53 @@ export function SettingsPanel({ userEmail }: SettingsPanelProps) {
   // Data export
   const [exporting, setExporting] = useState(false)
   const [exportDone, setExportDone] = useState(false)
+
+  // Social profile
+  const [profile, setProfile] = useState<PublicProfile | null>(publicProfile)
+  const [showOptInModal, setShowOptInModal] = useState(false)
+  const [consentChecked, setConsentChecked] = useState(false)
+  const [socialBusy, setSocialBusy] = useState(false)
+  const [socialError, setSocialError] = useState<string | null>(null)
+
+  async function handleOptIn() {
+    setSocialError(null)
+    setSocialBusy(true)
+    const res = await fetch('/api/profile/public/opt-in', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ consent: true }),
+    })
+    setSocialBusy(false)
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setSocialError(body.error ?? 'Failed to enable public profile')
+      return
+    }
+    const data = await res.json()
+    setProfile({ handle: data.handle, is_public: true })
+    setShowOptInModal(false)
+    setConsentChecked(false)
+    if (data.isNew) {
+      router.push('/settings/profile-handle')
+    } else {
+      router.refresh()
+    }
+  }
+
+  async function handleOptOut() {
+    if (!window.confirm('Make profile private? Your public profile page will no longer be accessible. You can re-enable this at any time.')) return
+    setSocialError(null)
+    setSocialBusy(true)
+    const res = await fetch('/api/profile/public/opt-out', { method: 'POST' })
+    setSocialBusy(false)
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setSocialError(body.error ?? 'Failed to disable public profile')
+      return
+    }
+    setProfile(profile ? { ...profile, is_public: false } : null)
+    router.refresh()
+  }
 
   async function handleChangeEmail() {
     setEmailError('')
@@ -194,6 +251,57 @@ export function SettingsPanel({ userEmail }: SettingsPanelProps) {
         </div>
       </section>
 
+      {/* Social — only shown when the social_profile feature flag is on */}
+      {socialProfileEnabled && (
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Globe className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+            <h2 className="text-lg font-semibold text-foreground">Social</h2>
+          </div>
+          <div className="rounded-xl border border-border p-5 space-y-4">
+            <div>
+              <p className="text-sm font-medium text-foreground">Public profile</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Share your professional credentials with other engineers via a public profile page.
+                Disabled by default. You can switch this off at any time.
+              </p>
+            </div>
+
+            {profile?.is_public ? (
+              <div className="space-y-3">
+                <div className="rounded-lg bg-muted/40 border border-border/60 px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Your profile is public at</p>
+                  <Link
+                    href={`/u/${profile.handle}`}
+                    className="text-sm font-medium text-foreground hover:underline break-all"
+                  >
+                    airworthiness.org.uk/u/{profile.handle}
+                  </Link>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link href="/settings/profile-handle">
+                    <Button variant="outline" size="sm">Change handle</Button>
+                  </Link>
+                  <Button variant="outline" size="sm" onClick={handleOptOut} disabled={socialBusy}>
+                    Make private
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => setShowOptInModal(true)}
+                disabled={socialBusy}
+              >
+                {profile ? 'Make profile public again' : 'Make profile public'}
+              </Button>
+            )}
+
+            {socialError && <p className="text-sm text-red-600">{socialError}</p>}
+          </div>
+        </section>
+      )}
+
       {/* Privacy & Data */}
       <section>
         <div className="flex items-center gap-2 mb-4">
@@ -229,6 +337,65 @@ export function SettingsPanel({ userEmail }: SettingsPanelProps) {
           <DeleteAccountButton />
         </div>
       </section>
+
+      {/* Public profile opt-in modal */}
+      {showOptInModal && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4"
+          onClick={() => { if (!socialBusy) { setShowOptInModal(false); setConsentChecked(false); setSocialError(null) } }}
+        >
+          <div
+            className="bg-card rounded-2xl border border-border shadow-xl max-w-md w-full p-6 space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-foreground">Make your profile public</h3>
+            <p className="text-sm text-muted-foreground">
+              Your public profile will show your name, type ratings, licence categories, and any
+              optional sections you choose to enable. It will be viewable by anyone with the link.
+            </p>
+            <div className="rounded-lg bg-muted/40 border border-border/60 p-3 text-sm space-y-2">
+              <div>
+                <span className="font-medium text-foreground">What is shared:</span>
+                <span className="text-muted-foreground"> name, type ratings, licence categories, and any optional sections you turn on.</span>
+              </div>
+              <div>
+                <span className="font-medium text-foreground">What is never shared:</span>
+                <span className="text-muted-foreground"> licence number, date of birth, employer, logbook entries, exam results, contact details.</span>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              You can switch your profile back to private at any time. Doing so will immediately make the page return a 404.
+            </p>
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consentChecked}
+                onChange={e => setConsentChecked(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span className="text-sm text-foreground">I understand and consent to my profile being publicly visible.</span>
+            </label>
+            {socialError && <p className="text-sm text-red-600">{socialError}</p>}
+            <div className="flex gap-2 justify-end pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setShowOptInModal(false); setConsentChecked(false); setSocialError(null) }}
+                disabled={socialBusy}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleOptIn}
+                disabled={!consentChecked || socialBusy}
+              >
+                {socialBusy ? 'Enabling...' : 'Make profile public'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
