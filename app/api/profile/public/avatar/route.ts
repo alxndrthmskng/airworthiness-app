@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { isFeatureEnabled } from '@/lib/feature-flags'
+import { isFeatureEnabledForUser } from '@/lib/feature-flags'
 import { logPrivacyEvent } from '@/lib/privacy-audit'
 
 const MAX_BYTES = 2 * 1024 * 1024 // 2 MB
@@ -22,14 +22,14 @@ const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
  * previous avatar from storage.
  */
 export async function POST(request: Request) {
-  if (!(await isFeatureEnabled('social_profile'))) {
-    return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
-  }
-
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  }
+
+  if (!(await isFeatureEnabledForUser('social_profile', user.id))) {
+    return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
   }
 
   // Verify the user has a public profile to attach the avatar to
@@ -124,14 +124,14 @@ export async function POST(request: Request) {
  * Delete the user's avatar.
  */
 export async function DELETE() {
-  if (!(await isFeatureEnabled('social_profile'))) {
-    return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
-  }
-
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  }
+
+  if (!(await isFeatureEnabledForUser('social_profile', user.id))) {
+    return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
   }
 
   const { data: profile } = await supabase

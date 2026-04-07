@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { isFeatureEnabled } from '@/lib/feature-flags'
+import { isFeatureEnabledForUser } from '@/lib/feature-flags'
 import { HandleForm } from './handle-form'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
@@ -12,7 +12,7 @@ export default async function ProfileHandlePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  if (!(await isFeatureEnabled('social_profile'))) {
+  if (!(await isFeatureEnabledForUser('social_profile', user.id))) {
     redirect('/settings')
   }
 

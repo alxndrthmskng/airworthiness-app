@@ -116,9 +116,71 @@ export async function getFeatureFlags(keys: string[]): Promise<Record<string, bo
 export function clearFeatureFlagCache(key?: string) {
   if (key) {
     cache.delete(key)
+    allowlistCache.delete(key)
   } else {
     cache.clear()
+    allowlistCache.clear()
   }
+}
+
+/**
+ * Per-flag allowlist cache. When a flag has any allowlist entries, only
+ * users in the allowlist see the feature (soft launch mode). Cached for
+ * the same 60s TTL as the flag itself.
+ */
+type AllowlistEntry = { userIds: Set<string>; expires: number }
+const allowlistCache = new Map<string, AllowlistEntry>()
+
+async function getAllowlist(key: string): Promise<Set<string>> {
+  const cached = allowlistCache.get(key)
+  if (cached && cached.expires > Date.now()) {
+    return cached.userIds
+  }
+
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('feature_flag_allowlist')
+      .select('user_id')
+      .eq('flag_key', key)
+
+    if (error) {
+      console.error(`[feature-flags] Error reading allowlist for ${key}:`, error.message)
+      return new Set()
+    }
+
+    const userIds = new Set((data ?? []).map(row => row.user_id as string))
+    allowlistCache.set(key, { userIds, expires: Date.now() + CACHE_TTL_MS })
+    return userIds
+  } catch (err) {
+    console.error(`[feature-flags] Unexpected error reading allowlist for ${key}:`, err)
+    return new Set()
+  }
+}
+
+/**
+ * Check whether a feature flag is enabled for a specific user.
+ *
+ * Semantics:
+ * - flag disabled        → false (kill switch always wins)
+ * - flag enabled, no allowlist → true for all users (full launch)
+ * - flag enabled, allowlist set → true only if user is in the allowlist (soft launch)
+ *
+ * Pass the userId from the authenticated session. For pages that don't
+ * require user identity (like public profile pages), use the regular
+ * isFeatureEnabled() instead, which only checks the global flag state.
+ */
+export async function isFeatureEnabledForUser(key: string, userId: string | null | undefined): Promise<boolean> {
+  if (!userId) return false
+
+  const flagOn = await isFeatureEnabled(key)
+  if (!flagOn) return false
+
+  const allowlist = await getAllowlist(key)
+  // Empty allowlist = full launch (everyone sees it)
+  if (allowlist.size === 0) return true
+  // Soft launch: user must be in the allowlist
+  return allowlist.has(userId)
 }
 
 /**

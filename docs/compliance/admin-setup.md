@@ -41,3 +41,61 @@ Admin grants are a high-risk operation. A bug or compromised account could grant
 - The audit trail lives in Postgres logs, not application logs
 
 This will be revisited when there are more than three admins.
+
+---
+
+## Soft launch — feature flag allowlists
+
+Some feature flags can be in **soft launch mode**: enabled, but only visible to a specific list of users. This is the recommended way to roll out new features (per the rollout plan).
+
+### Semantics
+
+- **Allowlist empty + flag enabled** → ON for everyone (full launch)
+- **Allowlist set + flag enabled** → ON for allowlist members only (soft launch)
+- **Allowlist anything + flag disabled** → OFF for everyone (kill switch)
+
+The kill switch always wins. Disabling the flag in `/admin/feature-flags` immediately turns the feature off for everyone, allowlist or not.
+
+### Adding a user to the soft launch group
+
+```sql
+INSERT INTO public.feature_flag_allowlist (flag_key, user_id, added_by)
+SELECT 'social_profile', u.id, (SELECT id FROM auth.users WHERE email = 'alxndrthmskng@gmail.com')
+FROM auth.users u
+WHERE u.email = 'their-email@example.com'
+ON CONFLICT (flag_key, user_id) DO NOTHING;
+```
+
+Replace `social_profile` with the flag key and `their-email@example.com` with the user's email.
+
+### Removing a user from the soft launch group
+
+```sql
+DELETE FROM public.feature_flag_allowlist
+WHERE flag_key = 'social_profile'
+  AND user_id = (SELECT id FROM auth.users WHERE email = 'their-email@example.com');
+```
+
+### Checking who is in the allowlist
+
+```sql
+SELECT a.flag_key, u.email, a.added_at
+FROM public.feature_flag_allowlist a
+JOIN auth.users u ON u.id = a.user_id
+WHERE a.flag_key = 'social_profile'
+ORDER BY a.added_at;
+```
+
+### Promoting from soft launch to full launch
+
+When ready to roll out to everyone, just empty the allowlist:
+
+```sql
+DELETE FROM public.feature_flag_allowlist WHERE flag_key = 'social_profile';
+```
+
+The flag remains enabled, but the empty allowlist now means "everyone."
+
+### Kill switch during soft launch
+
+Same as always: go to `/admin/feature-flags` and toggle the flag off. Works regardless of the allowlist state.

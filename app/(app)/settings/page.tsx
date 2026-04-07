@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SettingsPanel } from './settings-panel'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
-import { isFeatureEnabled } from '@/lib/feature-flags'
+import { isFeatureEnabledForUser } from '@/lib/feature-flags'
 
 export const metadata: Metadata = { title: 'Settings | Airworthiness' }
 
@@ -12,7 +12,7 @@ export default async function SettingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const socialProfileEnabled = await isFeatureEnabled('social_profile')
+  const socialProfileEnabled = await isFeatureEnabledForUser('social_profile', user.id)
 
   // Load the user's public profile row if it exists. May be null if they
   // have never opted in. Loaded server-side so the panel can render the

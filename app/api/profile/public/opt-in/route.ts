@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { logPrivacyEvent } from '@/lib/privacy-audit'
-import { isFeatureEnabled } from '@/lib/feature-flags'
+import { isFeatureEnabledForUser } from '@/lib/feature-flags'
 
 /**
  * Opt in to the public profile feature.
@@ -19,14 +19,14 @@ import { isFeatureEnabled } from '@/lib/feature-flags'
  * is_public = true and logs the event.
  */
 export async function POST(request: Request) {
-  if (!(await isFeatureEnabled('social_profile'))) {
-    return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
-  }
-
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+  }
+
+  if (!(await isFeatureEnabledForUser('social_profile', user.id))) {
+    return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
   }
 
   const body = await request.json().catch(() => null)
