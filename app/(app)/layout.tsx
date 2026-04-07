@@ -2,7 +2,9 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AppSidebar } from '@/components/app-sidebar'
 import { QuickAdd } from '@/components/quick-add'
+import { PrivacyPolicyBanner } from '@/components/privacy-policy-banner'
 import { isFeatureEnabled } from '@/lib/feature-flags'
+import { CURRENT_PRIVACY_POLICY_VERSION } from '@/lib/privacy-policy'
 
 export default async function AppLayout({
   children,
@@ -24,6 +26,15 @@ export default async function AppLayout({
 
   const quickAddEnabled = await isFeatureEnabled('quick_add')
 
+  // Privacy policy acknowledgement check — show banner if user has not
+  // acknowledged the current version
+  const { data: ack } = await supabase
+    .from('privacy_policy_acknowledgements')
+    .select('version')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  const needsPolicyAck = ack?.version !== CURRENT_PRIVACY_POLICY_VERSION
+
   return (
     <>
       <AppSidebar />
@@ -33,6 +44,7 @@ export default async function AppLayout({
         </div>
       </main>
       {quickAddEnabled && <QuickAdd />}
+      {needsPolicyAck && <PrivacyPolicyBanner version={CURRENT_PRIVACY_POLICY_VERSION} />}
     </>
   )
 }
