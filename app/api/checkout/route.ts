@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
     },
     success_url: `${origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/profile`,
+    cancel_url: `${origin}/account`,
   })
 
   return NextResponse.json({ url: session.url })

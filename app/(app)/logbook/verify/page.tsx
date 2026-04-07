@@ -54,7 +54,7 @@ export default async function VerifyPage({
           <p className="text-white/60 mb-6">
             You need a Part 66 Aircraft Maintenance Licence to verify logbook entries.
           </p>
-          <Link href="/profile">
+          <Link href="/account">
             <Button>Update your profile</Button>
           </Link>
         </div>

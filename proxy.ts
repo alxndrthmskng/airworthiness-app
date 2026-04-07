@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
     !user &&
     (request.nextUrl.pathname.startsWith('/dashboard') ||
       request.nextUrl.pathname.startsWith('/logbook') ||
-      request.nextUrl.pathname.startsWith('/profile') ||
+      request.nextUrl.pathname.startsWith('/account') ||
       request.nextUrl.pathname.startsWith('/modules') ||
       request.nextUrl.pathname.startsWith('/training') ||
       request.nextUrl.pathname.startsWith('/complete-profile') ||
@@ -58,7 +58,7 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/logbook/:path*',
-    '/profile/:path*',
+    '/account/:path*',
     '/modules/:path*',
     '/training/:path*',
     '/settings/:path*',

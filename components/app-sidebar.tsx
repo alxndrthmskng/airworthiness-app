@@ -114,7 +114,7 @@ function UserMenu({ fullName, onLogout, onClose }: { fullName: string | null; on
   const firstName = getFirstName(fullName)
 
   const menuItems = [
-    { label: 'Manage Profile', href: '/profile', icon: UserPen },
+    { label: 'Manage Profile', href: '/account', icon: UserPen },
     { label: 'Settings', href: '/settings', icon: Settings },
   ]
 
