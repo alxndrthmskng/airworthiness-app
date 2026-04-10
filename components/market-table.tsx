@@ -74,6 +74,18 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   )
 }
 
+const TRADING_AS_PATTERN = /\s+(?:t\/a|T\/A|d\/b\/a|D\/B\/A|dba|DBA|trading as|Trading As)\s+/
+
+function parseOrgName(name: string): { legalName: string; tradingAs: string | null } {
+  const match = name.match(TRADING_AS_PATTERN)
+  if (!match) return { legalName: name, tradingAs: null }
+  const idx = match.index!
+  return {
+    legalName: name.slice(0, idx),
+    tradingAs: name.slice(idx + match[0].length),
+  }
+}
+
 function ExpandedRow({ org }: { org: Approval }) {
   const ref = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(0)
@@ -99,6 +111,16 @@ function ExpandedRow({ org }: { org: Approval }) {
           <div className="px-6 py-5 bg-muted/30 border-t">
             {/* Details row */}
             <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm mb-5">
+              <div>
+                <span className="text-xs text-muted-foreground uppercase tracking-wide">Organisation</span>
+                <p className="text-foreground">{parseOrgName(org.organisation_name).legalName}</p>
+              </div>
+              {parseOrgName(org.organisation_name).tradingAs && (
+                <div>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Trading As</span>
+                  <p className="text-foreground">{parseOrgName(org.organisation_name).tradingAs}</p>
+                </div>
+              )}
               <div>
                 <span className="text-xs text-muted-foreground uppercase tracking-wide">Approval</span>
                 <p className="text-foreground">{org.reference_number}</p>
@@ -378,22 +400,22 @@ export function MarketTable({ approvals }: { approvals: Approval[] }) {
 
       <div className="bg-card rounded-xl border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="text-left font-medium text-muted-foreground px-4 py-3 cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('organisation_name')}>
+                <th className="w-[40%] text-left font-medium text-muted-foreground px-4 py-3 cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('organisation_name')}>
                   Organisation<SortIcon active={sortKey === 'organisation_name'} dir={sortDir} />
                 </th>
-                <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('reference_number')}>
+                <th className="w-[15%] text-left font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('reference_number')}>
                   Approval(s)<SortIcon active={sortKey === 'reference_number'} dir={sortDir} />
                 </th>
-                <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden md:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('city')}>
+                <th className="w-[20%] text-left font-medium text-muted-foreground px-4 py-3 hidden md:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('city')}>
                   City<SortIcon active={sortKey === 'city'} dir={sortDir} />
                 </th>
-                <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('state')}>
+                <th className="w-[10%] text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('state')}>
                   State<SortIcon active={sortKey === 'state'} dir={sortDir} />
                 </th>
-                <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('country')}>
+                <th className="w-[15%] text-left font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('country')}>
                   Country<SortIcon active={sortKey === 'country'} dir={sortDir} />
                 </th>
               </tr>
@@ -406,24 +428,24 @@ export function MarketTable({ approvals }: { approvals: Approval[] }) {
                     className={`border-b last:border-0 cursor-pointer transition-colors ${expandedId === org.id ? 'bg-muted/40' : 'hover:bg-muted/30'}`}
                     onClick={() => setExpandedId(expandedId === org.id ? null : org.id)}
                   >
-                    <td className="px-4 py-3">
-                      <span className="font-medium text-foreground">
-                        {org.organisation_name}
+                    <td className="px-4 py-3 overflow-hidden">
+                      <span className="font-medium text-foreground block truncate">
+                        {parseOrgName(org.organisation_name).legalName}
                       </span>
-                      <span className="sm:hidden block text-xs text-muted-foreground mt-0.5">
+                      <span className="sm:hidden block text-xs text-muted-foreground mt-0.5 truncate">
                         {org.reference_number}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
+                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell overflow-hidden truncate">
                       {org.reference_number}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
+                    <td className="px-4 py-3 text-muted-foreground hidden md:table-cell overflow-hidden truncate">
                       {org.city || '—'}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
+                    <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell overflow-hidden truncate">
                       {org.state ? titleCase(org.state) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
+                    <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell overflow-hidden truncate">
                       {COUNTRY_NAMES[org.country_code] || org.country_code || '—'}
                     </td>
                   </tr>
