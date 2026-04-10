@@ -134,7 +134,19 @@ function MobileMenu({
         </div>
 
         <div className="p-4">
-          <div className="pt-2">
+          <Link
+            href="/market"
+            onClick={onClose}
+            className={`block py-2.5 text-sm font-semibold ${
+              pathname === '/market' || pathname.startsWith('/market/')
+                ? 'text-primary'
+                : 'text-foreground'
+            }`}
+          >
+            Market
+          </Link>
+
+          <div className="pt-2 border-t mt-2">
             <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-2">Professionals</p>
             {professionalsItems.map(item => (
               item.href ? (
@@ -212,6 +224,17 @@ export function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-6">
+            <Link
+              href="/market"
+              className={`text-sm font-medium transition-colors ${
+                pathname === '/market' || pathname.startsWith('/market/')
+                  ? 'text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Market
+            </Link>
+
             {loaded && !user && (
               <>
                 <a href="mailto:contact@airworthiness.org.uk">
