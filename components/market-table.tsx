@@ -194,10 +194,10 @@ const APPROVAL_TYPES = [
 
 const PART145_CLASSES = [
   { key: 'all', label: 'All' },
-  { key: 'A', label: 'A: Aircraft' },
-  { key: 'B', label: 'B: Engine' },
-  { key: 'C', label: 'C: Component' },
-  { key: 'D', label: 'D: Non-Destructive Testing' },
+  { key: 'A', label: 'Aircraft Maintenance (Class A)' },
+  { key: 'B', label: 'Engine Maintenance (Class B)' },
+  { key: 'C', label: 'Component Maintenance (Class C)' },
+  { key: 'D', label: 'Non-Destructive Testing (Class D)' },
 ] as const
 
 export function MarketTable({ approvals }: { approvals: Approval[] }) {
@@ -248,51 +248,39 @@ export function MarketTable({ approvals }: { approvals: Approval[] }) {
 
   return (
     <>
-      {/* Level 1: Approval type */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {APPROVAL_TYPES.map(type => (
-          <button
-            key={type.key}
-            onClick={() => {
-              setApprovalType(type.key)
-              setRatingClassFilter('all')
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <select
+          value={approvalType}
+          onChange={e => {
+            setApprovalType(e.target.value)
+            setRatingClassFilter('all')
+            setExpandedId(null)
+          }}
+          className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          {APPROVAL_TYPES.map(type => (
+            <option key={type.key} value={type.key} disabled={!type.hasData}>
+              {type.label}{!type.hasData ? ' (Coming soon)' : ''}
+            </option>
+          ))}
+        </select>
+
+        {approvalType === 'part145' && (
+          <select
+            value={ratingClassFilter}
+            onChange={e => {
+              setRatingClassFilter(e.target.value)
               setExpandedId(null)
             }}
-            className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
-              approvalType === type.key
-                ? 'bg-foreground text-background border-foreground'
-                : type.hasData
-                  ? 'bg-transparent text-muted-foreground border-border hover:border-foreground hover:text-foreground'
-                  : 'bg-transparent text-muted-foreground/40 border-border/50 cursor-default'
-            }`}
-            disabled={!type.hasData}
+            className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
-            {type.label}
-          </button>
-        ))}
+            {PART145_CLASSES.map(cls => (
+              <option key={cls.key} value={cls.key}>{cls.label}</option>
+            ))}
+          </select>
+        )}
       </div>
-
-      {/* Level 2: Sub-filter (only for Part 145) */}
-      {approvalType === 'part145' && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {PART145_CLASSES.map(cls => (
-            <button
-              key={cls.key}
-              onClick={() => {
-                setRatingClassFilter(cls.key)
-                setExpandedId(null)
-              }}
-              className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
-                ratingClassFilter === cls.key
-                  ? 'bg-foreground text-background border-foreground'
-                  : 'bg-transparent text-muted-foreground border-border hover:border-foreground hover:text-foreground'
-              }`}
-            >
-              {cls.label}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Coming soon message for other types */}
       {approvalType !== 'part145' && (
