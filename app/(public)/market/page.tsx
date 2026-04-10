@@ -116,9 +116,8 @@ export default async function MarketPage({
                 <thead>
                   <tr className="border-b bg-muted/50">
                     <th className="text-left font-medium text-muted-foreground px-4 py-3">Organisation</th>
-                    <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell">Reference</th>
+                    <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell">Approval(s)</th>
                     <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden md:table-cell">Location</th>
-                    <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">Ratings</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -134,28 +133,12 @@ export default async function MarketPage({
                         <span className="sm:hidden block text-xs text-muted-foreground mt-0.5">
                           {org.reference_number}
                         </span>
-                        <div className="lg:hidden flex gap-1 mt-1">
-                          {org.ratingClasses.map(cls => (
-                            <span key={cls} className="inline-block text-[10px] font-medium bg-muted text-muted-foreground rounded px-1.5 py-0.5">
-                              {cls}
-                            </span>
-                          ))}
-                        </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                         {org.reference_number}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                        {org.city || org.country_code || '—'}
-                      </td>
-                      <td className="px-4 py-3 hidden lg:table-cell">
-                        <div className="flex gap-1">
-                          {org.ratingClasses.map(cls => (
-                            <span key={cls} className="inline-block text-[10px] font-medium bg-muted text-muted-foreground rounded px-1.5 py-0.5">
-                              {cls}
-                            </span>
-                          ))}
-                        </div>
+                        {org.country_code || '—'}
                       </td>
                     </tr>
                   ))}
