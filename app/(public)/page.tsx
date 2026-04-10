@@ -76,11 +76,10 @@ export default async function HomePage() {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-1.5">
-                Market
-                <span className="ml-2 text-xs font-normal text-muted-foreground">Coming soon</span>
+                <a href="/market" className="hover:underline">Market</a>
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Find and list aircraft parts, tooling, and services. A marketplace built for the industry.
+                Search 1,500+ Part 145 approved maintenance organisations. Ratings, capabilities, and locations.
               </p>
             </div>
           </div>
