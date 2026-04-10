@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { query, queryOne } from '@/lib/db'
 import { isFeatureEnabledForUser } from '@/lib/feature-flags'
 import { logPrivacyEvent } from '@/lib/privacy-audit'
 
-/**
- * Follow another user.
- *
- * Body: { targetPublicId: string }
- */
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   if (!(await isFeatureEnabledForUser('social_follow', user.id))) {
@@ -22,45 +18,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'targetPublicId is required' }, { status: 400 })
   }
 
-  const { data: target } = await supabase
-    .from('public_profiles')
-    .select('user_id, is_public')
-    .eq('public_id', body.targetPublicId)
-    .maybeSingle()
-
+  const target = await queryOne<{ user_id: string; is_public: boolean }>(
+    'SELECT user_id, is_public FROM public_profiles WHERE public_id = $1', [body.targetPublicId]
+  )
   if (!target || !target.is_public) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
   }
-
   if (target.user_id === user.id) {
     return NextResponse.json({ error: 'Cannot follow yourself' }, { status: 400 })
   }
 
-  const { data: blockExists } = await supabase
-    .from('blocks')
-    .select('blocker_id')
-    .or(`and(blocker_id.eq.${user.id},blocked_id.eq.${target.user_id}),and(blocker_id.eq.${target.user_id},blocked_id.eq.${user.id})`)
-    .maybeSingle()
+  const blockExists = await queryOne(
+    'SELECT blocker_id FROM blocks WHERE (blocker_id = $1 AND blocked_id = $2) OR (blocker_id = $2 AND blocked_id = $1)',
+    [user.id, target.user_id]
+  )
   if (blockExists) {
     return NextResponse.json({ error: 'Cannot follow this user' }, { status: 403 })
   }
 
   const status = 'active'
 
-  const { error } = await supabase
-    .from('follows')
-    .insert({
-      follower_id: user.id,
-      followed_id: target.user_id,
-      status,
-      accepted_at: status === 'active' ? new Date().toISOString() : null,
-    })
-
-  if (error) {
-    if (error.code === '23505') {
+  try {
+    await query(
+      'INSERT INTO follows (follower_id, followed_id, status, accepted_at) VALUES ($1, $2, $3, $4)',
+      [user.id, target.user_id, status, status === 'active' ? new Date().toISOString() : null]
+    )
+  } catch (err: any) {
+    if (err?.code === '23505') {
       return NextResponse.json({ success: true, status, alreadyFollowing: true })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 
   await logPrivacyEvent({
@@ -69,18 +56,18 @@ export async function POST(request: Request) {
     metadata: { target_public_id: body.targetPublicId },
   })
 
-  await supabase.rpc('create_notification', {
-    p_recipient_id: target.user_id,
-    p_notification_type: status === 'active' ? 'new_follower' : 'follow_requested',
-    p_data: { target_public_id: body.targetPublicId },
-  })
+  await query('SELECT create_notification($1, $2, $3)', [
+    target.user_id,
+    status === 'active' ? 'new_follower' : 'follow_requested',
+    JSON.stringify({ target_public_id: body.targetPublicId }),
+  ])
 
   return NextResponse.json({ success: true, status })
 }
 
 export async function DELETE(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   if (!(await isFeatureEnabledForUser('social_follow', user.id))) {
@@ -92,25 +79,12 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'targetPublicId is required' }, { status: 400 })
   }
 
-  const { data: target } = await supabase
-    .from('public_profiles')
-    .select('user_id')
-    .eq('public_id', body.targetPublicId)
-    .maybeSingle()
-
+  const target = await queryOne<{ user_id: string }>('SELECT user_id FROM public_profiles WHERE public_id = $1', [body.targetPublicId])
   if (!target) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
   }
 
-  const { error } = await supabase
-    .from('follows')
-    .delete()
-    .eq('follower_id', user.id)
-    .eq('followed_id', target.user_id)
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  await query('DELETE FROM follows WHERE follower_id = $1 AND followed_id = $2', [user.id, target.user_id])
 
   await logPrivacyEvent({
     eventType: 'unfollowed',

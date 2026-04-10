@@ -1,6 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryOne, queryAll } from '@/lib/db'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,6 +12,7 @@ import {
   ATA_CHAPTERS,
 } from '@/lib/logbook/constants'
 import type { EntryStatus } from '@/lib/logbook/constants'
+import type { LogbookEntry } from '@/lib/logbook/types'
 import { EditEntryForm } from './edit-entry-form'
 import { SubmitForVerification } from './submit-for-verification'
 import { VerificationActions } from './verification-actions'
@@ -29,23 +31,20 @@ function label(list: readonly { value: string; label: string }[], value: string)
 
 export default async function LogbookEntryPage({ params }: Props) {
   const { id } = await params
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
   // Fetch entry and user profile in parallel (both independent)
-  const [{ data: entry }, { data: profile }] = await Promise.all([
-    supabase
-      .from('logbook_entries')
-      .select('*')
-      .eq('id', id)
-      .single(),
-    supabase
-      .from('profiles')
-      .select('aml_licence_number, aml_categories')
-      .eq('id', user.id)
-      .single(),
+  const [entry, profile] = await Promise.all([
+    queryOne<LogbookEntry>(
+      'SELECT * FROM logbook_entries WHERE id = $1',
+      [id]
+    ),
+    queryOne<{ aml_licence_number: string | null; aml_categories: string[] | null }>(
+      'SELECT aml_licence_number, aml_categories FROM profiles WHERE id = $1',
+      [user.id]
+    ),
   ])
 
   if (!entry) notFound()
@@ -56,20 +55,16 @@ export default async function LogbookEntryPage({ params }: Props) {
   // Fetch verifier and QC info in parallel (both depend on entry but not on each other)
   const [verifierInfo, qcInfo] = await Promise.all([
     entry.verifier_id
-      ? supabase
-          .from('profiles')
-          .select('full_name, aml_licence_number')
-          .eq('id', entry.verifier_id)
-          .single()
-          .then(({ data }) => data)
+      ? queryOne<{ full_name: string; aml_licence_number: string }>(
+          'SELECT full_name, aml_licence_number FROM profiles WHERE id = $1',
+          [entry.verifier_id]
+        )
       : Promise.resolve(null),
     entry.qc_auditor_id
-      ? supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', entry.qc_auditor_id)
-          .single()
-          .then(({ data }) => data)
+      ? queryOne<{ full_name: string }>(
+          'SELECT full_name FROM profiles WHERE id = $1',
+          [entry.qc_auditor_id]
+        )
       : Promise.resolve(null),
   ]) as [{ full_name: string; aml_licence_number: string } | null, { full_name: string } | null]
   const canShowVerifyActions = isAmlHolder && !isOwner && entry.status === 'pending_verification'
@@ -94,11 +89,10 @@ export default async function LogbookEntryPage({ params }: Props) {
   // If editable, show edit form
   if (isEditable) {
     // Fetch employers for dropdown
-    const { data: periods } = await supabase
-      .from('employment_periods')
-      .select('employer')
-      .eq('user_id', user.id)
-      .order('start_date', { ascending: false })
+    const periods = await queryAll<{ employer: string }>(
+      'SELECT employer FROM employment_periods WHERE user_id = $1 ORDER BY start_date DESC',
+      [user.id]
+    )
 
     const employers = [...new Set(periods?.map(p => p.employer) ?? [])]
 
@@ -108,7 +102,7 @@ export default async function LogbookEntryPage({ params }: Props) {
           <div className="flex items-center gap-3 mb-6">
             <SidebarTriggerInline />
             <Link href="/logbook" className="text-sm text-foreground hover:underline">
-              ← Back to logbook
+              &larr; Back to logbook
             </Link>
           </div>
 
@@ -146,7 +140,7 @@ export default async function LogbookEntryPage({ params }: Props) {
         <div className="flex items-center gap-3 mb-6">
           <SidebarTriggerInline />
           <Link href="/logbook" className="text-sm text-foreground hover:underline">
-            ← Back to logbook
+            &larr; Back to logbook
           </Link>
         </div>
 

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -126,25 +125,22 @@ export function ProgressTracker({ examRows, selectedCategory, userId }: Progress
     setSavedMsg(prev => ({ ...prev, [key]: '' }))
 
     const form = mcqForms[moduleId]
-    const supabase = createClient()
 
-    const { error } = await supabase
-      .from('module_exam_progress')
-      .upsert(
-        {
-          user_id: userId,
-          target_category: selectedCategory,
-          module_id: moduleId,
-          issue_date: form.issue_date || null,
-          part_147_approval_number: form.part_147_approval_number || null,
-          certificate_number: form.certificate_number || null,
-          mcq_score: form.score ? parseInt(form.score, 10) : null,
-        },
-        { onConflict: 'user_id,target_category,module_id' }
-      )
+    const res = await fetch('/api/progress/upsert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        target_category: selectedCategory,
+        module_id: moduleId,
+        issue_date: form.issue_date || null,
+        part_147_approval_number: form.part_147_approval_number || null,
+        certificate_number: form.certificate_number || null,
+        mcq_score: form.score ? parseInt(form.score, 10) : null,
+      }),
+    })
 
     setSaving(prev => ({ ...prev, [key]: false }))
-    if (error) {
+    if (!res.ok) {
       setSavedMsg(prev => ({ ...prev, [key]: 'Failed to save' }))
     } else {
       setSavedMsg(prev => ({ ...prev, [key]: 'Saved' }))
@@ -163,27 +159,24 @@ export function ProgressTracker({ examRows, selectedCategory, userId }: Progress
     setSavedMsg(prev => ({ ...prev, [key]: '' }))
 
     const form = essayForms[moduleId]
-    const supabase = createClient()
 
-    const { error } = await supabase
-      .from('module_exam_progress')
-      .upsert(
-        {
-          user_id: userId,
-          target_category: selectedCategory,
-          module_id: moduleId,
-          issue_date: form.issue_date || null,
-          part_147_approval_number: form.part_147_approval_number || null,
-          certificate_number: form.certificate_number || null,
-          essay_score: form.score ? parseInt(form.score, 10) : null,
-          essay_split: form.essay_split,
-          essay_score_2: form.essay_split && form.score_2 ? parseInt(form.score_2, 10) : null,
-        },
-        { onConflict: 'user_id,target_category,module_id' }
-      )
+    const res = await fetch('/api/progress/upsert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        target_category: selectedCategory,
+        module_id: moduleId,
+        issue_date: form.issue_date || null,
+        part_147_approval_number: form.part_147_approval_number || null,
+        certificate_number: form.certificate_number || null,
+        essay_score: form.score ? parseInt(form.score, 10) : null,
+        essay_split: form.essay_split,
+        essay_score_2: form.essay_split && form.score_2 ? parseInt(form.score_2, 10) : null,
+      }),
+    })
 
     setSaving(prev => ({ ...prev, [key]: false }))
-    if (error) {
+    if (!res.ok) {
       setSavedMsg(prev => ({ ...prev, [key]: 'Failed to save' }))
     } else {
       setSavedMsg(prev => ({ ...prev, [key]: 'Saved' }))
@@ -204,13 +197,14 @@ export function ProgressTracker({ examRows, selectedCategory, userId }: Progress
     )
     if (!confirmed) return
 
-    const supabase = createClient()
-    await supabase
-      .from('module_exam_progress')
-      .delete()
-      .eq('user_id', userId)
-      .eq('target_category', selectedCategory)
-      .eq('module_id', moduleId)
+    await fetch('/api/progress/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        target_category: selectedCategory,
+        module_id: moduleId,
+      }),
+    })
 
     // Reset local form state
     setMcqForms(prev => ({
@@ -232,13 +226,14 @@ export function ProgressTracker({ examRows, selectedCategory, userId }: Progress
     )
     if (!confirmed) return
 
-    const supabase = createClient()
-    await supabase
-      .from('module_exam_progress')
-      .delete()
-      .eq('user_id', userId)
-      .eq('target_category', row.equivalentFrom.sourceCategory)
-      .eq('module_id', row.equivalentFrom.sourceModule)
+    await fetch('/api/progress/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        target_category: row.equivalentFrom.sourceCategory,
+        module_id: row.equivalentFrom.sourceModule,
+      }),
+    })
 
     startTransition(() => router.refresh())
   }

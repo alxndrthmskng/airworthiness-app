@@ -1,22 +1,22 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryOne } from '@/lib/db'
 import { CompleteProfileForm } from './complete-profile-form'
 
 export default async function CompleteProfilePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
 
   if (!user) redirect('/')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('profile_completed_at')
-    .eq('id', user.id)
-    .single()
+  const profile = await queryOne<{ profile_completed_at: string | null }>(
+    'SELECT profile_completed_at FROM profiles WHERE id = $1',
+    [user.id],
+  )
 
   if (profile?.profile_completed_at) {
     redirect('/dashboard')
   }
 
-  return <CompleteProfileForm />
+  return <CompleteProfileForm userId={user.id!} />
 }

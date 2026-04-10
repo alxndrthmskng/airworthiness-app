@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { query } from '@/lib/db'
+import { uploadFile } from '@/lib/storage'
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
-  }
+  const session = await auth()
+  const user = session?.user
+  if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
 
   const formData = await request.formData()
   const file = formData.get('file') as File | null
@@ -17,50 +16,27 @@ export async function POST(request: Request) {
   if (!file || !moduleId || !targetCategory) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
+  if (file.size > 5 * 1024 * 1024) return NextResponse.json({ error: 'File too large (max 5MB)' }, { status: 400 })
 
-  // Validate file size (5MB max)
-  if (file.size > 5 * 1024 * 1024) {
-    return NextResponse.json({ error: 'File too large (max 5MB)' }, { status: 400 })
-  }
-
-  // Validate file type
   const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf']
   if (!allowedTypes.includes(file.type)) {
     return NextResponse.json({ error: 'Invalid file type. Allowed: JPEG, PNG, PDF' }, { status: 400 })
   }
 
   const ext = file.name.split('.').pop() || 'jpg'
-  const timestamp = Date.now()
-  const storagePath = `${user.id}/${moduleId}-${targetCategory}-${timestamp}.${ext}`
+  const storagePath = `${user.id}/${moduleId}-${targetCategory}-${Date.now()}.${ext}`
 
-  const { error: uploadError } = await supabase.storage
-    .from('module-certificates')
-    .upload(storagePath, file, {
-      contentType: file.type,
-      upsert: false,
-    })
+  const arrayBuffer = await file.arrayBuffer()
+  const { error: uploadError } = await uploadFile('module-certificates', storagePath, Buffer.from(arrayBuffer), file.type)
+  if (uploadError) return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
 
-  if (uploadError) {
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
-  }
-
-  // Upsert the progress record with the file path
-  const { error: dbError } = await supabase
-    .from('module_exam_progress')
-    .upsert(
-      {
-        user_id: user.id,
-        target_category: targetCategory,
-        module_id: moduleId,
-        certificate_photo_path: storagePath,
-        verification_status: 'pending',
-      },
-      { onConflict: 'user_id,target_category,module_id' }
-    )
-
-  if (dbError) {
-    return NextResponse.json({ error: 'Failed to update record' }, { status: 500 })
-  }
+  await query(
+    `INSERT INTO module_exam_progress (user_id, target_category, module_id, certificate_photo_path, verification_status)
+     VALUES ($1, $2, $3, $4, 'pending')
+     ON CONFLICT (user_id, target_category, module_id)
+     DO UPDATE SET certificate_photo_path = $4, verification_status = 'pending'`,
+    [user.id, targetCategory, moduleId, storagePath]
+  )
 
   return NextResponse.json({ path: storagePath })
 }

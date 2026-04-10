@@ -1,63 +1,10 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { redirect } from 'next/navigation'
 
-export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  const token_hash = searchParams.get('token_hash')
-  const type = searchParams.get('type')
-  const next = searchParams.get('next') ?? '/complete-profile'
-
-  // Collect cookies Supabase wants to set, then apply them to the response.
-  // Using request.cookies (not cookies() from next/headers) ensures they are
-  // written onto the HTTP response and reach the browser after the redirect.
-  const cookiesToSet: { name: string; value: string; options: Record<string, unknown> }[] = []
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(toSet) {
-          toSet.forEach(({ name, value, options }) => {
-            cookiesToSet.push({ name, value, options: options as Record<string, unknown> })
-          })
-        },
-      },
-    }
-  )
-
-  let redirectPath: string | null = null
-
-  // Handle PKCE flow (code exchange)
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) redirectPath = next
-  }
-
-  // Handle token hash flow (email links for recovery, email verification, etc.)
-  if (!redirectPath && token_hash && type) {
-    const { error } = await supabase.auth.verifyOtp({
-      type: type as 'recovery' | 'email' | 'signup',
-      token_hash,
-    })
-    if (!error) {
-      redirectPath = next
-    }
-  }
-
-  const response = redirectPath
-    ? NextResponse.redirect(`${origin}${redirectPath}`)
-    : NextResponse.redirect(`${origin}/`)
-
-  // Write session cookies onto the redirect response so the browser stores them
-  cookiesToSet.forEach(({ name, value, options }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    response.cookies.set(name, value, options as any)
-  })
-
-  return response
+/**
+ * Legacy Supabase auth callback route.
+ * Auth.js handles callbacks at /api/auth/callback/email automatically.
+ * This route now just redirects to the complete-profile page.
+ */
+export async function GET() {
+  redirect('/complete-profile')
 }

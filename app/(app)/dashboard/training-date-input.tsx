@@ -2,16 +2,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
 interface TrainingDateInputProps {
   slug: string
   label: string
+  userId: string
 }
 
-export function TrainingDateInput({ slug, label }: TrainingDateInputProps) {
+export function TrainingDateInput({ slug, label, userId }: TrainingDateInputProps) {
   const router = useRouter()
   const [date, setDate] = useState('')
   const [saving, setSaving] = useState(false)
@@ -21,37 +21,33 @@ export function TrainingDateInput({ slug, label }: TrainingDateInputProps) {
   async function handleSaveDate() {
     if (!date) return
     setSaving(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
 
-    // Find or create a certificate record for this training
-    const { error } = await supabase
-      .from('certificates')
-      .upsert({
-        user_id: user.id,
-        course_slug: slug,
-        issued_at: date,
-      }, { onConflict: 'user_id,course_slug' })
+    const res = await fetch('/api/certificates/upsert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ course_slug: slug, issued_at: date }),
+    })
 
     setSaving(false)
-    if (!error) router.refresh()
+    if (res.ok) router.refresh()
   }
 
   async function handleUpload(file: File) {
     setUploading(true)
     setUploadMsg('')
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setUploading(false); return }
 
-    const path = `training/${user.id}/${slug}-${Date.now()}.${file.name.split('.').pop()}`
-    const { error } = await supabase.storage
-      .from('certificates')
-      .upload(path, file)
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('bucket', 'certificates')
+    formData.append('path_prefix', `training/${userId}/${slug}`)
+
+    const res = await fetch('/api/storage/upload', {
+      method: 'POST',
+      body: formData,
+    })
 
     setUploading(false)
-    if (error) {
+    if (!res.ok) {
       setUploadMsg('Upload failed')
     } else {
       setUploadMsg('Certificate uploaded')

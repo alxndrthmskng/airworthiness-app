@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { COMPETENCY_QUESTIONS, COMPETENCY_PASS_SCORE } from '@/lib/profile/constants'
 
@@ -46,24 +45,17 @@ export function AssessmentForm() {
     setSubmitted(true)
 
     if (didPass) {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      // Save responses
+      // Save responses and mark competency as completed via API
       const responses = COMPETENCY_QUESTIONS.map(q => ({
-        user_id: user.id,
         question_id: q.id,
         answer: q.options[answers[q.id]],
       }))
 
-      await supabase.from('competency_responses').insert(responses)
-
-      // Mark competency as completed on profile
-      await supabase
-        .from('profiles')
-        .update({ competency_completed_at: new Date().toISOString() })
-        .eq('id', user.id)
+      await fetch('/api/assessment/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ responses }),
+      })
     }
 
     setLoading(false)

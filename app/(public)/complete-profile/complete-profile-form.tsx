@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -216,14 +215,14 @@ export interface ProfileFormInitialData {
 interface CompleteProfileFormProps {
   mode?: 'create' | 'edit'
   initialData?: ProfileFormInitialData
+  userId: string
 }
 
 const DEFAULT_LICENCE: LicenceEntry = { number: '', categories: [], endorsements: [{ ...EMPTY_ENDORSEMENT }], showTypeRatings: false, typeSearch: '', activeSearchRow: null }
 const DEFAULT_EMPLOYER: Employer = { name: '', startDate: '', endDate: '', approvals: [{ type: '', reference: '', certifyingStaff: false, arcSignatory: false, instructor: false }] }
 
-export function CompleteProfileForm({ mode = 'create', initialData }: CompleteProfileFormProps) {
+export function CompleteProfileForm({ mode = 'create', initialData, userId }: CompleteProfileFormProps) {
   const router = useRouter()
-  const supabase = createClient()
 
   const [firstName, setFirstName] = useState(initialData?.firstName ?? '')
   const [middleNames, setMiddleNames] = useState(initialData?.middleNames ?? '')
@@ -339,23 +338,31 @@ export function CompleteProfileForm({ mode = 'create', initialData }: CompletePr
 
   async function handleLicencePhotoUpload(side: 'front' | 'back', file: File) {
     if (file.size > 5 * 1024 * 1024) return
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const ext = file.name.split('.').pop() || 'jpg'
-    const path = `${user.id}/licence-${side}-${Date.now()}.${ext}`
-    const { error } = await supabase.storage
-      .from('module-certificates')
-      .upload(path, file, { contentType: file.type, upsert: false })
-    if (!error) {
-      if (side === 'front') setLicenceFrontPath(path)
-      else setLicenceBackPath(path)
+
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('bucket', 'module-certificates')
+    formData.append('path_prefix', `${userId}/licence-${side}`)
+
+    const res = await fetch('/api/storage/upload', {
+      method: 'POST',
+      body: formData,
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (side === 'front') setLicenceFrontPath(data.path)
+      else setLicenceBackPath(data.path)
     }
   }
 
   async function handleDeleteLicencePhoto(side: 'front' | 'back') {
     const path = side === 'front' ? licenceFrontPath : licenceBackPath
     if (!path) return
-    await supabase.storage.from('module-certificates').remove([path])
+    await fetch('/api/storage/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bucket: 'module-certificates', paths: [path] }),
+    })
     if (side === 'front') setLicenceFrontPath(null)
     else setLicenceBackPath(null)
   }
@@ -398,13 +405,6 @@ export function CompleteProfileForm({ mode = 'create', initialData }: CompletePr
       .flatMap(l => l.endorsements)
       .filter(e => e.rating)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setError('Session expired. Please sign in again.')
-      setLoading(false)
-      return
-    }
-
     const profileUpdate: Record<string, any> = {
       full_name: fullName,
       date_of_birth: dateOfBirth || null,
@@ -421,38 +421,28 @@ export function CompleteProfileForm({ mode = 'create', initialData }: CompletePr
       profileUpdate.profile_completed_at = new Date().toISOString()
     }
 
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .upsert({ id: user.id, ...profileUpdate }, { onConflict: 'id' })
-
-    if (profileError) {
-      setError(profileError.message)
-      setLoading(false)
-      return
-    }
-
     const validEmployers = employers.filter(e => e.name.trim())
 
-    if (mode === 'edit') {
-      // Replace existing employment periods
-      await supabase
-        .from('employment_periods')
-        .delete()
-        .eq('user_id', user.id)
-    }
-
-    if (validEmployers.length > 0) {
-      await supabase.from('employment_periods').insert(
-        validEmployers.map(e => ({
-          user_id: user.id,
+    const res = await fetch('/api/profile/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile: profileUpdate,
+        employers: validEmployers.map(e => ({
           employer: e.name.trim(),
           start_date: e.startDate || new Date().toISOString().split('T')[0],
           end_date: e.endDate || null,
-        }))
-      )
-    }
+        })),
+        mode,
+      }),
+    })
 
-    await supabase.auth.updateUser({ data: { full_name: fullName } })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setError(body.error ?? 'Failed to save profile')
+      setLoading(false)
+      return
+    }
 
     if (mode === 'edit') {
       // Detect newly added type ratings (compared to initialData) so we

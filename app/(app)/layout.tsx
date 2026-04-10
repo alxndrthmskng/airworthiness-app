@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryOne } from '@/lib/db'
 import { AppSidebar } from '@/components/app-sidebar'
 import { QuickAdd } from '@/components/quick-add'
 import { PrivacyPolicyBanner } from '@/components/privacy-policy-banner'
@@ -11,16 +12,15 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
 
   if (!user) redirect('/')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('profile_completed_at')
-    .eq('id', user.id)
-    .single()
+  const profile = await queryOne<{ profile_completed_at: string | null }>(
+    'SELECT profile_completed_at FROM profiles WHERE id = $1',
+    [user.id]
+  )
 
   if (!profile?.profile_completed_at) redirect('/complete-profile')
 
@@ -28,11 +28,10 @@ export default async function AppLayout({
 
   // Privacy policy acknowledgement check — show banner if user has not
   // acknowledged the current version
-  const { data: ack } = await supabase
-    .from('privacy_policy_acknowledgements')
-    .select('version')
-    .eq('user_id', user.id)
-    .maybeSingle()
+  const ack = await queryOne<{ version: string }>(
+    'SELECT version FROM privacy_policy_acknowledgements WHERE user_id = $1',
+    [user.id]
+  )
   const needsPolicyAck = ack?.version !== CURRENT_PRIVACY_POLICY_VERSION
 
   return (

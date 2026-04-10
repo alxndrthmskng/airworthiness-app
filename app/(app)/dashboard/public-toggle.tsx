@@ -2,14 +2,14 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 interface PublicToggleProps {
   isPublic: boolean
   canGoPublic: boolean
+  userId: string
 }
 
-export function PublicToggle({ isPublic, canGoPublic }: PublicToggleProps) {
+export function PublicToggle({ isPublic, canGoPublic, userId }: PublicToggleProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [checked, setChecked] = useState(isPublic)
@@ -20,14 +20,11 @@ export function PublicToggle({ isPublic, canGoPublic }: PublicToggleProps) {
     const newValue = !checked
     setChecked(newValue)
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    await supabase
-      .from('profiles')
-      .update({ is_public: newValue })
-      .eq('id', user.id)
+    await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_public: newValue }),
+    })
 
     startTransition(() => {
       router.refresh()

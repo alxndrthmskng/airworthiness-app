@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryAll } from '@/lib/db'
+import { getPublicUrl } from '@/lib/storage'
 import { isFeatureEnabledForUser } from '@/lib/feature-flags'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 import { Rss } from 'lucide-react'
@@ -20,8 +22,8 @@ interface FeedPost {
 }
 
 export default async function FeedPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/')
 
   const feedEnabled = await isFeatureEnabledForUser('social_feed', user.id)
@@ -33,16 +35,18 @@ export default async function FeedPage() {
         <h1 className="text-2xl font-semibold text-foreground">Social Feed</h1>
       </div>
 
-      {feedEnabled ? <FeedContent userId={user.id} /> : <ComingSoon />}
+      {feedEnabled ? <FeedContent userId={user.id!} /> : <ComingSoon />}
     </div>
   )
 }
 
 async function FeedContent({ userId }: { userId: string }) {
   const PAGE_SIZE = 25
-  const supabase = await createClient()
-  const { data: posts } = await supabase.rpc('get_feed', { p_limit: PAGE_SIZE, p_before: null })
-  const list: FeedPost[] = (posts as FeedPost[]) ?? []
+  const posts = await queryAll<FeedPost>(
+    'SELECT * FROM get_feed($1, $2)',
+    [PAGE_SIZE, null]
+  )
+  const list: FeedPost[] = posts ?? []
 
   if (list.length === 0) {
     return (
@@ -62,7 +66,7 @@ async function FeedContent({ userId }: { userId: string }) {
   // Resolve avatar URLs and photo URLs (for task_share posts)
   const postsWithMedia = list.map(post => {
     const avatarUrl = post.author_avatar_path
-      ? supabase.storage.from('public-profile-avatars').getPublicUrl(post.author_avatar_path).data.publicUrl
+      ? getPublicUrl('public-profile-avatars', post.author_avatar_path)
       : null
 
     let photoUrls: string[] = []
@@ -71,7 +75,7 @@ async function FeedContent({ userId }: { userId: string }) {
       if (Array.isArray(photos)) {
         photoUrls = photos
           .filter((p): p is string => typeof p === 'string')
-          .map(path => supabase.storage.from('post-photos').getPublicUrl(path).data.publicUrl)
+          .map(path => getPublicUrl('post-photos', path))
       }
     }
 

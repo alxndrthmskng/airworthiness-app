@@ -1,43 +1,22 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { query, queryOne } from '@/lib/db'
 import { isFeatureEnabledForUser } from '@/lib/feature-flags'
 import { logPrivacyEvent } from '@/lib/privacy-audit'
 import { POST_TYPES, isValidPostType } from '@/lib/post-types'
 
-/**
- * Share a milestone to the feed.
- *
- * Body: { post_type: string, data: object, visibility?: 'followers' | 'public' }
- *
- * Validates the post type and the payload shape, then creates a row in
- * the posts table. Logs to privacy audit.
- *
- * Gated on social_feed feature flag (per-user, soft launch capable).
- *
- * Note: the user must have a public_profiles row to share — the feed
- * query joins on public_profiles, so a post from a user without a
- * profile would be invisible.
- */
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   if (!(await isFeatureEnabledForUser('social_feed', user.id))) {
     return NextResponse.json({ error: 'Feature not available' }, { status: 404 })
   }
 
-  // The user must have a public profile row, otherwise no one can see the post
-  const { data: profile } = await supabase
-    .from('public_profiles')
-    .select('user_id')
-    .eq('user_id', user.id)
-    .maybeSingle()
+  const profile = await queryOne<{ user_id: string }>('SELECT user_id FROM public_profiles WHERE user_id = $1', [user.id])
   if (!profile) {
-    return NextResponse.json(
-      { error: 'You must enable a public profile before sharing to the feed' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'You must enable a public profile before sharing to the feed' }, { status: 400 })
   }
 
   const body = await request.json().catch(() => null)
@@ -57,26 +36,16 @@ export async function POST(request: Request) {
 
   const visibility = body.visibility === 'public' ? 'public' : 'followers'
 
-  const { data: insertedPost, error } = await supabase
-    .from('posts')
-    .insert({
-      author_id: user.id,
-      post_type: body.post_type,
-      data: validation.data,
-      visibility,
-    })
-    .select('id, created_at')
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  const insertedPost = await queryOne<{ id: string; created_at: string }>(
+    'INSERT INTO posts (author_id, post_type, data, visibility) VALUES ($1, $2, $3, $4) RETURNING id, created_at',
+    [user.id, body.post_type, JSON.stringify(validation.data), visibility]
+  )
 
   await logPrivacyEvent({
     eventType: 'milestone_shared',
     eventCategory: 'social',
-    metadata: { post_type: body.post_type, visibility, post_id: insertedPost.id },
+    metadata: { post_type: body.post_type, visibility, post_id: insertedPost!.id },
   })
 
-  return NextResponse.json({ success: true, post_id: insertedPost.id, created_at: insertedPost.created_at })
+  return NextResponse.json({ success: true, post_id: insertedPost!.id, created_at: insertedPost!.created_at })
 }

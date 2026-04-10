@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,6 +17,7 @@ interface MilitaryExperienceProps {
   civilMonths: number
   militaryMonths: number
   totalExpMonths: number
+  userId: string
 }
 
 function formatDuration(months: number): string {
@@ -37,6 +37,7 @@ export function MilitaryExperience({
   civilMonths,
   militaryMonths,
   totalExpMonths,
+  userId,
 }: MilitaryExperienceProps) {
   const router = useRouter()
   const [checked, setChecked] = useState(hasMilitaryPeriod)
@@ -56,25 +57,15 @@ export function MilitaryExperience({
   async function handleSave() {
     if (!startDate) return
     setSaving(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
 
-    await supabase
-      .from('employment_periods')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('is_military', true)
-
-    await supabase
-      .from('employment_periods')
-      .insert({
-        user_id: user.id,
-        employer: 'Military / Non-Civil Service',
+    await fetch('/api/employment/military', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         start_date: startDate,
         end_date: endDate || null,
-        is_military: true,
-      })
+      }),
+    })
 
     setSaving(false)
     router.refresh()
@@ -82,15 +73,8 @@ export function MilitaryExperience({
 
   async function handleRemove() {
     setSaving(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
 
-    await supabase
-      .from('employment_periods')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('is_military', true)
+    await fetch('/api/employment/military', { method: 'DELETE' })
 
     setChecked(false)
     setStartDate('')

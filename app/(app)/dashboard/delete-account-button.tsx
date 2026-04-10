@@ -1,12 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 
 export function DeleteAccountButton() {
-  const router = useRouter()
   const [confirming, setConfirming] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
@@ -15,20 +13,15 @@ export function DeleteAccountButton() {
     setDeleting(true)
     setError('')
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    const res = await fetch('/api/account', { method: 'DELETE' })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setError(body.error ?? 'Failed to delete account')
+      setDeleting(false)
+      return
+    }
 
-    // Delete profile data
-    await supabase.from('logbook_entries').delete().eq('user_id', user.id)
-    await supabase.from('module_exam_progress').delete().eq('user_id', user.id)
-    await supabase.from('certificates').delete().eq('user_id', user.id)
-    await supabase.from('purchases').delete().eq('user_id', user.id)
-    await supabase.from('profiles').delete().eq('id', user.id)
-
-    // Sign out
-    await supabase.auth.signOut()
-    router.push('/')
+    await signOut({ callbackUrl: '/' })
   }
 
   if (!confirming) {

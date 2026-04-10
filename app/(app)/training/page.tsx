@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { queryAll } from '@/lib/db'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
@@ -8,13 +8,9 @@ import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 export const metadata: Metadata = { title: 'Continuation Training | Airworthiness' }
 
 export default async function CoursesPage() {
-  const supabase = await createClient()
-
-  const { data: courses } = await supabase
-    .from('courses')
-    .select('id, title, slug, description, is_premium')
-    .eq('is_published', true)
-    .order('created_at', { ascending: false })
+  const courses = await queryAll<{ id: string; title: string; slug: string; description: string; is_premium: boolean }>(
+    'SELECT id, title, slug, description, is_premium FROM courses WHERE is_published = true ORDER BY created_at DESC'
+  )
 
   const continuationTraining = [
     'Safety Training (Including Human Factors)',

@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { signIn } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 export function SignUpForm() {
-  const supabase = createClient()
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -23,15 +22,13 @@ export function SignUpForm() {
     if (!email.trim()) return
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signInWithOtp({
+    const result = await signIn('nodemailer', {
       email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/complete-profile`,
-      },
+      callbackUrl: '/complete-profile',
+      redirect: false,
     })
-    if (error) {
-      setError(error.message)
+    if (result?.error) {
+      setError(result.error)
     } else {
       setState('link_sent')
       setResendCountdown(60)

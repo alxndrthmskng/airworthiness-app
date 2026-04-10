@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSession } from 'next-auth/react'
 import { UK_TYPE_RATINGS } from '@/lib/profile/type-ratings'
 import { ATA_2200_CHAPTERS } from '@/lib/logbook/ata-2200'
 import { Plus, X, Check } from 'lucide-react'
@@ -66,6 +66,7 @@ function validateDate(display: string): string | null {
 
 export function QuickAdd() {
   const router = useRouter()
+  const { data: session } = useSession()
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -165,20 +166,10 @@ export function QuickAdd() {
     if (!taskDetail.trim()) return
     const err = validateDate(date)
     if (err) { setDateError(err); return }
+    if (!session?.user) return
 
     setSaving(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
 
-    const { data: employment } = await supabase
-      .from('employment_periods')
-      .select('employer')
-      .eq('user_id', user.id)
-      .order('start_date', { ascending: false })
-      .limit(1)
-
-    const employer = employment?.[0]?.employer ?? ''
     const found = UK_TYPE_RATINGS.find(t => t.rating === aircraftType)
     const derivedCategory = found ? groupToCategory(found.group) : null
     const aircraftCategory = licenceCategory || derivedCategory || 'aeroplane_turbine'
@@ -188,31 +179,36 @@ export function QuickAdd() {
       taskDetail.trim(),
     ].filter(Boolean).join(' ')
 
-    const { error } = await supabase.from('logbook_entries').insert({
-      user_id: user.id,
-      task_date: parseDateInput(date),
-      maintenance_type: 'line_maintenance',
-      aircraft_category: aircraftCategory,
-      aircraft_registration: registration.toUpperCase() || 'N/A',
-      aircraft_type: aircraftType || 'N/A',
-      ata_chapter: ataChapters[0] ?? '',
-      ata_chapters: ataChapters,
-      job_number: '',
-      description: descriptionParts,
-      employer,
-      category: 'line_maintenance',
-      duration_hours: 1,
-      supervised: true,
-      status: 'draft',
-    })
+    try {
+      const res = await fetch('/api/logbook/entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          task_date: parseDateInput(date),
+          maintenance_type: 'line_maintenance',
+          aircraft_category: aircraftCategory,
+          aircraft_registration: registration.toUpperCase() || 'N/A',
+          aircraft_type: aircraftType || 'N/A',
+          ata_chapter: ataChapters[0] ?? '',
+          ata_chapters: ataChapters,
+          job_number: '',
+          description: descriptionParts,
+          category: 'line_maintenance',
+          duration_hours: 1,
+          supervised: true,
+          status: 'draft',
+        }),
+      })
+
+      if (res.ok) {
+        setSaved(true)
+        reset()
+        router.refresh()
+        setTimeout(() => firstInputRef.current?.focus(), 50)
+      }
+    } catch {}
 
     setSaving(false)
-    if (!error) {
-      setSaved(true)
-      reset()
-      router.refresh()
-      setTimeout(() => firstInputRef.current?.focus(), 50)
-    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {

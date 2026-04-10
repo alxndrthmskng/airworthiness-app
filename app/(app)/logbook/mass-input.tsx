@@ -2,7 +2,6 @@
 
 import { useState, Fragment, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { useToast, Toast } from '@/components/toast'
 import {
@@ -195,9 +194,10 @@ interface MassInputProps {
   defaultEmployer: string
   lastMaintenanceType?: MaintenanceType
   editingEntry?: Record<string, unknown> | null
+  userId: string
 }
 
-export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }: MassInputProps) {
+export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry, userId }: MassInputProps) {
   const router = useRouter()
   const isEditing = !!editingEntry
   const { toast, show: showToast } = useToast()
@@ -244,19 +244,19 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
 
     setUploading(prev => ({ ...prev, [rowId]: true }))
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setUploading(prev => ({ ...prev, [rowId]: false })); return }
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('bucket', 'module-certificates')
+    formData.append('path_prefix', `${userId}/job`)
 
-    const ext = file.name.split('.').pop() || 'jpg'
-    const storagePath = `${user.id}/job-${Date.now()}.${ext}`
+    const res = await fetch('/api/storage/upload', {
+      method: 'POST',
+      body: formData,
+    })
 
-    const { error } = await supabase.storage
-      .from('module-certificates')
-      .upload(storagePath, file, { contentType: file.type, upsert: false })
-
-    if (!error) {
-      updateRow(rowId, 'jobNumberPhotoPath', storagePath)
+    if (res.ok) {
+      const data = await res.json()
+      updateRow(rowId, 'jobNumberPhotoPath', data.path)
     }
     setUploading(prev => ({ ...prev, [rowId]: false }))
   }
@@ -269,10 +269,6 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
     if (!isSimple && !row.aircraftRegistration) return
 
     setRows(prev => prev.map(r => r.id === id ? { ...r, saving: true } : r))
-
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
 
     const descriptionParts = [
       row.taskTypes.length > 0 ? `[${row.taskTypes.join(', ')}]` : '',
@@ -302,11 +298,18 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
       work_order_photo_path: row.jobNumberPhotoPath,
     }
 
-    const { error } = isEditing
-      ? await supabase.from('logbook_entries').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', editingEntry!.id as string)
-      : await supabase.from('logbook_entries').insert({ ...payload, user_id: user.id })
+    const url = isEditing
+      ? `/api/logbook/${editingEntry!.id as string}`
+      : '/api/logbook'
+    const method = isEditing ? 'PUT' : 'POST'
 
-    if (!error) {
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    if (res.ok) {
       if (isEditing) {
         showToast('Task updated successfully.')
         router.push('/logbook/export')
@@ -330,7 +333,8 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
       showToast('Task successfully added to logbook.')
       router.refresh()
     } else {
-      setRows(prev => prev.map(r => r.id === id ? { ...r, saving: false, saveError: error?.message ?? error?.code ?? 'Save failed — check all fields' } : r))
+      const body = await res.json().catch(() => ({}))
+      setRows(prev => prev.map(r => r.id === id ? { ...r, saving: false, saveError: body.error ?? 'Save failed — check all fields' } : r))
     }
   }
 
@@ -344,13 +348,10 @@ export function MassInput({ defaultEmployer, lastMaintenanceType, editingEntry }
 
   async function handleDelete() {
     if (!editingEntry) return
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('logbook_entries')
-      .delete()
-      .eq('id', editingEntry.id as string)
-    if (error) {
-      showToast('Failed to delete: ' + error.message, 'error')
+    const res = await fetch(`/api/logbook/${editingEntry.id as string}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      showToast('Failed to delete: ' + (body.error ?? 'Unknown error'), 'error')
       return
     }
     showToast('Task deleted.')

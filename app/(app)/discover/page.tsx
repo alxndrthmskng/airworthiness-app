@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryAll } from '@/lib/db'
+import { getPublicUrl } from '@/lib/storage'
 import { isFeatureEnabledForUser } from '@/lib/feature-flags'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 import { Search } from 'lucide-react'
@@ -24,8 +26,8 @@ interface PageProps {
 }
 
 export default async function DiscoverPage({ searchParams }: PageProps) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/')
 
   if (!(await isFeatureEnabledForUser('social_profile', user.id))) {
@@ -37,15 +39,19 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
 
   let results: SearchResult[] = []
   if (query.length >= 2) {
-    const { data } = await supabase.rpc('search_profiles', { p_query: query, p_limit: 20 })
-    results = (data as SearchResult[]) ?? []
+    results = await queryAll<SearchResult>(
+      'SELECT * FROM search_profiles($1, $2)',
+      [query, 20]
+    )
   }
 
   // Suggested follows — only shown when there's no search query
   let suggestions: SuggestedFollow[] = []
   if (query.length === 0) {
-    const { data } = await supabase.rpc('get_suggested_follows', { p_limit: 10 })
-    suggestions = (data as SuggestedFollow[]) ?? []
+    suggestions = await queryAll<SuggestedFollow>(
+      'SELECT * FROM get_suggested_follows($1)',
+      [10]
+    )
   }
 
   return (
@@ -82,7 +88,7 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
                 </p>
                 {suggestions.map(s => {
                   const avatarUrl = s.avatar_path
-                    ? supabase.storage.from('public-profile-avatars').getPublicUrl(s.avatar_path).data.publicUrl
+                    ? getPublicUrl('public-profile-avatars', s.avatar_path)
                     : null
                   return (
                     <Link
@@ -130,7 +136,7 @@ export default async function DiscoverPage({ searchParams }: PageProps) {
           <div className="space-y-2">
             {results.map(r => {
               const avatarUrl = r.avatar_path
-                ? supabase.storage.from('public-profile-avatars').getPublicUrl(r.avatar_path).data.publicUrl
+                ? getPublicUrl('public-profile-avatars', r.avatar_path)
                 : null
               return (
                 <Link

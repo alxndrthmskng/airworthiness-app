@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { query, queryOne, queryAll } from '@/lib/db'
 import { Button } from '@/components/ui/button'
 import {
   MAINTENANCE_CATEGORIES,
@@ -13,6 +14,7 @@ import {
   CATEGORY_TO_AIRCRAFT,
   getAtaLabel,
 } from '@/lib/logbook/constants'
+import type { AircraftCategory } from '@/lib/logbook/constants'
 import { MassInput } from './mass-input'
 import { AtaChart } from './ata-chart'
 import { BtcToggle } from '@/app/(app)/modules/btc-toggle'
@@ -51,9 +53,8 @@ export default async function LogbookPage({
 }: {
   searchParams: Promise<{ page?: string; status?: string; category?: string; sort?: string; dir?: string; edit?: string }>
 }) {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
   const params = await searchParams
@@ -79,44 +80,38 @@ export default async function LogbookPage({
   const relevantAircraftCats = selectedCategory ? CATEGORY_TO_AIRCRAFT[selectedCategory] ?? [] : []
 
   // Fetch profile, stats, recency, and employment in parallel
-  const [{ data: profile }, { data: statsEntries }, { data: recencyEntries }, { data: employmentPeriods }, { data: btcRecord }] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('aml_licence_number')
-      .eq('id', user.id)
-      .single(),
-    supabase
-      .from('logbook_entries')
-      .select('status, task_date, aircraft_category, maintenance_type, ata_chapters')
-      .eq('user_id', user.id),
-    supabase
-      .from('logbook_entries')
-      .select('aircraft_category, task_date')
-      .eq('user_id', user.id)
-      .gte('task_date', twoYearsAgoStr),
-    supabase
-      .from('employment_periods')
-      .select('employer, start_date, end_date, is_military')
-      .eq('user_id', user.id)
-      .order('start_date', { ascending: false }),
-    supabase
-      .from('module_exam_progress')
-      .select('is_btc')
-      .eq('user_id', user.id)
-      .eq('module_id', '_btc')
-      .single(),
+  const [profileRow, statsEntries, recencyEntries, employmentPeriods, btcRecord] = await Promise.all([
+    queryOne<{ aml_licence_number: string | null }>(
+      'SELECT aml_licence_number FROM profiles WHERE id = $1',
+      [user.id]
+    ),
+    queryAll<{ status: string; task_date: string; aircraft_category: string; maintenance_type: string; ata_chapters: string[] }>(
+      'SELECT status, task_date, aircraft_category, maintenance_type, ata_chapters FROM logbook_entries WHERE user_id = $1',
+      [user.id]
+    ),
+    queryAll<{ aircraft_category: string; task_date: string }>(
+      'SELECT aircraft_category, task_date FROM logbook_entries WHERE user_id = $1 AND task_date >= $2',
+      [user.id, twoYearsAgoStr]
+    ),
+    queryAll<{ employer: string; start_date: string; end_date: string | null; is_military: boolean }>(
+      'SELECT employer, start_date, end_date, is_military FROM employment_periods WHERE user_id = $1 ORDER BY start_date DESC',
+      [user.id]
+    ),
+    queryOne<{ is_btc: boolean }>(
+      'SELECT is_btc FROM module_exam_progress WHERE user_id = $1 AND module_id = $2',
+      [user.id, '_btc']
+    ),
   ])
+
+  const profile = profileRow
 
   // Fetch editing entry if ?edit= param is set
   let editingEntry: Record<string, unknown> | null = null
   if (editId) {
-    const { data } = await supabase
-      .from('logbook_entries')
-      .select('*')
-      .eq('id', editId)
-      .eq('user_id', user.id)
-      .single()
-    editingEntry = data
+    editingEntry = await queryOne<Record<string, unknown>>(
+      'SELECT * FROM logbook_entries WHERE id = $1 AND user_id = $2',
+      [editId, user.id]
+    )
   }
 
   const isAmlHolder = !!profile?.aml_licence_number
@@ -134,7 +129,7 @@ export default async function LogbookPage({
 
   // Filter stats by category if selected
   const filteredStats = selectedCategory && relevantAircraftCats.length > 0
-    ? allStats.filter(e => relevantAircraftCats.includes(e.aircraft_category))
+    ? allStats.filter(e => relevantAircraftCats.includes(e.aircraft_category as AircraftCategory))
     : allStats
 
   const totalCount = filteredStats.length
@@ -144,7 +139,7 @@ export default async function LogbookPage({
 
   // Recency: filter by selected category's aircraft types
   const filteredRecency = selectedCategory && relevantAircraftCats.length > 0
-    ? (recencyEntries ?? []).filter(e => relevantAircraftCats.includes(e.aircraft_category))
+    ? (recencyEntries ?? []).filter(e => relevantAircraftCats.includes(e.aircraft_category as AircraftCategory))
     : (recencyEntries ?? [])
   const recencyTasks = filteredRecency.length
   const recencyDays = new Set(filteredRecency.map(e => e.task_date)).size
@@ -195,21 +190,31 @@ export default async function LogbookPage({
   const tenYearsAgoTime = tenYearsAgo.getTime()
 
   // Fetch the current page of entries with filters
-  let query = supabase
-    .from('logbook_entries')
-    .select('id, task_date, aircraft_type, aircraft_registration, aircraft_category, ata_chapter, category, status')
-    .eq('user_id', user.id)
-    .order(sortColumn, { ascending: sortDir })
-    .range(offset, offset + PAGE_SIZE - 1)
+  // Build dynamic SQL query
+  const conditions: string[] = ['user_id = $1']
+  const queryParams: any[] = [user.id]
+  let paramIdx = 2
 
   if (statusFilter !== 'all') {
-    query = query.eq('status', statusFilter)
+    conditions.push(`status = $${paramIdx}`)
+    queryParams.push(statusFilter)
+    paramIdx++
   }
   if (selectedCategory && relevantAircraftCats.length > 0) {
-    query = query.in('aircraft_category', relevantAircraftCats)
+    conditions.push(`aircraft_category = ANY($${paramIdx})`)
+    queryParams.push(relevantAircraftCats)
+    paramIdx++
   }
 
-  const { data: entries } = await query
+  const orderDirection = sortDir ? 'ASC' : 'DESC'
+  conditions.push(`1=1`) // always true, simplifies query building
+  queryParams.push(PAGE_SIZE)
+  queryParams.push(offset)
+
+  const entries = await queryAll<{ id: string; task_date: string; aircraft_type: string; aircraft_registration: string; aircraft_category: string; ata_chapter: string; category: string; status: string }>(
+    `SELECT id, task_date, aircraft_type, aircraft_registration, aircraft_category, ata_chapter, category, status FROM logbook_entries WHERE ${conditions.join(' AND ')} ORDER BY ${sortColumn} ${orderDirection} LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
+    queryParams
+  )
 
   const pageEntries = entries ?? []
   const hasNextPage = pageEntries.length === PAGE_SIZE
@@ -319,7 +324,7 @@ export default async function LogbookPage({
           <BtcToggle
             initialValue={hasBtc}
             selectedCategory={selectedCategory || 'B1.1'}
-            userId={user.id}
+            userId={user.id!}
           />
         </div>
 
@@ -332,6 +337,7 @@ export default async function LogbookPage({
               defaultEmployer={defaultEmployer}
               lastMaintenanceType={lastMaintenanceType}
               editingEntry={editingEntry}
+              userId={user.id!}
             />
           </>
         )}

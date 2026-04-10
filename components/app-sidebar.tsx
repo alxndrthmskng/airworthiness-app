@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { usePathname } from 'next/navigation'
+import { useSession, signOut } from 'next-auth/react'
 import {
   BookOpen,
   ClipboardList,
@@ -70,38 +70,25 @@ function useOrderedNav() {
 }
 
 function useUserProfile() {
-  const [user, setUser] = useState<any>(null)
+  const { data: session, status } = useSession()
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null)
-  const [loaded, setLoaded] = useState(false)
+  const loaded = status !== 'loading'
 
   useEffect(() => {
-    const supabase = createClient()
-
-    async function load(userId: string) {
-      const { data } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', userId)
-        .single()
-      setProfile(data)
+    if (!session?.user) return
+    async function load() {
+      try {
+        const res = await fetch('/api/profile')
+        if (res.ok) {
+          const data = await res.json()
+          setProfile(data)
+        }
+      } catch {}
     }
+    load()
+  }, [session?.user])
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) load(session.user.id)
-      setLoaded(true)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) load(session.user.id)
-      setLoaded(true)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  return { user, profile, loaded }
+  return { user: session?.user ?? null, profile, loaded }
 }
 
 function useUnreadNotificationCount(user: any): number {
@@ -111,10 +98,14 @@ function useUnreadNotificationCount(user: any): number {
   useEffect(() => {
     if (!user) return
     let cancelled = false
-    const supabase = createClient()
     async function load() {
-      const { data } = await supabase.rpc('get_unread_notification_count')
-      if (!cancelled && typeof data === 'number') setCount(data)
+      try {
+        const res = await fetch('/api/notifications/unread-count')
+        if (res.ok) {
+          const data = await res.json()
+          if (!cancelled && typeof data.count === 'number') setCount(data.count)
+        }
+      } catch {}
     }
     load()
     // Refresh on path change so the badge clears after visiting /notifications
@@ -300,7 +291,6 @@ function NavList({
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const router = useRouter()
   const { user, profile, loaded } = useUserProfile()
   const unreadCount = useUnreadNotificationCount(user)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -318,10 +308,8 @@ export function AppSidebar() {
     }
   }, [])
 
-  async function handleLogout() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
+  function handleLogout() {
+    signOut({ callbackUrl: '/' })
   }
 
   useEffect(() => {

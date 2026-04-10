@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTheme } from 'next-themes'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -102,11 +101,16 @@ export function SettingsPanel({
     }
 
     setEmailLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.updateUser({ email: trimmed })
 
-    if (error) {
-      setEmailError(error.message)
+    const res = await fetch('/api/account/change-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: trimmed }),
+    })
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setEmailError(body.error ?? 'Failed to change email')
     } else {
       setEmailSuccess(true)
       setNewEmail('')
@@ -118,37 +122,13 @@ export function SettingsPanel({
     setExporting(true)
     setExportDone(false)
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setExporting(false); return }
-
-    const [
-      { data: profile },
-      { data: logbook },
-      { data: progress },
-      { data: employment },
-      { data: certificates },
-      { data: externalTraining },
-    ] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', user.id).single(),
-      supabase.from('logbook_entries').select('*').eq('user_id', user.id),
-      supabase.from('module_exam_progress').select('*').eq('user_id', user.id),
-      supabase.from('employment_periods').select('*').eq('user_id', user.id),
-      supabase.from('certificates').select('*').eq('user_id', user.id),
-      supabase.from('external_training_certificates').select('*').eq('user_id', user.id),
-    ])
-
-    const exportData = {
-      exported_at: new Date().toISOString(),
-      user_id: user.id,
-      email: user.email,
-      profile,
-      logbook_entries: logbook ?? [],
-      module_exam_progress: progress ?? [],
-      employment_periods: employment ?? [],
-      certificates: certificates ?? [],
-      external_training_certificates: externalTraining ?? [],
+    const res = await fetch('/api/account/export')
+    if (!res.ok) {
+      setExporting(false)
+      return
     }
+
+    const exportData = await res.json()
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -255,7 +235,7 @@ export function SettingsPanel({
         </div>
       </section>
 
-      {/* Social — only shown when the social_profile feature flag is on */}
+      {/* Social -- only shown when the social_profile feature flag is on */}
       {socialProfileEnabled && (
         <section>
           <div className="flex items-center gap-2 mb-4">

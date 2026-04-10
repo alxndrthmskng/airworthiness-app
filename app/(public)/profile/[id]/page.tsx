@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { queryAll, queryOne } from '@/lib/db'
+import { getPublicUrl } from '@/lib/storage'
 import { isFeatureEnabled } from '@/lib/feature-flags'
 import { Button } from '@/components/ui/button'
 import { ProfileActions } from './profile-actions'
@@ -32,9 +33,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!PUBLIC_ID_REGEX.test(id)) return notFoundMeta
   if (!(await isFeatureEnabled('social_profile'))) return notFoundMeta
 
-  const supabase = await createClient()
-  const { data } = await supabase.rpc('get_public_profile', { p_public_id: id })
-  const profile = data?.[0]
+  const rows = await queryAll('SELECT * FROM get_public_profile($1)', [id])
+  const profile = rows?.[0]
   if (!profile) return notFoundMeta
 
   let name = profile.display_name || profile.full_name || 'Engineer'
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     : `${name} on Airworthiness.`
 
   const ogImage = profile.avatar_path
-    ? supabase.storage.from('public-profile-avatars').getPublicUrl(profile.avatar_path).data.publicUrl
+    ? getPublicUrl('public-profile-avatars', profile.avatar_path)
     : undefined
 
   return {
@@ -85,9 +85,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
   if (!PUBLIC_ID_REGEX.test(id)) notFound()
   if (!(await isFeatureEnabled('social_profile'))) notFound()
 
-  const supabase = await createClient()
-
-  const { data: rows } = await supabase.rpc('get_public_profile', { p_public_id: id })
+  const rows = await queryAll('SELECT * FROM get_public_profile($1)', [id])
   const profile = rows?.[0]
 
   if (!profile) notFound()
@@ -120,10 +118,13 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
   let yearsInIndustry: number | null = null
   if (profile.show_years_in_industry) {
-    const { data: years } = await supabase.rpc('get_public_profile_years_in_industry', {
-      p_public_id: id,
-    })
-    if (typeof years === 'number') yearsInIndustry = years
+    const row = await queryOne<{ get_public_profile_years_in_industry: number }>(
+      'SELECT get_public_profile_years_in_industry($1)',
+      [id],
+    )
+    if (row && typeof row.get_public_profile_years_in_industry === 'number') {
+      yearsInIndustry = row.get_public_profile_years_in_industry
+    }
   }
 
   const followEnabled = await isFeatureEnabled('social_follow')
@@ -132,20 +133,23 @@ export default async function PublicProfilePage({ params }: PageProps) {
   let followState: 'none' | 'pending' | 'active' | 'self' = 'none'
 
   if (followEnabled) {
-    const [{ data: fc }, { data: gc }, { data: fs }] = await Promise.all([
-      supabase.rpc('get_follower_count', { p_public_id: id }),
-      supabase.rpc('get_following_count', { p_public_id: id }),
-      supabase.rpc('get_follow_state', { p_public_id: id }),
+    const [fcRow, gcRow, fsRow] = await Promise.all([
+      queryOne<{ get_follower_count: number }>('SELECT get_follower_count($1)', [id]),
+      queryOne<{ get_following_count: number }>('SELECT get_following_count($1)', [id]),
+      queryOne<{ get_follow_state: string }>('SELECT get_follow_state($1)', [id]),
     ])
-    if (typeof fc === 'number') followerCount = fc
-    if (typeof gc === 'number') followingCount = gc
-    if (typeof fs === 'string' && (fs === 'none' || fs === 'pending' || fs === 'active' || fs === 'self')) {
-      followState = fs
+    if (fcRow && typeof fcRow.get_follower_count === 'number') followerCount = fcRow.get_follower_count
+    if (gcRow && typeof gcRow.get_following_count === 'number') followingCount = gcRow.get_following_count
+    if (fsRow && typeof fsRow.get_follow_state === 'string') {
+      const fs = fsRow.get_follow_state
+      if (fs === 'none' || fs === 'pending' || fs === 'active' || fs === 'self') {
+        followState = fs
+      }
     }
   }
 
   const avatarUrl = profile.avatar_path
-    ? supabase.storage.from('public-profile-avatars').getPublicUrl(profile.avatar_path).data.publicUrl
+    ? getPublicUrl('public-profile-avatars', profile.avatar_path)
     : null
 
   return (

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryAll } from '@/lib/db'
 import {
   PART_66_MODULES,
   MODULE_REQUIREMENTS,
@@ -23,18 +24,18 @@ export default async function ProgressPage({
 }: {
   searchParams: Promise<{ category?: string }>
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
   const params = await searchParams
   const selectedCategory = params.category || 'B1.1'
 
   // Fetch all progress for this user
-  const { data: allProgress } = await supabase
-    .from('module_exam_progress')
-    .select('*')
-    .eq('user_id', user.id)
+  const allProgress = await queryAll<ModuleExamProgress>(
+    'SELECT * FROM module_exam_progress WHERE user_id = $1',
+    [user.id]
+  )
 
   const progressRecords = (allProgress ?? []) as ModuleExamProgress[]
 
@@ -255,7 +256,7 @@ export default async function ProgressPage({
             <ProgressTracker
               examRows={mcqRows}
               selectedCategory={selectedCategory}
-              userId={user.id}
+              userId={user.id!}
             />
           </div>
 
@@ -266,7 +267,7 @@ export default async function ProgressPage({
               <ProgressTracker
                 examRows={essayRows}
                 selectedCategory={selectedCategory}
-                userId={user.id}
+                userId={user.id!}
               />
             ) : (
               <div className="rounded-xl border border-border p-6 text-center">

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { queryAll } from '@/lib/db'
+import { getPublicUrl } from '@/lib/storage'
 import { isFeatureEnabled } from '@/lib/feature-flags'
 import { FollowList } from '../follow-list'
 
@@ -30,18 +31,16 @@ export default async function FollowersPage({ params }: PageProps) {
   if (!(await isFeatureEnabled('social_profile'))) notFound()
   if (!(await isFeatureEnabled('social_follow'))) notFound()
 
-  const supabase = await createClient()
-
-  const { data: rows } = await supabase.rpc('get_public_profile', { p_public_id: id })
+  const rows = await queryAll('SELECT * FROM get_public_profile($1)', [id])
   const profile = rows?.[0]
   if (!profile) notFound()
 
-  const { data: followers } = await supabase.rpc('get_followers', { p_public_id: id, p_limit: 200 })
-  const list: Entry[] = (followers as Entry[]) ?? []
+  const followers = await queryAll<Entry>('SELECT * FROM get_followers($1, $2)', [id, 200])
+  const list: Entry[] = followers ?? []
 
   function avatarUrlFor(path: string | null): string | null {
     if (!path) return null
-    return supabase.storage.from('public-profile-avatars').getPublicUrl(path).data.publicUrl
+    return getPublicUrl('public-profile-avatars', path)
   }
 
   const displayName = profile.display_name || profile.full_name || 'Engineer'

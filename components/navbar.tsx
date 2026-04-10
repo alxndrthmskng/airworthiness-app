@@ -3,28 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
-
-function useUser() {
-  const [user, setUser] = useState<any>(null)
-  const [loaded, setLoaded] = useState(false)
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user)
-      }
-      setLoaded(true)
-    })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setLoaded(true)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-  return { user, loaded }
-}
 
 function Dropdown({
   label,
@@ -193,7 +173,9 @@ function MobileMenu({
 }
 
 export function Navbar() {
-  const { user, loaded } = useUser()
+  const { data: session, status } = useSession()
+  const user = session?.user ?? null
+  const loaded = status !== 'loading'
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 

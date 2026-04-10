@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { query } from '@/lib/db'
 import { isAdmin, clearFeatureFlagCache } from '@/lib/feature-flags'
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
@@ -20,17 +21,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
   }
 
-  const { error } = await supabase
-    .from('feature_flags')
-    .update({ enabled: body.enabled })
-    .eq('key', body.key)
+  await query('UPDATE feature_flags SET enabled = $1 WHERE key = $2', [body.enabled, body.key])
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  // Invalidate the in-memory cache so the change takes effect immediately
-  // for this Node instance. Other instances will pick it up within 60s.
   clearFeatureFlagCache(body.key)
 
   return NextResponse.json({ success: true })

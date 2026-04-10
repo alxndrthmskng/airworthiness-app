@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { query } from '@/lib/db'
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
-  }
+  const session = await auth()
+  const user = session?.user
+  if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
 
   const body = await request.json()
   const { training_slug, completion_date, certificate_path } = body
@@ -20,21 +18,16 @@ export async function POST(request: Request) {
   const expiryDate = new Date(completionDate)
   expiryDate.setFullYear(expiryDate.getFullYear() + 2)
 
-  const { error } = await supabase
-    .from('external_training_certificates')
-    .upsert({
-      user_id: user.id,
-      training_slug,
-      completion_date,
-      expiry_date: expiryDate.toISOString().split('T')[0],
-      ...(certificate_path !== undefined && { certificate_path }),
-    }, {
-      onConflict: 'user_id,training_slug',
-    })
-
-  if (error) {
-    return NextResponse.json({ error: 'Failed to save' }, { status: 500 })
-  }
+  await query(
+    `INSERT INTO external_training_certificates (user_id, training_slug, completion_date, expiry_date${certificate_path !== undefined ? ', certificate_path' : ''})
+     VALUES ($1, $2, $3, $4${certificate_path !== undefined ? ', $5' : ''})
+     ON CONFLICT (user_id, training_slug) DO UPDATE SET
+       completion_date = $3,
+       expiry_date = $4${certificate_path !== undefined ? ', certificate_path = $5' : ''}`,
+    certificate_path !== undefined
+      ? [user.id, training_slug, completion_date, expiryDate.toISOString().split('T')[0], certificate_path]
+      : [user.id, training_slug, completion_date, expiryDate.toISOString().split('T')[0]]
+  )
 
   return NextResponse.json({ success: true })
 }

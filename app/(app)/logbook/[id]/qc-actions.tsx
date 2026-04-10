@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -14,7 +13,6 @@ interface Props {
 
 export function QcActions({ entryId }: Props) {
   const router = useRouter()
-  const supabase = createClient()
 
   const [action, setAction] = useState<'approve' | 'reject' | null>(null)
   const [comments, setComments] = useState('')
@@ -23,19 +21,14 @@ export function QcActions({ entryId }: Props) {
   async function handleQcReview(approved: boolean) {
     setSubmitting(true)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSubmitting(false); return }
-
-    await supabase
-      .from('logbook_entries')
-      .update({
-        status: approved ? 'qc_approved' : 'qc_rejected',
-        qc_auditor_id: user.id,
-        qc_comments: comments || null,
-        qc_reviewed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', entryId)
+    await fetch(`/api/logbook/${entryId}/qc-review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        approved,
+        comments: comments || null,
+      }),
+    })
 
     router.refresh()
     setSubmitting(false)

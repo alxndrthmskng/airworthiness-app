@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { queryOne, queryAll } from '@/lib/db'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,24 +9,29 @@ import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
 
   // Fetch public profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, full_name, aml_licence_number, aml_categories, type_ratings, is_public, competency_completed_at, created_at')
-    .eq('id', id)
-    .eq('is_public', true)
-    .single()
+  const profile = await queryOne<{
+    id: string
+    full_name: string | null
+    aml_licence_number: string | null
+    aml_categories: string[] | null
+    type_ratings: any
+    is_public: boolean
+    competency_completed_at: string | null
+    created_at: string | null
+  }>(
+    'SELECT id, full_name, aml_licence_number, aml_categories, type_ratings, is_public, competency_completed_at, created_at FROM profiles WHERE id = $1 AND is_public = true',
+    [id]
+  )
 
   if (!profile) notFound()
 
   // Fetch certificates for training status
-  const { data: certificates } = await supabase
-    .from('certificates')
-    .select('issued_at, courses(slug, title)')
-    .eq('user_id', profile.id)
-    .order('issued_at', { ascending: false })
+  const certificates = await queryAll<{ issued_at: string; courses: { slug: string; title: string } }>(
+    'SELECT c.issued_at, json_build_object(\'slug\', co.slug, \'title\', co.title) as courses FROM certificates c LEFT JOIN courses co ON co.id = c.course_id WHERE c.user_id = $1 ORDER BY c.issued_at DESC',
+    [profile.id]
+  )
 
   const now = new Date()
   const twoYearsAgo = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate())
@@ -42,12 +47,10 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
   // Calculate recency as distinct task days
   const periodStart = new Date(now.getFullYear() - RECENCY_PERIOD_YEARS, now.getMonth(), now.getDate())
-  const { data: logbookEntries } = await supabase
-    .from('logbook_entries')
-    .select('task_date')
-    .eq('user_id', profile.id)
-    .gte('task_date', periodStart.toISOString().split('T')[0])
-    .in('status', ['verified'])
+  const logbookEntries = await queryAll<{ task_date: string }>(
+    'SELECT task_date FROM logbook_entries WHERE user_id = $1 AND task_date >= $2 AND status = ANY($3)',
+    [profile.id, periodStart.toISOString().split('T')[0], ['verified']]
+  )
 
   const uniqueTaskDays = new Set(logbookEntries?.map(e => e.task_date) ?? []).size
   const recencyMet = uniqueTaskDays >= RECENCY_REQUIRED_DAYS

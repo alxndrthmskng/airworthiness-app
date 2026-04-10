@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { queryOne, queryAll } from '@/lib/db'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
@@ -11,12 +11,10 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { reference } = await params
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('part145_approvals')
-    .select('organisation_name')
-    .eq('reference_number', decodeURIComponent(reference))
-    .single()
+  const data = await queryOne<{ organisation_name: string }>(
+    'SELECT organisation_name FROM part145_approvals WHERE reference_number = $1',
+    [decodeURIComponent(reference)],
+  )
 
   if (!data) return { title: 'Not Found | Airworthiness' }
 
@@ -46,25 +44,39 @@ export default async function OrgDetailPage({ params }: Props) {
   const { reference } = await params
   const ref = decodeURIComponent(reference)
 
-  const supabase = await createClient()
-
-  const { data: org } = await supabase
-    .from('part145_approvals')
-    .select('*')
-    .eq('reference_number', ref)
-    .single()
+  const org = await queryOne<{
+    id: string
+    organisation_name: string
+    reference_number: string
+    status: string
+    country_code: string | null
+    city: string | null
+    state: string | null
+    postcode: string | null
+    issued_date: string | null
+    website: string | null
+    source_date: string | null
+  }>(
+    'SELECT * FROM part145_approvals WHERE reference_number = $1',
+    [ref],
+  )
 
   if (!org) notFound()
 
-  const { data: ratings } = await supabase
-    .from('part145_ratings')
-    .select('*')
-    .eq('approval_id', org.id)
-    .order('rating_class')
-    .order('category')
+  const ratings = await queryAll<{
+    id: string
+    rating_class: string
+    category: string
+    detail: string | null
+    base_maintenance: boolean
+    line_maintenance: boolean
+  }>(
+    'SELECT * FROM part145_ratings WHERE approval_id = $1 ORDER BY rating_class, category',
+    [org.id],
+  )
 
   const ratingsByClass: Record<string, typeof ratings> = {}
-  for (const r of ratings || []) {
+  for (const r of ratings) {
     if (!ratingsByClass[r.rating_class]) ratingsByClass[r.rating_class] = []
     ratingsByClass[r.rating_class]!.push(r)
   }
@@ -126,13 +138,13 @@ export default async function OrgDetailPage({ params }: Props) {
           </div>
 
           {/* Ratings */}
-          {(ratings || []).length > 0 && (
+          {ratings.length > 0 && (
             <div className="mt-10">
               <h2 className="text-lg font-semibold text-foreground mb-4">
                 Ratings & Capabilities
               </h2>
               <p className="text-sm text-muted-foreground mb-6">
-                {(ratings || []).length} rating{(ratings || []).length !== 1 ? 's' : ''} across {Object.keys(ratingsByClass).length} class{Object.keys(ratingsByClass).length !== 1 ? 'es' : ''}.
+                {ratings.length} rating{ratings.length !== 1 ? 's' : ''} across {Object.keys(ratingsByClass).length} class{Object.keys(ratingsByClass).length !== 1 ? 'es' : ''}.
               </p>
 
               <div className="space-y-6">

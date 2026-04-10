@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -14,7 +13,6 @@ interface Props {
 
 export function VerificationActions({ entryId }: Props) {
   const router = useRouter()
-  const supabase = createClient()
 
   const [action, setAction] = useState<'approve' | 'reject' | null>(null)
   const [comments, setComments] = useState('')
@@ -23,19 +21,14 @@ export function VerificationActions({ entryId }: Props) {
   async function handleVerify(approved: boolean) {
     setSubmitting(true)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSubmitting(false); return }
-
-    await supabase
-      .from('logbook_entries')
-      .update({
-        status: approved ? 'verified' : 'rejected',
-        verifier_id: user.id,
-        verifier_comments: comments || null,
-        verified_at: approved ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', entryId)
+    await fetch(`/api/logbook/${entryId}/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        approved,
+        comments: comments || null,
+      }),
+    })
 
     router.refresh()
     setSubmitting(false)

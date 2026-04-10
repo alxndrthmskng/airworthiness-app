@@ -2,7 +2,6 @@
 
 import { useState, useTransition, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -72,9 +71,10 @@ interface ProfileEditorProps {
     aml_photo_path: string | null
     aml_verified: boolean
   }
+  userId: string
 }
 
-export function ProfileEditor({ profile }: ProfileEditorProps) {
+export function ProfileEditor({ profile, userId }: ProfileEditorProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -220,22 +220,19 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     setError('')
     setSaved(false)
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
     const validEndorsements = endorsements.filter(e => e.rating !== '')
 
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
+    const res = await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         aml_licence_number: isLicenceHolder ? (licenceNumber || null) : null,
         aml_categories: isLicenceHolder ? categories : [],
         type_ratings: showTypeRatings ? validEndorsements : [],
-      })
-      .eq('id', user.id)
+      }),
+    })
 
-    if (updateError) {
+    if (!res.ok) {
       setError('Failed to save. Please try again.')
       return
     }

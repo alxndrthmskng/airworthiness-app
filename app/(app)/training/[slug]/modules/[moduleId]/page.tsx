@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryOne, queryAll } from '@/lib/db'
 import { MarkCompleteButton } from './mark-complete-button'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
@@ -10,38 +11,33 @@ interface Props {
 
 export default async function ModulePage({ params }: Props) {
   const { slug, moduleId } = await params
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
   // Get the module
-  const { data: module } = await supabase
-    .from('modules')
-    .select('*, courses(title, slug)')
-    .eq('id', moduleId)
-    .single()
+  const module = await queryOne<Record<string, any>>(
+    'SELECT m.*, json_build_object(\'title\', c.title, \'slug\', c.slug) as courses FROM modules m LEFT JOIN courses c ON c.id = m.course_id WHERE m.id = $1',
+    [moduleId]
+  )
 
   if (!module) notFound()
 
   // Get all modules in this course for prev/next navigation
-  const { data: allModules } = await supabase
-    .from('modules')
-    .select('id, title, order_index')
-    .eq('course_id', module.course_id)
-    .order('order_index', { ascending: true })
+  const allModules = await queryAll<{ id: string; title: string; order_index: number }>(
+    'SELECT id, title, order_index FROM modules WHERE course_id = $1 ORDER BY order_index ASC',
+    [module.course_id]
+  )
 
   const currentIndex = allModules?.findIndex(m => m.id === moduleId) ?? 0
   const prevModule = allModules?.[currentIndex - 1]
   const nextModule = allModules?.[currentIndex + 1]
 
   // Check if already completed
-  const { data: progressRecord } = await supabase
-    .from('module_progress')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('module_id', moduleId)
-    .single()
+  const progressRecord = await queryOne<{ id: string }>(
+    'SELECT id FROM module_progress WHERE user_id = $1 AND module_id = $2',
+    [user.id, moduleId]
+  )
 
   const isCompleted = !!progressRecord
 
@@ -53,7 +49,7 @@ export default async function ModulePage({ params }: Props) {
         <div className="flex items-center gap-3 mb-6">
           <SidebarTriggerInline />
           <Link href={`/training/${slug}`} className="text-sm text-foreground hover:underline">
-            ← Back to course
+            &larr; Back to course
           </Link>
         </div>
 
@@ -80,13 +76,13 @@ export default async function ModulePage({ params }: Props) {
             {prevModule ? (
               <Link href={`/training/${slug}/modules/${prevModule.id}`}
                 className="text-sm text-foreground hover:underline">
-                ← {prevModule.title}
+                &larr; {prevModule.title}
               </Link>
             ) : <span />}
             {nextModule && (
               <Link href={`/training/${slug}/modules/${nextModule.id}`}
                 className="text-sm text-foreground hover:underline">
-                {nextModule.title} →
+                {nextModule.title} &rarr;
               </Link>
             )}
           </div>

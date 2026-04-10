@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryAll } from '@/lib/db'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -18,32 +19,26 @@ function label(list: readonly { value: string; label: string }[], value: string)
 }
 
 export default async function QcPage() {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
   // Get user's employment periods to scope QC to same employer
-  const { data: employmentPeriods } = await supabase
-    .from('employment_periods')
-    .select('employer, start_date, end_date')
-    .eq('user_id', user.id)
-
-  const userEmployers = employmentPeriods ?? []
+  const userEmployers = await queryAll<{ employer: string; start_date: string; end_date: string | null }>(
+    'SELECT employer, start_date, end_date FROM employment_periods WHERE user_id = $1',
+    [user.id]
+  )
 
   // Fetch all pending_qc entries (not owned by this user, not verified by this user)
-  const { data: pendingEntries } = await supabase
-    .from('logbook_entries')
-    .select('*, profiles!logbook_entries_user_id_fkey(full_name)')
-    .eq('status', 'pending_qc')
-    .neq('user_id', user.id)
-    .neq('verifier_id', user.id)
-    .order('task_date', { ascending: false })
+  const pendingEntries = await queryAll<Record<string, any>>(
+    'SELECT le.*, json_build_object(\'full_name\', p.full_name) as profiles FROM logbook_entries le LEFT JOIN profiles p ON p.id = le.user_id WHERE le.status = $1 AND le.user_id != $2 AND le.verifier_id != $3 ORDER BY le.task_date DESC',
+    ['pending_qc', user.id, user.id]
+  )
 
   // Filter by employer overlap
   const filteredEntries = (pendingEntries ?? []).filter(entry => {
     const taskDate = new Date(entry.task_date)
-    return userEmployers.some(period => {
+    return (userEmployers ?? []).some(period => {
       if (period.employer !== entry.employer) return false
       const start = new Date(period.start_date)
       const end = period.end_date ? new Date(period.end_date) : new Date()
@@ -58,7 +53,7 @@ export default async function QcPage() {
         <div className="flex items-center gap-3 mb-6">
           <SidebarTriggerInline />
           <Link href="/logbook" className="text-sm text-foreground hover:underline">
-            ← Back to logbook
+            &larr; Back to logbook
           </Link>
         </div>
 

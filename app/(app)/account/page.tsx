@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryOne, queryAll } from '@/lib/db'
 import { CompleteProfileForm } from '@/app/(public)/complete-profile/complete-profile-form'
 import type { ProfileFormInitialData } from '@/app/(public)/complete-profile/complete-profile-form'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
@@ -20,24 +21,29 @@ function parseFullName(fullName: string | null): { firstName: string; middleName
 }
 
 export default async function ManageProfilePage() {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, date_of_birth, aml_licence_number, aml_categories, type_ratings, aml_photo_path, industry')
-    .eq('id', user.id)
-    .single()
+  const profile = await queryOne<{
+    full_name: string | null
+    date_of_birth: string | null
+    aml_licence_number: string | null
+    aml_categories: string[] | null
+    type_ratings: any
+    aml_photo_path: string | null
+    industry: string | null
+  }>(
+    'SELECT full_name, date_of_birth, aml_licence_number, aml_categories, type_ratings, aml_photo_path, industry FROM profiles WHERE id = $1',
+    [user.id]
+  )
 
   if (!profile) redirect('/login')
 
-  const { data: employmentPeriods } = await supabase
-    .from('employment_periods')
-    .select('employer, start_date, end_date')
-    .eq('user_id', user.id)
-    .order('start_date', { ascending: false })
+  const employmentPeriods = await queryAll<{ employer: string; start_date: string; end_date: string | null }>(
+    'SELECT employer, start_date, end_date FROM employment_periods WHERE user_id = $1 ORDER BY start_date DESC',
+    [user.id]
+  )
 
   const { firstName, middleNames, lastName } = parseFullName(profile.full_name)
 
@@ -108,7 +114,7 @@ export default async function ManageProfilePage() {
         </div>
       </div>
       <div className="max-w-md">
-        <CompleteProfileForm mode="edit" initialData={initialData} />
+        <CompleteProfileForm mode="edit" initialData={initialData} userId={user.id!} />
       </div>
     </div>
   )

@@ -1,19 +1,19 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryAll } from '@/lib/db'
 import { EmploymentForm } from './employment-form'
+import type { EmploymentPeriod } from '@/lib/logbook/types'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
 export default async function EmploymentPage() {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
-  const { data: periods } = await supabase
-    .from('employment_periods')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('start_date', { ascending: false })
+  const periods = await queryAll<EmploymentPeriod>(
+    'SELECT * FROM employment_periods WHERE user_id = $1 ORDER BY start_date DESC',
+    [user.id]
+  )
 
   return (
     <div className="min-h-screen aw-gradient">
@@ -26,7 +26,7 @@ export default async function EmploymentPage() {
           Add your employers and dates. This is used to match you with verifiers who worked at the same organisation during the same period.
         </p>
 
-        <EmploymentForm periods={periods ?? []} />
+        <EmploymentForm periods={periods ?? []} userId={user.id!} />
       </div>
     </div>
   )

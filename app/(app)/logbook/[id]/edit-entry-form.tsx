@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,7 +28,6 @@ interface Props {
 
 export function EditEntryForm({ entry, employers }: Props) {
   const router = useRouter()
-  const supabase = createClient()
 
   const [taskDate, setTaskDate] = useState(entry.task_date)
   const [aircraftType, setAircraftType] = useState(entry.aircraft_type)
@@ -53,9 +51,10 @@ export function EditEntryForm({ entry, employers }: Props) {
     setSaving(true)
     setError('')
 
-    const { error: updateError } = await supabase
-      .from('logbook_entries')
-      .update({
+    const res = await fetch(`/api/logbook/${entry.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         task_date: taskDate,
         aircraft_type: aircraftType,
         aircraft_registration: aircraftRegistration.toUpperCase(),
@@ -71,12 +70,12 @@ export function EditEntryForm({ entry, employers }: Props) {
         verifier_id: null,
         verifier_comments: null,
         verified_at: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', entry.id)
+      }),
+    })
 
-    if (updateError) {
-      setError(updateError.message)
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setError(body.error ?? 'Failed to save')
       setSaving(false)
       return
     }
@@ -85,13 +84,11 @@ export function EditEntryForm({ entry, employers }: Props) {
   }
 
   async function handleDelete() {
-    const { error: deleteError } = await supabase
-      .from('logbook_entries')
-      .delete()
-      .eq('id', entry.id)
+    const res = await fetch(`/api/logbook/${entry.id}`, { method: 'DELETE' })
 
-    if (deleteError) {
-      setError(deleteError.message)
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setError(body.error ?? 'Failed to delete')
       return
     }
     router.push('/logbook')

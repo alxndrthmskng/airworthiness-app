@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryOne, queryAll } from '@/lib/db'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { UpgradeButton } from '@/components/upgrade-button'
@@ -12,49 +13,41 @@ interface Props {
 
 export default async function CoursePage({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
-
-  // Get user
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
   // Get course first (needed for course_id in subsequent queries)
-  const { data: course } = await supabase
-    .from('courses')
-    .select('id, title, slug, description, is_premium, is_published')
-    .eq('slug', slug)
-    .eq('is_published', true)
-    .single()
+  const course = await queryOne<{ id: string; title: string; slug: string; description: string; is_premium: boolean; is_published: boolean }>(
+    'SELECT id, title, slug, description, is_premium, is_published FROM courses WHERE slug = $1 AND is_published = true',
+    [slug]
+  )
 
   if (!course) notFound()
 
   // Run remaining queries in parallel
   const [
-    { data: modules },
-    { data: progress },
-    { data: purchase },
-    { data: certificate },
+    modules,
+    progress,
+    purchase,
+    certificate,
   ] = await Promise.all([
-    supabase
-      .from('modules')
-      .select('id, title, order_index')
-      .eq('course_id', course.id)
-      .order('order_index', { ascending: true }),
-    supabase
-      .from('module_progress')
-      .select('module_id')
-      .eq('user_id', user.id),
-    supabase
-      .from('purchases')
-      .select('id')
-      .eq('user_id', user.id)
-      .single(),
-    supabase
-      .from('certificates')
-      .select('token')
-      .eq('user_id', user.id)
-      .eq('course_id', course.id)
-      .single(),
+    queryAll<{ id: string; title: string; order_index: number }>(
+      'SELECT id, title, order_index FROM modules WHERE course_id = $1 ORDER BY order_index ASC',
+      [course.id]
+    ),
+    queryAll<{ module_id: string }>(
+      'SELECT module_id FROM module_progress WHERE user_id = $1',
+      [user.id]
+    ),
+    queryOne<{ id: string }>(
+      'SELECT id FROM purchases WHERE user_id = $1',
+      [user.id]
+    ),
+    queryOne<{ token: string }>(
+      'SELECT token FROM certificates WHERE user_id = $1 AND course_id = $2',
+      [user.id, course.id]
+    ),
   ])
 
   const completedIds = new Set(progress?.map(p => p.module_id) ?? [])
@@ -70,7 +63,7 @@ export default async function CoursePage({ params }: Props) {
         <div className="flex items-center gap-3 mb-6">
           <SidebarTriggerInline />
           <Link href="/training" className="text-sm text-foreground hover:underline">
-            ← Back to courses
+            &larr; Back to courses
           </Link>
         </div>
 
@@ -154,7 +147,7 @@ export default async function CoursePage({ params }: Props) {
                       You passed this course. View or share your certificate.
                     </p>
                     <Link href={`/certificates/${certificate.token}`}>
-                      <Button>View certificate →</Button>
+                      <Button>View certificate &rarr;</Button>
                     </Link>
                   </>
                 ) : (
@@ -166,7 +159,7 @@ export default async function CoursePage({ params }: Props) {
                       Ready to take the exam and earn your certificate?
                     </p>
                     <Link href={`/training/${slug}/exam`}>
-                      <Button>Take the exam →</Button>
+                      <Button>Take the exam &rarr;</Button>
                     </Link>
                   </>
                 )}

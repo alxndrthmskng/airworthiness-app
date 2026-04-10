@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,11 +12,11 @@ interface Props {
   fullName: string
   amlLicenceNumber: string
   amlCategories: string[]
+  userId: string
 }
 
-export function ProfileForm({ fullName: initialName, amlLicenceNumber: initialLicence, amlCategories: initialCategories }: Props) {
+export function ProfileForm({ fullName: initialName, amlLicenceNumber: initialLicence, amlCategories: initialCategories, userId }: Props) {
   const router = useRouter()
-  const supabase = createClient()
 
   const [fullName, setFullName] = useState(initialName)
   const [amlLicenceNumber, setAmlLicenceNumber] = useState(initialLicence)
@@ -43,20 +42,19 @@ export function ProfileForm({ fullName: initialName, amlLicenceNumber: initialLi
       return
     }
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
-
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
+    const res = await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         full_name: fullName,
         aml_licence_number: amlLicenceNumber || null,
         aml_categories: amlLicenceNumber ? amlCategories : null,
-      })
-      .eq('id', user.id)
+      }),
+    })
 
-    if (updateError) {
-      setError(updateError.message)
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setError(body.error ?? 'Failed to save')
     } else {
       setSaved(true)
     }

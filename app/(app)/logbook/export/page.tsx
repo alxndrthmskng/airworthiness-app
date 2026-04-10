@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryOne, queryAll } from '@/lib/db'
 import { ExportTable } from './export-table'
 import { PdfDownloadButton } from './pdf-download-button'
 import {
@@ -30,9 +31,8 @@ function calcMonths(periods: { start_date: string; end_date: string | null }[], 
 }
 
 export default async function ExportPage() {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
   const now = new Date()
@@ -42,26 +42,27 @@ export default async function ExportPage() {
   const tenYearsAgo = new Date(now)
   tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - EXPERIENCE_VALIDITY_YEARS)
 
-  const [{ data: profile }, { data: entries }, { data: recencyEntries }, { data: employmentPeriods }] = await Promise.all([
-    supabase.from('profiles').select('full_name, aml_licence_number').eq('id', user.id).single(),
-    supabase
-      .from('logbook_entries')
-      .select('id, task_date, aircraft_type, aircraft_registration, job_number, description, ata_chapter, maintenance_type, aircraft_category, work_order_photo_path')
-      .eq('user_id', user.id)
-      .order('task_date', { ascending: true }),
-    supabase
-      .from('logbook_entries')
-      .select('task_date')
-      .eq('user_id', user.id)
-      .gte('task_date', twoYearsAgoStr),
-    supabase
-      .from('employment_periods')
-      .select('start_date, end_date, is_military')
-      .eq('user_id', user.id),
+  const [profile, entries, recencyEntries, employmentPeriods] = await Promise.all([
+    queryOne<{ full_name: string | null; aml_licence_number: string | null }>(
+      'SELECT full_name, aml_licence_number FROM profiles WHERE id = $1',
+      [user.id]
+    ),
+    queryAll<{ id: string; task_date: string; aircraft_type: string; aircraft_registration: string; job_number: string | null; description: string; ata_chapter: string; maintenance_type: string; aircraft_category: string; work_order_photo_path: string | null }>(
+      'SELECT id, task_date, aircraft_type, aircraft_registration, job_number, description, ata_chapter, maintenance_type, aircraft_category, work_order_photo_path FROM logbook_entries WHERE user_id = $1 ORDER BY task_date ASC',
+      [user.id]
+    ),
+    queryAll<{ task_date: string }>(
+      'SELECT task_date FROM logbook_entries WHERE user_id = $1 AND task_date >= $2',
+      [user.id, twoYearsAgoStr]
+    ),
+    queryAll<{ start_date: string; end_date: string | null; is_military: boolean }>(
+      'SELECT start_date, end_date, is_military FROM employment_periods WHERE user_id = $1',
+      [user.id]
+    ),
   ])
 
   const fullName = profile?.full_name ?? 'Unknown'
-  const logbookNumber = toLogbookNumber(user.id)
+  const logbookNumber = toLogbookNumber(user.id!)
   const generatedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
   const recencyTasks = (recencyEntries ?? []).length

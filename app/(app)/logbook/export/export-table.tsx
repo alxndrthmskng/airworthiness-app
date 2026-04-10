@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAtaLabel } from '@/lib/logbook/constants'
-import { createClient } from '@/lib/supabase/client'
 
 function parseDateFilter(ddmmyyyy: string): string {
   const parts = ddmmyyyy.split('/')
@@ -92,9 +91,11 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
 
   async function loadSignedUrl(path: string) {
     if (signedUrls[path]) return
-    const supabase = createClient()
-    const { data } = await supabase.storage.from('module-certificates').createSignedUrl(path, 3600)
-    if (data?.signedUrl) setSignedUrls(prev => ({ ...prev, [path]: data.signedUrl }))
+    const res = await fetch(`/api/storage/signed-url?bucket=module-certificates&path=${encodeURIComponent(path)}`)
+    if (res.ok) {
+      const data = await res.json()
+      if (data.signedUrl) setSignedUrls(prev => ({ ...prev, [path]: data.signedUrl }))
+    }
   }
 
   // Filters
@@ -133,7 +134,7 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
     })
   }, [entries, selectedCategories, selectedFacilities, selectedAta, dateFrom, dateTo, search, allAta.length])
 
-  // Group: by category → by full sub-chapter (XX-XX)
+  // Group: by category -> by full sub-chapter (XX-XX)
   const grouped = useMemo(() => {
     const catOrder = CATEGORY_ORDER.filter(c => selectedCategories.has(c))
     return catOrder.map(cat => {
@@ -218,7 +219,7 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
 
   return (
     <div>
-      {/* Filter + column panel — hidden on print */}
+      {/* Filter + column panel -- hidden on print */}
       <div className="print:hidden mb-6 space-y-4">
 
         {/* Licence Category */}
@@ -318,7 +319,7 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
               className="w-full text-sm h-9 pl-8 pr-3 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
             />
             {search && (
-              <button type="button" onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs">✕</button>
+              <button type="button" onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs">&#10005;</button>
             )}
           </div>
         </div>
@@ -341,8 +342,8 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                     className="rounded"
                   />
                   <label htmlFor={`col-${col.key}`} className="text-sm text-foreground flex-1 cursor-pointer">{col.label}</label>
-                  <button type="button" disabled={idx === 0} onClick={() => moveCol(col.key, -1)} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs px-1">▲</button>
-                  <button type="button" disabled={idx === columns.length - 1} onClick={() => moveCol(col.key, 1)} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs px-1">▼</button>
+                  <button type="button" disabled={idx === 0} onClick={() => moveCol(col.key, -1)} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs px-1">&#9650;</button>
+                  <button type="button" disabled={idx === columns.length - 1} onClick={() => moveCol(col.key, 1)} className="text-muted-foreground hover:text-foreground disabled:opacity-30 text-xs px-1">&#9660;</button>
                 </div>
               ))}
             </div>
@@ -386,7 +387,7 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                                 onDragEnd={() => { setDragging(null); setDragOver(null) }}
                                 className={`text-center px-3 py-2 text-xs font-semibold text-muted-foreground whitespace-nowrap cursor-grab print:cursor-default print:px-1 select-none border-b border-l border-border print:border-gray-800 ${colIdx === visibleCols.length - 1 ? 'rounded-tr-lg' : ''} ${colIdx === 0 ? 'border-l-0' : ''} ${dragOver === col.key ? 'bg-accent' : ''} ${dragging === col.key ? 'opacity-50' : ''}`}
                               >
-                                <span className="print:hidden mr-1 text-muted-foreground/40">⠿</span>
+                                <span className="print:hidden mr-1 text-muted-foreground/40">&#10303;</span>
                                 {col.label}
                               </th>
                             ))}
@@ -414,7 +415,7 @@ export function ExportTable({ entries }: { entries: ExportEntry[] }) {
                                 >
                                   {col.key === 'task_type' ? (() => {
                                     const types = extractTaskTypes(entry.description)
-                                    if (types.length === 0) return <span className="text-muted-foreground/40">—</span>
+                                    if (types.length === 0) return <span className="text-muted-foreground/40">&mdash;</span>
                                     return (
                                       <div className="flex flex-wrap gap-1 justify-center items-center mx-auto">
                                         {types.map(t => (

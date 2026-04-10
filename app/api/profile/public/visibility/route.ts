@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { query } from '@/lib/db'
 import { isFeatureEnabledForUser } from '@/lib/feature-flags'
 import { logPrivacyEvent } from '@/lib/privacy-audit'
 
@@ -12,17 +13,9 @@ const VALID_TOGGLES = new Set([
   'display_name_first_only',
 ])
 
-/**
- * Update one of the user's public profile visibility toggles.
- *
- * Body: { field: string, value: boolean }
- *
- * Only fields in the VALID_TOGGLES allowlist can be updated. The user
- * must already have a public_profiles row.
- */
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
   if (!(await isFeatureEnabledForUser('social_profile', user.id))) {
@@ -38,14 +31,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unknown field' }, { status: 400 })
   }
 
-  const { error } = await supabase
-    .from('public_profiles')
-    .update({ [body.field]: body.value })
-    .eq('user_id', user.id)
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  // Use parameterized column name safely since we validated against allowlist
+  await query(`UPDATE public_profiles SET ${body.field} = $1 WHERE user_id = $2`, [body.value, user.id])
 
   await logPrivacyEvent({
     eventType: 'visibility_changed',

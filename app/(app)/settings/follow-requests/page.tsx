@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryAll } from '@/lib/db'
+import { getPublicUrl } from '@/lib/storage'
 import { isFeatureEnabledForUser } from '@/lib/feature-flags'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 import { FollowRequestActions } from './follow-request-actions'
@@ -17,16 +19,18 @@ interface PendingRequest {
 }
 
 export default async function FollowRequestsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/')
 
   if (!(await isFeatureEnabledForUser('social_follow', user.id))) {
     redirect('/settings')
   }
 
-  const { data: requests } = await supabase.rpc('get_pending_follow_requests')
-  const pending: PendingRequest[] = (requests as PendingRequest[]) ?? []
+  const requests = await queryAll<PendingRequest>(
+    'SELECT * FROM get_pending_follow_requests()'
+  )
+  const pending: PendingRequest[] = requests ?? []
 
   return (
     <div>
@@ -46,7 +50,7 @@ export default async function FollowRequestsPage() {
           <div className="space-y-3">
             {pending.map(req => {
               const avatarUrl = req.avatar_path
-                ? supabase.storage.from('public-profile-avatars').getPublicUrl(req.avatar_path).data.publicUrl
+                ? getPublicUrl('public-profile-avatars', req.avatar_path)
                 : null
               return (
                 <div key={req.follower_id} className="rounded-xl border border-border p-4 flex items-center gap-4">

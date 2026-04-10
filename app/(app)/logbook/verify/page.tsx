@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryOne, queryAll } from '@/lib/db'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -27,9 +28,8 @@ export default async function VerifyPage({
 }: {
   searchParams: Promise<{ page?: string }>
 }) {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
   const params = await searchParams
@@ -37,11 +37,10 @@ export default async function VerifyPage({
   const offset = (page - 1) * PAGE_SIZE
 
   // Verify the user is an AML holder
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('aml_licence_number, aml_categories')
-    .eq('id', user.id)
-    .single()
+  const profile = await queryOne<{ aml_licence_number: string | null; aml_categories: string[] | null }>(
+    'SELECT aml_licence_number, aml_categories FROM profiles WHERE id = $1',
+    [user.id]
+  )
 
   if (!profile?.aml_licence_number) {
     return (
@@ -65,15 +64,13 @@ export default async function VerifyPage({
   const verifierCategories = profile.aml_categories ?? []
 
   // Use the database function to filter server-side instead of fetching all entries
-  const { data: filteredEntries } = await supabase.rpc('get_verification_queue', {
-    p_verifier_id: user.id,
-    p_categories: verifierCategories,
-    p_limit: PAGE_SIZE,
-    p_offset: offset,
-  })
+  const entries = await queryAll<any>(
+    'SELECT * FROM get_verification_queue($1, $2, $3, $4)',
+    [user.id, verifierCategories, PAGE_SIZE, offset]
+  )
 
-  const entries = filteredEntries ?? []
-  const hasNextPage = entries.length === PAGE_SIZE
+  const filteredEntries = entries ?? []
+  const hasNextPage = filteredEntries.length === PAGE_SIZE
 
   return (
     <div className="min-h-screen aw-gradient">
@@ -82,7 +79,7 @@ export default async function VerifyPage({
         <div className="flex items-center gap-3 mb-6">
           <SidebarTriggerInline />
           <Link href="/logbook" className="text-sm text-foreground hover:underline">
-            ← Back to logbook
+            &larr; Back to logbook
           </Link>
         </div>
 
@@ -99,7 +96,7 @@ export default async function VerifyPage({
           </p>
         </div>
 
-        {entries.length === 0 ? (
+        {filteredEntries.length === 0 ? (
           <div className="bg-card rounded-xl border p-8 text-center text-muted-foreground">
             <p>No entries pending your verification.</p>
             <p className="text-sm mt-1">Entries will appear here when personnel at your employer submit them.</p>
@@ -120,7 +117,7 @@ export default async function VerifyPage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {entries.map((entry: any) => (
+                  {filteredEntries.map((entry: any) => (
                     <TableRow key={entry.id}>
                       <TableCell className="font-medium">
                         {entry.engineer_name ?? 'Unknown'}

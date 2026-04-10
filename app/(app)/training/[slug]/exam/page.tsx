@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryOne, queryAll } from '@/lib/db'
 import { ExamForm } from './exam-form'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
@@ -10,31 +11,28 @@ interface Props {
 
 export default async function ExamPage({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
   // Get the course
-  const { data: course } = await supabase
-    .from('courses')
-    .select('*')
-    .eq('slug', slug)
-    .eq('is_published', true)
-    .single()
+  const course = await queryOne<Record<string, any>>(
+    'SELECT * FROM courses WHERE slug = $1 AND is_published = true',
+    [slug]
+  )
 
   if (!course) notFound()
 
   // Make sure all modules are completed before allowing exam access
-  const { data: modules } = await supabase
-    .from('modules')
-    .select('id')
-    .eq('course_id', course.id)
+  const modules = await queryAll<{ id: string }>(
+    'SELECT id FROM modules WHERE course_id = $1',
+    [course.id]
+  )
 
-  const { data: progress } = await supabase
-    .from('module_progress')
-    .select('module_id')
-    .eq('user_id', user.id)
+  const progress = await queryAll<{ module_id: string }>(
+    'SELECT module_id FROM module_progress WHERE user_id = $1',
+    [user.id]
+  )
 
   const completedIds = new Set(progress?.map(p => p.module_id) ?? [])
   const allCompleted = modules?.every(m => completedIds.has(m.id))
@@ -44,11 +42,10 @@ export default async function ExamPage({ params }: Props) {
   }
 
   // Check if user already passed this exam
-  const { data: exam } = await supabase
-    .from('exams')
-    .select('*')
-    .eq('course_id', course.id)
-    .single()
+  const exam = await queryOne<Record<string, any>>(
+    'SELECT * FROM exams WHERE course_id = $1',
+    [course.id]
+  )
 
   if (!exam) {
     return (
@@ -57,7 +54,7 @@ export default async function ExamPage({ params }: Props) {
           <div className="flex items-center gap-3 justify-center">
             <SidebarTriggerInline />
             <Link href={`/training/${slug}`} className="text-sm text-foreground hover:underline">
-              ← Back to course
+              &larr; Back to course
             </Link>
           </div>
           <h1 className="text-xl font-semibold text-foreground mt-4">No exam available yet</h1>
@@ -66,24 +63,20 @@ export default async function ExamPage({ params }: Props) {
     )
   }
 
-  const { data: existingPass } = await supabase
-    .from('exam_attempts')
-    .select('id, score')
-    .eq('user_id', user.id)
-    .eq('exam_id', exam.id)
-    .eq('passed', true)
-    .single()
+  const existingPass = await queryOne<{ id: string; score: number }>(
+    'SELECT id, score FROM exam_attempts WHERE user_id = $1 AND exam_id = $2 AND passed = true',
+    [user.id, exam.id]
+  )
 
   if (existingPass) {
     redirect(`/training/${slug}`)
   }
 
   // Get questions and answers (shuffle answer order)
-  const { data: questions } = await supabase
-    .from('questions')
-    .select('id, question_text, order_index, answers(id, answer_text)')
-    .eq('exam_id', exam.id)
-    .order('order_index', { ascending: true })
+  const questions = await queryAll<{ id: string; question_text: string; order_index: number; answers: { id: string; answer_text: string }[] }>(
+    'SELECT q.id, q.question_text, q.order_index, COALESCE(json_agg(json_build_object(\'id\', a.id, \'answer_text\', a.answer_text)) FILTER (WHERE a.id IS NOT NULL), \'[]\') as answers FROM questions q LEFT JOIN answers a ON a.question_id = q.id WHERE q.exam_id = $1 GROUP BY q.id, q.question_text, q.order_index ORDER BY q.order_index ASC',
+    [exam.id]
+  )
 
   return (
     <div className="min-h-screen aw-gradient">
@@ -91,7 +84,7 @@ export default async function ExamPage({ params }: Props) {
         <div className="flex items-center gap-3 mb-6">
           <SidebarTriggerInline />
           <Link href={`/training/${slug}`} className="text-sm text-foreground hover:underline">
-            ← Back to course
+            &larr; Back to course
           </Link>
         </div>
 

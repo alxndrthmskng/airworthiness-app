@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryAll } from '@/lib/db'
+import { getPublicUrl } from '@/lib/storage'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 import { UnblockButton } from './unblock-button'
 
@@ -15,12 +17,14 @@ interface BlockedUser {
 }
 
 export default async function BlockedUsersPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/')
 
-  const { data: blocked } = await supabase.rpc('get_blocked_users')
-  const list: BlockedUser[] = (blocked as BlockedUser[]) ?? []
+  const blocked = await queryAll<BlockedUser>(
+    'SELECT * FROM get_blocked_users()'
+  )
+  const list: BlockedUser[] = blocked ?? []
 
   return (
     <div>
@@ -42,7 +46,7 @@ export default async function BlockedUsersPage() {
           <div className="space-y-2">
             {list.map(b => {
               const avatarUrl = b.avatar_path
-                ? supabase.storage.from('public-profile-avatars').getPublicUrl(b.avatar_path).data.publicUrl
+                ? getPublicUrl('public-profile-avatars', b.avatar_path)
                 : null
               return (
                 <div key={b.user_id} className="rounded-xl border border-border p-4 flex items-center gap-3">

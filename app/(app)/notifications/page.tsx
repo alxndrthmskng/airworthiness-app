@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryAll } from '@/lib/db'
+import { getPublicUrl } from '@/lib/storage'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 import { Bell } from 'lucide-react'
 import { MarkAllRead } from './mark-all-read'
@@ -47,12 +49,15 @@ function notificationText(notif: Notification): string {
 }
 
 export default async function NotificationsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/')
 
-  const { data: notifications } = await supabase.rpc('get_notifications', { p_limit: 100 })
-  const list: Notification[] = (notifications as Notification[]) ?? []
+  const notifications = await queryAll<Notification>(
+    'SELECT * FROM get_notifications($1)',
+    [100]
+  )
+  const list: Notification[] = notifications ?? []
 
   const hasUnread = list.some(n => !n.is_read)
 
@@ -79,7 +84,7 @@ export default async function NotificationsPage() {
         <div className="space-y-2 max-w-2xl">
           {list.map(notif => {
             const avatarUrl = notif.actor_avatar_path
-              ? supabase.storage.from('public-profile-avatars').getPublicUrl(notif.actor_avatar_path).data.publicUrl
+              ? getPublicUrl('public-profile-avatars', notif.actor_avatar_path)
               : null
             const linkHref = notif.actor_public_id ? `/profile/${notif.actor_public_id}` : '#'
             return (

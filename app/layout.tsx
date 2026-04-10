@@ -4,6 +4,7 @@ import './globals.css'
 import { CookieBanner } from '@/components/cookie-banner'
 import { ScrollToTop } from '@/components/scroll-to-top'
 import { ThemeProvider } from '@/components/theme-provider'
+import { AuthSessionProvider } from '@/components/session-provider'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -23,11 +24,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <body className="antialiased">
-        <ThemeProvider>
-          {children}
-          <CookieBanner />
-          <ScrollToTop />
-        </ThemeProvider>
+        <AuthSessionProvider>
+          <ThemeProvider>
+            {children}
+            <CookieBanner />
+            <ScrollToTop />
+          </ThemeProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   )

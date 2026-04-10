@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import { useTransition } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 export function RemoveAssessmentButton() {
   const router = useRouter()
@@ -14,14 +13,11 @@ export function RemoveAssessmentButton() {
     )
     if (!confirmed) return
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    await supabase
-      .from('profiles')
-      .update({ competency_completed_at: null })
-      .eq('id', user.id)
+    await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ competency_completed_at: null }),
+    })
 
     startTransition(() => {
       router.refresh()

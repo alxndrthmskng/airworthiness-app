@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,11 +10,11 @@ import type { EmploymentPeriod } from '@/lib/logbook/types'
 
 interface Props {
   periods: EmploymentPeriod[]
+  userId: string
 }
 
-export function EmploymentForm({ periods: initialPeriods }: Props) {
+export function EmploymentForm({ periods: initialPeriods, userId }: Props) {
   const router = useRouter()
-  const supabase = createClient()
 
   const [employer, setEmployer] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -30,21 +29,20 @@ export function EmploymentForm({ periods: initialPeriods }: Props) {
     setSaving(true)
     setError('')
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
-
-    const { error: insertError } = await supabase
-      .from('employment_periods')
-      .insert({
-        user_id: user.id,
+    const res = await fetch('/api/employment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         employer,
         start_date: startDate,
         end_date: endDate || null,
         is_military: isMilitary,
-      })
+      }),
+    })
 
-    if (insertError) {
-      setError(insertError.message)
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      setError(body.error ?? 'Failed to add')
     } else {
       setEmployer('')
       setStartDate('')
@@ -57,7 +55,7 @@ export function EmploymentForm({ periods: initialPeriods }: Props) {
 
   async function handleDelete(id: string) {
     setDeletingId(id)
-    await supabase.from('employment_periods').delete().eq('id', id)
+    await fetch(`/api/employment/${id}`, { method: 'DELETE' })
     setDeletingId(null)
     router.refresh()
   }

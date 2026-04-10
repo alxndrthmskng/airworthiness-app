@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import Stripe from 'stripe'
-import { createClient as createSupabaseServerClient } from '@/lib/supabase/server'
-import { createClient as createSupabaseAdminClient } from '@supabase/supabase-js'
+import { auth } from '@/lib/auth'
+import { query } from '@/lib/db'
 import { Button } from '@/components/ui/button'
 import { SidebarTriggerInline } from '@/components/sidebar-trigger-inline'
 
@@ -18,23 +18,17 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-  const supabaseAdmin = createSupabaseAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
 
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
 
   if (!user) {
     redirect('/')
   }
 
-  const session = await stripe.checkout.sessions.retrieve(session_id)
+  const stripeSession = await stripe.checkout.sessions.retrieve(session_id)
 
-  if (session.payment_status !== 'paid') {
+  if (stripeSession.payment_status !== 'paid') {
     return (
       <div className="min-h-screen aw-gradient flex items-center justify-center">
         <div className="bg-card rounded-2xl border p-12 text-center max-w-md">
@@ -55,7 +49,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
     )
   }
 
-  const metadataUserId = session.metadata?.user_id
+  const metadataUserId = stripeSession.metadata?.user_id
 
   if (!metadataUserId || metadataUserId !== user.id) {
     return (
@@ -78,12 +72,12 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
     )
   }
 
-  const { error } = await supabaseAdmin.from('purchases').upsert({
-    user_id: user.id,
-    stripe_session_id: session.id,
-  })
-
-  if (error) {
+  try {
+    await query(
+      'INSERT INTO purchases (user_id, stripe_session_id) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET stripe_session_id = $2',
+      [user.id, stripeSession.id]
+    )
+  } catch (error) {
     return (
       <div className="min-h-screen aw-gradient flex items-center justify-center">
         <div className="bg-card rounded-2xl border p-12 text-center max-w-md">

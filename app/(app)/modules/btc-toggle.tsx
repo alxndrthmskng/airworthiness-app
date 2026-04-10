@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 interface BtcToggleProps {
   initialValue: boolean
@@ -20,19 +19,14 @@ export function BtcToggle({ initialValue, selectedCategory, userId, darkMode }: 
     setChecked(value)
     setSaving(true)
 
-    const supabase = createClient()
-
-    await supabase
-      .from('module_exam_progress')
-      .upsert(
-        {
-          user_id: userId,
-          target_category: selectedCategory,
-          module_id: '_btc',
-          is_btc: value,
-        },
-        { onConflict: 'user_id,target_category,module_id' }
-      )
+    await fetch('/api/progress/btc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        target_category: selectedCategory,
+        is_btc: value,
+      }),
+    })
 
     setSaving(false)
     router.refresh()

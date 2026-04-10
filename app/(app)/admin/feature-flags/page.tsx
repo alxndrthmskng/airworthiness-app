@@ -1,22 +1,17 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { queryAll } from '@/lib/db'
 import { FeatureFlagToggle } from './feature-flag-toggle'
 
 export const metadata: Metadata = { title: 'Feature Flags | Airworthiness Admin' }
 
 export default async function FeatureFlagsPage() {
-  const supabase = await createClient()
+  const flags = await queryAll<{ key: string; enabled: boolean; description: string | null; updated_at: string; updated_by: string | null }>(
+    'SELECT key, enabled, description, updated_at, updated_by FROM feature_flags ORDER BY key'
+  )
 
-  const { data: flags } = await supabase
-    .from('feature_flags')
-    .select('key, enabled, description, updated_at, updated_by')
-    .order('key')
-
-  const { data: recentAudit } = await supabase
-    .from('feature_flag_audit')
-    .select('id, flag_key, previous_value, new_value, changed_at, changed_by')
-    .order('changed_at', { ascending: false })
-    .limit(20)
+  const recentAudit = await queryAll<{ id: string; flag_key: string; previous_value: boolean | null; new_value: boolean; changed_at: string; changed_by: string }>(
+    'SELECT id, flag_key, previous_value, new_value, changed_at, changed_by FROM feature_flag_audit ORDER BY changed_at DESC LIMIT 20'
+  )
 
   return (
     <div>
@@ -57,8 +52,8 @@ export default async function FeatureFlagsPage() {
                     <td className="px-4 py-2 font-mono text-xs">{entry.flag_key}</td>
                     <td className="px-4 py-2">
                       {entry.previous_value === null
-                        ? <span className="text-muted-foreground">created → {String(entry.new_value)}</span>
-                        : <span>{String(entry.previous_value)} → {String(entry.new_value)}</span>}
+                        ? <span className="text-muted-foreground">created &rarr; {String(entry.new_value)}</span>
+                        : <span>{String(entry.previous_value)} &rarr; {String(entry.new_value)}</span>}
                     </td>
                     <td className="px-4 py-2 text-muted-foreground text-xs">
                       {new Date(entry.changed_at).toLocaleString('en-GB')}

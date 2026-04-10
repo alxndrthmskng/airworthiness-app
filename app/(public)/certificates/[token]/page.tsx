@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { queryOne } from '@/lib/db'
 import { PrintButton } from './print-button'
 
 interface Props {
@@ -8,18 +8,19 @@ interface Props {
 
 export default async function CertificatePage({ params }: Props) {
   const { token } = await params
-  const supabase = await createClient()
 
-  const { data: cert } = await supabase
-    .from('certificates')
-    .select(`
-      token,
-      issued_at,
-      recipient_name,
-      courses(title)
-    `)
-    .eq('token', token)
-    .single()
+  const cert = await queryOne<{
+    token: string
+    issued_at: string
+    recipient_name: string | null
+    course_title: string | null
+  }>(
+    `SELECT c.token, c.issued_at, c.recipient_name, co.title AS course_title
+     FROM certificates c
+     LEFT JOIN courses co ON co.id = c.course_id
+     WHERE c.token = $1`,
+    [token],
+  )
 
   if (!cert) notFound()
 
@@ -61,7 +62,7 @@ export default async function CertificatePage({ params }: Props) {
           </p>
 
           <h2 className="text-lg font-semibold text-foreground mb-8">
-            {(cert.courses as any)?.title}
+            {cert.course_title}
           </h2>
 
           <div className="flex items-center gap-4 mb-8">

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryOne, queryAll } from '@/lib/db'
 import { REQUIRED_TRAINING, RECENCY_TASK_THRESHOLD, RECENCY_REQUIRED_DAYS, RECENCY_PERIOD_YEARS } from '@/lib/profile/constants'
 import { MODULE_REQUIREMENTS, ESSAY_MODULES, PASS_MARK, PASS_VALIDITY_YEARS, isSameModuleEquivalent, getCrossModuleEquivalency } from '@/lib/progress/constants'
 import type { TrainingStatus, RecencyStatus, TypeEndorsement } from '@/lib/profile/types'
@@ -20,17 +21,28 @@ function normaliseTypeRatings(raw: any): TypeEndorsement[] {
 }
 
 export default async function ProfilePage() {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
   // Fetch profile first (needed for redirect check and aml_categories)
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, full_name, role, aml_licence_number, aml_categories, type_ratings, aml_photo_path, aml_verified, is_public, competency_completed_at, created_at, dashboard_widgets')
-    .eq('id', user.id)
-    .single()
+  const profile = await queryOne<{
+    id: string
+    full_name: string | null
+    role: string | null
+    aml_licence_number: string | null
+    aml_categories: string[] | null
+    type_ratings: any
+    aml_photo_path: string | null
+    aml_verified: boolean | null
+    is_public: boolean | null
+    competency_completed_at: string | null
+    created_at: string | null
+    dashboard_widgets: any
+  }>(
+    'SELECT id, full_name, role, aml_licence_number, aml_categories, type_ratings, aml_photo_path, aml_verified, is_public, competency_completed_at, created_at, dashboard_widgets FROM profiles WHERE id = $1',
+    [user.id]
+  )
 
   if (!profile) redirect('/login')
 
@@ -38,44 +50,40 @@ export default async function ProfilePage() {
 
   // Run remaining queries in parallel -- none depend on each other
   const [
-    { data: purchase },
-    { data: certificates },
-    { data: allLogbookEntries },
-    { data: allProgress },
+    purchase,
+    certificates,
+    allLogbookEntries,
+    allProgress,
   ] = await Promise.all([
-    supabase
-      .from('purchases')
-      .select('id')
-      .eq('user_id', user.id)
-      .single(),
-    supabase
-      .from('certificates')
-      .select('token, issued_at, courses(slug, title)')
-      .eq('user_id', user.id)
-      .order('issued_at', { ascending: false }),
-    supabase
-      .from('logbook_entries')
-      .select('task_date, status')
-      .eq('user_id', user.id),
-    supabase
-      .from('module_exam_progress')
-      .select('id, user_id, target_category, module_id, issue_date, mcq_score, essay_score, essay_score_2, essay_split, is_btc')
-      .eq('user_id', user.id),
+    queryOne<{ id: string }>(
+      'SELECT id FROM purchases WHERE user_id = $1',
+      [user.id]
+    ),
+    queryAll<{ token: string; issued_at: string; courses: { slug: string; title: string } }>(
+      'SELECT c.token, c.issued_at, json_build_object(\'slug\', co.slug, \'title\', co.title) as courses FROM certificates c LEFT JOIN courses co ON co.id = c.course_id WHERE c.user_id = $1 ORDER BY c.issued_at DESC',
+      [user.id]
+    ),
+    queryAll<{ task_date: string; status: string }>(
+      'SELECT task_date, status FROM logbook_entries WHERE user_id = $1',
+      [user.id]
+    ),
+    queryAll<ModuleExamProgress>(
+      'SELECT id, user_id, target_category, module_id, issue_date, mcq_score, essay_score, essay_score_2, essay_split, is_btc FROM module_exam_progress WHERE user_id = $1',
+      [user.id]
+    ),
   ])
 
   // Fetch external training certificates
-  const { data: externalCerts } = await supabase
-    .from('external_training_certificates')
-    .select('training_slug, completion_date, expiry_date, certificate_path')
-    .eq('user_id', user.id)
+  const externalCerts = await queryAll<{ training_slug: string; completion_date: string; expiry_date: string | null; certificate_path: string | null }>(
+    'SELECT training_slug, completion_date, expiry_date, certificate_path FROM external_training_certificates WHERE user_id = $1',
+    [user.id]
+  )
 
   // Fetch 10 most recent logbook entries
-  const { data: recentEntries } = await supabase
-    .from('logbook_entries')
-    .select('id, task_date, aircraft_type, aircraft_registration, description, status')
-    .eq('user_id', user.id)
-    .order('task_date', { ascending: false })
-    .limit(10)
+  const recentEntries = await queryAll<{ id: string; task_date: string; aircraft_type: string; aircraft_registration: string; description: string; status: string }>(
+    'SELECT id, task_date, aircraft_type, aircraft_registration, description, status FROM logbook_entries WHERE user_id = $1 ORDER BY task_date DESC LIMIT 10',
+    [user.id]
+  )
 
   // Calculate training status (merge platform + external certificates)
   const now = new Date()
@@ -228,6 +236,7 @@ export default async function ProfilePage() {
       externalCerts={externalCerts ?? []}
       recentEntries={recentEntries ?? []}
       widgetConfig={profile.dashboard_widgets as any}
+      userId={user.id!}
     />
   )
 }

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Pencil, ArrowUp, ArrowDown, Eye, EyeOff, Check } from 'lucide-react'
@@ -43,6 +42,7 @@ interface DashboardEditorProps {
   externalCerts: { training_slug: string; completion_date: string | null; expiry_date: string | null; certificate_path: string | null }[]
   recentEntries: { id: string; task_date: string; aircraft_type: string; aircraft_registration: string; description: string; status: string }[]
   widgetConfig: WidgetConfig | null
+  userId: string
 }
 
 function getConfig(saved: WidgetConfig | null): WidgetConfig {
@@ -79,14 +79,13 @@ export function DashboardEditor(props: DashboardEditorProps) {
 
   async function handleSave() {
     setSaving(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      await supabase
-        .from('profiles')
-        .update({ dashboard_widgets: config })
-        .eq('id', user.id)
-    }
+
+    await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dashboard_widgets: config }),
+    })
+
     setSaving(false)
     setEditing(false)
   }

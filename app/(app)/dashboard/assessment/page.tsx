@@ -1,20 +1,19 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
+import { queryOne } from '@/lib/db'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { AssessmentForm } from './assessment-form'
 
 export default async function AssessmentPage() {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await auth()
+  const user = session?.user
   if (!user) redirect('/login')
 
   // Check if already passed
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('competency_completed_at')
-    .eq('id', user.id)
-    .single()
+  const profile = await queryOne<{ competency_completed_at: string | null }>(
+    'SELECT competency_completed_at FROM profiles WHERE id = $1',
+    [user.id]
+  )
 
   if (profile?.competency_completed_at) {
     redirect('/dashboard')

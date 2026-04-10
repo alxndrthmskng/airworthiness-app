@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
 interface Answer {
@@ -27,7 +26,6 @@ interface Props {
 
 export function ExamForm({ questions, examId, passScore, courseSlug, courseId }: Props) {
   const router = useRouter()
-  const supabase = createClient()
 
   const [selected, setSelected] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -44,61 +42,28 @@ export function ExamForm({ questions, examId, passScore, courseSlug, courseId }:
     if (!allAnswered) return
     setSubmitting(true)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const res = await fetch('/api/training/exam/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        exam_id: examId,
+        course_id: courseId,
+        answers: selected,
+      }),
+    })
+
+    if (!res.ok) {
       setSubmitting(false)
       return
     }
 
-    const { data: correctAnswers } = await supabase
-      .from('answers')
-      .select('id, question_id')
-      .in('question_id', questions.map(q => q.id))
-      .eq('is_correct', true)
-
-    const correctMap: Record<string, string> = {}
-    correctAnswers?.forEach(a => {
-      correctMap[a.question_id] = a.id
+    const data = await res.json()
+    setResult({
+      score: data.score,
+      passed: data.passed,
+      correctCount: data.correctCount,
+      total: data.total,
     })
-
-    let correctCount = 0
-    questions.forEach(q => {
-      if (selected[q.id] === correctMap[q.id]) {
-        correctCount++
-      }
-    })
-
-    const score = Math.round((correctCount / questions.length) * 100)
-    const passed = score >= passScore
-
-    const { data: attempt } = await supabase
-      .from('exam_attempts')
-      .insert({
-        user_id: user.id,
-        exam_id: examId,
-        score,
-        passed,
-      })
-      .select()
-      .single()
-
-if (passed && attempt) {
-      // Fetch the user's name to store directly on the certificate
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single()
-
-      await supabase.from('certificates').insert({
-        user_id: user.id,
-        course_id: courseId,
-        exam_attempt_id: attempt.id,
-        recipient_name: profile?.full_name ?? '',
-      })
-    }
-
-    setResult({ score, passed, correctCount, total: questions.length })
     setSubmitting(false)
   }
 

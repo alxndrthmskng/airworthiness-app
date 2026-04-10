@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
 interface Props {
@@ -17,16 +16,16 @@ export function SubmitForVerification({
   label = 'Submit for Verification',
 }: Props) {
   const router = useRouter()
-  const supabase = createClient()
   const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit() {
     setSubmitting(true)
 
-    await supabase
-      .from('logbook_entries')
-      .update({ status: targetStatus, updated_at: new Date().toISOString() })
-      .eq('id', entryId)
+    await fetch(`/api/logbook/${entryId}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: targetStatus }),
+    })
 
     router.refresh()
     setSubmitting(false)

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
 interface Props {
@@ -14,7 +13,6 @@ interface Props {
 
 export function MarkCompleteButton({ moduleId, courseSlug, isCompleted, nextModuleId }: Props) {
   const router = useRouter()
-  const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(isCompleted)
 
@@ -22,24 +20,13 @@ export function MarkCompleteButton({ moduleId, courseSlug, isCompleted, nextModu
     if (done) return
     setLoading(true)
 
-    // Get the current logged-in user
-    const { data: { user } } = await supabase.auth.getUser()
+    const res = await fetch('/api/training/module-progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ module_id: moduleId }),
+    })
 
-    if (!user) {
-      setLoading(false)
-      return
-    }
-
-    // Save progress - user_id is now included so RLS allows the insert
-    const { error } = await supabase
-      .from('module_progress')
-      .upsert({
-        module_id: moduleId,
-        user_id: user.id        // ← this was the missing piece
-      })
-
-    if (error) {
-      console.error('Failed to save progress:', error.message)
+    if (!res.ok) {
       setLoading(false)
       return
     }
