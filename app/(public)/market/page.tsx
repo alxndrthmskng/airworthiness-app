@@ -5,8 +5,24 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
 export const metadata: Metadata = {
-  title: 'Part 145 Directory | Airworthiness',
+  title: 'The Market | Airworthiness',
   description: 'Search 1,500+ UK CAA Part 145 approved maintenance organisations. Filter by country, rating class, and capabilities.',
+}
+
+const COUNTRY_NAMES: Record<string, string> = {
+  AE: 'United Arab Emirates', AT: 'Austria', AU: 'Australia', BE: 'Belgium', BG: 'Bulgaria',
+  BH: 'Bahrain', BR: 'Brazil', CA: 'Canada', CH: 'Switzerland', CN: 'China',
+  CR: 'Costa Rica', CY: 'Cyprus', CZ: 'Czech Republic', DE: 'Germany', DK: 'Denmark',
+  EE: 'Estonia', ES: 'Spain', FI: 'Finland', FR: 'France', GB: 'United Kingdom',
+  GR: 'Greece', HK: 'Hong Kong', HR: 'Croatia', HU: 'Hungary', ID: 'Indonesia',
+  IE: 'Ireland', IL: 'Israel', IN: 'India', IS: 'Iceland', IT: 'Italy',
+  JO: 'Jordan', JP: 'Japan', KR: 'South Korea', KW: 'Kuwait', LT: 'Lithuania',
+  LU: 'Luxembourg', LV: 'Latvia', MA: 'Morocco', MT: 'Malta', MU: 'Mauritius',
+  MX: 'Mexico', MY: 'Malaysia', NL: 'Netherlands', NO: 'Norway', NZ: 'New Zealand',
+  OM: 'Oman', PE: 'Peru', PH: 'Philippines', PK: 'Pakistan', PL: 'Poland',
+  PT: 'Portugal', QA: 'Qatar', RO: 'Romania', RS: 'Serbia', SA: 'Saudi Arabia',
+  SE: 'Sweden', SG: 'Singapore', SI: 'Slovenia', SK: 'Slovakia', TH: 'Thailand',
+  TR: 'Turkey', TW: 'Taiwan', UA: 'Ukraine', US: 'United States', ZA: 'South Africa',
 }
 
 const PAGE_SIZE = 25
@@ -68,7 +84,7 @@ export default async function MarketPage({
       <section className="py-12 lg:py-16">
         <div className="max-w-5xl mx-auto px-6">
           <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-            Part 145 Directory
+            The Market
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
             {totalCount.toLocaleString()} approved maintenance organisations from the UK CAA register.
@@ -90,7 +106,7 @@ export default async function MarketPage({
             >
               <option value="">All countries</option>
               {uniqueCountries.map(c => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>{COUNTRY_NAMES[c] || c}</option>
               ))}
             </select>
             <Button type="submit" size="sm" className="h-9 px-4">
@@ -138,7 +154,7 @@ export default async function MarketPage({
                         {org.reference_number}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                        {org.country_code || '—'}
+                        {COUNTRY_NAMES[org.country_code] || org.country_code || '—'}
                       </td>
                     </tr>
                   ))}
