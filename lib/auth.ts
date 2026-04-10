@@ -11,7 +11,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PostgresAdapter(pool),
   providers: [
     Nodemailer({
-      server: process.env.EMAIL_SERVER || '',
+      server: {
+        host: process.env.EMAIL_HOST || 'smtp.resend.com',
+        port: Number(process.env.EMAIL_PORT || 587),
+        auth: {
+          user: process.env.EMAIL_USER || 'resend',
+          pass: process.env.EMAIL_PASS || '',
+        },
+      },
       from: process.env.EMAIL_FROM || 'Airworthiness <noreply@airworthiness.limited>',
     }),
   ],
