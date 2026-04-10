@@ -14,6 +14,7 @@ export default async function MarketPage() {
     .from('part145_approvals')
     .select('id, reference_number, organisation_name, status, city, state, country_code, website, issued_date, part145_ratings(id, rating_class, category, detail, base_maintenance, line_maintenance)')
     .order('organisation_name')
+    .limit(2000)
 
   return (
     <div className="min-h-screen">
