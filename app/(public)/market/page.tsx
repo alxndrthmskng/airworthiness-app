@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { getDb } from '@/lib/postgres/server'
 import { MarketTable } from '@/components/market-table'
 
 export const metadata: Metadata = {
@@ -8,13 +8,37 @@ export const metadata: Metadata = {
 }
 
 export default async function MarketPage() {
-  const supabase = await createClient()
+  const db = getDb()
 
-  const { data: approvals } = await supabase
-    .from('part145_approvals')
-    .select('id, reference_number, organisation_name, status, city, state, country_code, website, issued_date, part145_ratings(id, rating_class, category, detail, base_maintenance, line_maintenance)')
-    .order('organisation_name')
-    .limit(2000)
+  const { rows: approvals } = await db.query(`
+    SELECT
+      a.id,
+      a.reference_number,
+      a.organisation_name,
+      a.status,
+      a.city,
+      a.state,
+      a.country_code,
+      a.website,
+      a.issued_date,
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'id', r.id,
+            'rating_class', r.rating_class,
+            'category', r.category,
+            'detail', r.detail,
+            'base_maintenance', r.base_maintenance,
+            'line_maintenance', r.line_maintenance
+          )
+        ) FILTER (WHERE r.id IS NOT NULL),
+        '[]'
+      ) AS part145_ratings
+    FROM part145_approvals a
+    LEFT JOIN part145_ratings r ON r.approval_id = a.id
+    GROUP BY a.id
+    ORDER BY a.organisation_name
+  `)
 
   return (
     <div className="min-h-screen">
@@ -28,7 +52,7 @@ export default async function MarketPage() {
           </p>
 
           <div className="mt-8">
-            <MarketTable approvals={approvals || []} />
+            <MarketTable approvals={approvals} />
           </div>
 
           <p className="mt-6 text-xs text-muted-foreground">
