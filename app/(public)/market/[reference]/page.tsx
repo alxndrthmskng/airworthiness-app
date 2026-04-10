@@ -96,10 +96,11 @@ export default async function OrgDetailPage({ params }: Props) {
 
           {/* Details */}
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {org.city && (
+            {(org.city || org.state || org.postcode) && (
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Location</p>
-                <p className="text-sm text-foreground">{org.city}</p>
+                {org.city && <p className="text-sm text-foreground">{org.city}</p>}
+                {org.state && <p className="text-sm text-foreground">{org.state}</p>}
                 {org.postcode && <p className="text-sm text-muted-foreground">{org.postcode}</p>}
               </div>
             )}
