@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import type { Metadata } from 'next'
 import { getDb } from '@/lib/postgres/server'
 import { MarketTable } from '@/components/market-table'
