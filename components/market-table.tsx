@@ -25,8 +25,22 @@ type Approval = {
   organisation_name: string
   status: string
   city: string | null
+  state: string | null
   country_code: string
   website: string | null
+}
+
+function titleCase(s: string): string {
+  return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+}
+
+function formatLocation(org: Approval): string {
+  const parts = [
+    org.city || null,
+    org.state ? titleCase(org.state) : null,
+    COUNTRY_NAMES[org.country_code] || org.country_code || null,
+  ].filter(Boolean)
+  return parts.join(', ') || '—'
 }
 
 type SortKey = 'organisation_name' | 'reference_number' | 'country'
@@ -72,8 +86,8 @@ export function MarketTable({ approvals }: { approvals: Approval[] }) {
           bv = b.reference_number
           break
         case 'country':
-          av = COUNTRY_NAMES[a.country_code] || a.country_code || ''
-          bv = COUNTRY_NAMES[b.country_code] || b.country_code || ''
+          av = formatLocation(a)
+          bv = formatLocation(b)
           break
       }
       return av.localeCompare(bv) * dir
@@ -130,7 +144,7 @@ export function MarketTable({ approvals }: { approvals: Approval[] }) {
                     {org.reference_number}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                    {COUNTRY_NAMES[org.country_code] || org.country_code || '—'}
+                    {formatLocation(org)}
                   </td>
                 </tr>
               ))}
