@@ -25,7 +25,7 @@ export default async function MarketPage({
 
   let query = supabase
     .from('part145_approvals')
-    .select('id, reference_number, organisation_name, status, city, country_code, website', { count: 'exact' })
+    .select('id, reference_number, organisation_name, status, city, country_code, website, part145_ratings(rating_class)', { count: 'exact' })
 
   if (q) {
     query = query.or(`organisation_name.ilike.%${q}%,reference_number.ilike.%${q}%`)
@@ -41,6 +41,16 @@ export default async function MarketPage({
 
   const { data: approvals, count, error } = await query
 
+  // Compute rating summary for each approval
+  const approvalsWithRatings = (approvals || []).map(org => {
+    const ratings = (org as any).part145_ratings || []
+    const classes = new Set(ratings.map((r: any) => r.rating_class))
+    return {
+      ...org,
+      ratingClasses: Array.from(classes).sort() as string[],
+    }
+  })
+
   const totalCount = count || 0
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
@@ -51,7 +61,7 @@ export default async function MarketPage({
     .not('country_code', 'eq', '')
     .order('country_code')
 
-  const uniqueCountries = [...new Set((countries || []).map(c => c.country_code))].filter(c => c && c.length <= 3)
+  const uniqueCountries = [...new Set((countries || []).map(c => c.country_code))].filter(c => c && /^[A-Z]{2}$/.test(c))
 
   return (
     <div className="min-h-screen">
@@ -108,11 +118,11 @@ export default async function MarketPage({
                     <th className="text-left font-medium text-muted-foreground px-4 py-3">Organisation</th>
                     <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell">Reference</th>
                     <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden md:table-cell">Location</th>
-                    <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">Country</th>
+                    <th className="text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">Ratings</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(approvals || []).map(org => (
+                  {approvalsWithRatings.map(org => (
                     <tr key={org.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
                         <Link
@@ -124,15 +134,28 @@ export default async function MarketPage({
                         <span className="sm:hidden block text-xs text-muted-foreground mt-0.5">
                           {org.reference_number}
                         </span>
+                        <div className="lg:hidden flex gap-1 mt-1">
+                          {org.ratingClasses.map(cls => (
+                            <span key={cls} className="inline-block text-[10px] font-medium bg-muted text-muted-foreground rounded px-1.5 py-0.5">
+                              {cls}
+                            </span>
+                          ))}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                         {org.reference_number}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                        {org.city || '—'}
+                        {org.city || org.country_code || '—'}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
-                        {org.country_code || '—'}
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        <div className="flex gap-1">
+                          {org.ratingClasses.map(cls => (
+                            <span key={cls} className="inline-block text-[10px] font-medium bg-muted text-muted-foreground rounded px-1.5 py-0.5">
+                              {cls}
+                            </span>
+                          ))}
+                        </div>
                       </td>
                     </tr>
                   ))}
