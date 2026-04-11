@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, Fragment } from 'react'
 
 const COUNTRY_NAMES: Record<string, string> = {
   AE: 'United Arab Emirates', AT: 'Austria', AU: 'Australia', BE: 'Belgium', BG: 'Bulgaria',
@@ -18,11 +18,11 @@ const COUNTRY_NAMES: Record<string, string> = {
   TR: 'Turkey', TW: 'Taiwan', UA: 'Ukraine', US: 'United States', ZA: 'South Africa',
 }
 
-const RATING_CLASS_LABELS: Record<string, string> = {
-  A: 'Aircraft',
-  B: 'Engines',
-  C: 'Components',
-  D: 'Specialised Services',
+const RATING_SECTION_LABELS: Record<string, string> = {
+  A: 'Aircraft Maintenance',
+  B: 'Engine Maintenance',
+  C: 'Component Maintenance',
+  D: 'Non-Destructive Testing',
 }
 
 type Rating = {
@@ -51,16 +51,7 @@ function titleCase(s: string): string {
   return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
 }
 
-function formatLongDate(dateStr: string): string {
-  try {
-    const date = new Date(dateStr + 'T00:00:00')
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-  } catch {
-    return dateStr
-  }
-}
-
-type SortKey = 'organisation_name' | 'reference_number' | 'city' | 'state' | 'country'
+type SortKey = 'organisation_name' | 'reference_number' | 'country'
 type SortDir = 'asc' | 'desc'
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
@@ -75,6 +66,12 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 }
 
 const TRADING_AS_PATTERN = /\s+(?:t\/a|T\/A|d\/b\/a|D\/B\/A|dba|DBA|trading as|Trading As)\s+/
+
+function splitRatingCode(detail: string): { text: string; code: string | null } {
+  const m = detail.match(/^(.+?)\s*\(([A-Z0-9]+)\)\s*$/)
+  if (m) return { text: m[1], code: m[2] }
+  return { text: detail, code: null }
+}
 
 function parseOrgName(name: string): { legalName: string; tradingAs: string | null } {
   const match = name.match(TRADING_AS_PATTERN)
@@ -99,10 +96,19 @@ function ExpandedRow({ org }: { org: Approval }) {
     if (!ratingsByClass[r.rating_class]) ratingsByClass[r.rating_class] = []
     ratingsByClass[r.rating_class].push(r)
   }
+  // Sort within each class: by category number (A1 before A2), then alphabetically by detail
+  for (const cls of Object.keys(ratingsByClass)) {
+    ratingsByClass[cls].sort((a, b) => {
+      const aNum = parseInt(a.category.replace(/\D/g, '')) || 0
+      const bNum = parseInt(b.category.replace(/\D/g, '')) || 0
+      if (aNum !== bNum) return aNum - bNum
+      return (a.detail || '').localeCompare(b.detail || '')
+    })
+  }
 
   return (
     <tr>
-      <td colSpan={6} className="p-0">
+      <td colSpan={3} className="p-0">
         <div
           ref={ref}
           className="overflow-hidden transition-all duration-300 ease-in-out"
@@ -125,14 +131,16 @@ function ExpandedRow({ org }: { org: Approval }) {
                 <span className="text-xs text-muted-foreground uppercase tracking-wide">Approval</span>
                 <p className="text-foreground">{org.reference_number}</p>
               </div>
-              <div>
-                <span className="text-xs text-muted-foreground uppercase tracking-wide">Status</span>
-                <p className="text-foreground">{org.status}</p>
-              </div>
-              {org.issued_date && (
+              {org.city && (
                 <div>
-                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Issued</span>
-                  <p className="text-foreground">{formatLongDate(org.issued_date)}</p>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">City</span>
+                  <p className="text-foreground">{org.city}</p>
+                </div>
+              )}
+              {org.state && (
+                <div>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">State</span>
+                  <p className="text-foreground">{titleCase(org.state)}</p>
                 </div>
               )}
               {org.website && (
@@ -160,35 +168,24 @@ function ExpandedRow({ org }: { org: Approval }) {
                   if (!classRatings || classRatings.length === 0) return null
                   return (
                     <div key={cls}>
-                      <h4 className="text-xs font-semibold text-foreground mb-2">
-                        Class {cls} — {RATING_CLASS_LABELS[cls]}
-                        <span className="ml-1 font-normal text-muted-foreground">({classRatings.length})</span>
-                      </h4>
                       <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
+                        <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b">
-                              <th className="text-left font-medium text-muted-foreground py-1.5 pr-4">Category</th>
-                              <th className="text-left font-medium text-muted-foreground py-1.5 pr-4">Rating(s)</th>
-                              {cls === 'A' && (
-                                <>
-                                  <th className="text-left font-medium text-muted-foreground py-1.5 pr-4">Base</th>
-                                  <th className="text-left font-medium text-muted-foreground py-1.5">Line</th>
-                                </>
-                              )}
+                              <th className="text-left text-xs text-muted-foreground uppercase tracking-wide font-normal py-1.5 pr-4">
+                                {RATING_SECTION_LABELS[cls]} ({classRatings.length})
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
                             {classRatings.map(r => (
                               <tr key={r.id} className="border-b last:border-0">
-                                <td className="py-1.5 pr-4 text-foreground">{r.category}</td>
-                                <td className="py-1.5 pr-4 text-muted-foreground">{r.detail || '—'}</td>
-                                {cls === 'A' && (
-                                  <>
-                                    <td className="py-1.5 pr-4">{r.base_maintenance ? 'Yes' : '—'}</td>
-                                    <td className="py-1.5">{r.line_maintenance ? 'Yes' : '—'}</td>
-                                  </>
-                                )}
+                                <td className="py-1.5 pr-4 text-foreground">
+                                  {r.detail ? (() => {
+                                    const { text, code } = splitRatingCode(r.detail)
+                                    return <>{text}{code && <span className="text-muted-foreground ml-1">({code})</span>}</>
+                                  })() : '—'}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -276,6 +273,7 @@ export function MarketTable({ approvals }: { approvals: Approval[] }) {
   const [approvalType, setApprovalType] = useState<string>('')
   const [ratingClassFilter, setRatingClassFilter] = useState<string>('all')
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -288,6 +286,22 @@ export function MarketTable({ approvals }: { approvals: Approval[] }) {
 
   const sorted = useMemo(() => {
     let list = [...approvals]
+
+    // Free-text search across all fields
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      list = list.filter(org => {
+        const fields = [
+          org.organisation_name,
+          org.reference_number,
+          org.city,
+          org.state,
+          COUNTRY_NAMES[org.country_code] || org.country_code,
+          ...(org.part145_ratings || []).map(r => r.detail || ''),
+        ]
+        return fields.some(f => f && f.toLowerCase().includes(q))
+      })
+    }
 
     // Filter by rating class if Part 145 selected with a specific class
     if (approvalType === 'part145' && ratingClassFilter !== 'all') {
@@ -334,17 +348,26 @@ export function MarketTable({ approvals }: { approvals: Approval[] }) {
       switch (sortKey) {
         case 'organisation_name': av = a.organisation_name; bv = b.organisation_name; break
         case 'reference_number': av = a.reference_number; bv = b.reference_number; break
-        case 'city': av = a.city || ''; bv = b.city || ''; break
-        case 'state': av = a.state ? titleCase(a.state) : ''; bv = b.state ? titleCase(b.state) : ''; break
         case 'country': av = COUNTRY_NAMES[a.country_code] || ''; bv = COUNTRY_NAMES[b.country_code] || ''; break
       }
       return av.localeCompare(bv) * dir
     })
     return list
-  }, [approvals, sortKey, sortDir, approvalType, ratingClassFilter])
+  }, [approvals, sortKey, sortDir, approvalType, ratingClassFilter, subcategoryFilter, searchQuery])
 
   return (
     <>
+      {/* Search */}
+      <div className="mb-4">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => { setSearchQuery(e.target.value); setExpandedId(null) }}
+          placeholder="Search organisations, aircraft, engines, locations..."
+          className="w-full h-10 rounded-lg border border-input bg-transparent px-4 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        />
+      </div>
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <select
@@ -403,28 +426,21 @@ export function MarketTable({ approvals }: { approvals: Approval[] }) {
           <table className="w-full text-sm table-fixed">
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="w-[40%] text-left font-medium text-muted-foreground px-4 py-3 cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('organisation_name')}>
+                <th className="w-[55%] text-left font-medium text-muted-foreground px-4 py-3 cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('organisation_name')}>
                   Organisation<SortIcon active={sortKey === 'organisation_name'} dir={sortDir} />
                 </th>
-                <th className="w-[15%] text-left font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('reference_number')}>
+                <th className="w-[20%] text-left font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('reference_number')}>
                   Approval(s)<SortIcon active={sortKey === 'reference_number'} dir={sortDir} />
                 </th>
-                <th className="w-[20%] text-left font-medium text-muted-foreground px-4 py-3 hidden md:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('city')}>
-                  City<SortIcon active={sortKey === 'city'} dir={sortDir} />
-                </th>
-                <th className="w-[10%] text-left font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('state')}>
-                  State<SortIcon active={sortKey === 'state'} dir={sortDir} />
-                </th>
-                <th className="w-[15%] text-left font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('country')}>
+                <th className="w-[25%] text-left font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort('country')}>
                   Country<SortIcon active={sortKey === 'country'} dir={sortDir} />
                 </th>
               </tr>
             </thead>
             <tbody>
               {sorted.map(org => (
-                <>
+                <Fragment key={org.id}>
                   <tr
-                    key={org.id}
                     className={`border-b last:border-0 cursor-pointer transition-colors ${expandedId === org.id ? 'bg-muted/40' : 'hover:bg-muted/30'}`}
                     onClick={() => setExpandedId(expandedId === org.id ? null : org.id)}
                   >
@@ -439,22 +455,16 @@ export function MarketTable({ approvals }: { approvals: Approval[] }) {
                     <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell overflow-hidden truncate">
                       {org.reference_number}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden md:table-cell overflow-hidden truncate">
-                      {org.city || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell overflow-hidden truncate">
-                      {org.state ? titleCase(org.state) : '—'}
-                    </td>
                     <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell overflow-hidden truncate">
                       {COUNTRY_NAMES[org.country_code] || org.country_code || '—'}
                     </td>
                   </tr>
                   {expandedId === org.id && <ExpandedRow key={`exp-${org.id}`} org={org} />}
-                </>
+                </Fragment>
               ))}
               {sorted.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
                     No organisations found.
                   </td>
                 </tr>
@@ -465,7 +475,9 @@ export function MarketTable({ approvals }: { approvals: Approval[] }) {
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
-        {approvals.length.toLocaleString()} organisations
+        {sorted.length === approvals.length
+          ? `${approvals.length.toLocaleString()} organisations`
+          : `${sorted.length.toLocaleString()} of ${approvals.length.toLocaleString()} organisations`}
       </p>
     </>
   )
