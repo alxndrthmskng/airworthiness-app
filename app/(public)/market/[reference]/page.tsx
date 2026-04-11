@@ -25,11 +25,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-const RATING_CLASS_LABELS: Record<string, string> = {
-  A: 'Aircraft',
-  B: 'Engines',
-  C: 'Components',
-  D: 'Specialised Services',
+const RATING_SECTION_LABELS: Record<string, string> = {
+  A: 'Aircraft Maintenance',
+  B: 'Engine Maintenance',
+  C: 'Component Maintenance',
+  D: 'Non-Destructive Testing',
+}
+
+function splitRatingCode(detail: string): { text: string; code: string | null } {
+  const m = detail.match(/^(.+?)\s*\(([A-Z0-9]+)\)\s*$/)
+  if (m) return { text: m[1], code: m[2] }
+  return { text: detail, code: null }
 }
 
 function formatLongDate(dateStr: string): string {
@@ -155,37 +161,24 @@ export default async function OrgDetailPage({ params }: Props) {
 
                   return (
                     <div key={cls} className="bg-card rounded-xl border p-5">
-                      <h3 className="text-sm font-semibold text-foreground mb-3">
-                        Class {cls} — {RATING_CLASS_LABELS[cls]}
-                        <span className="ml-2 text-xs font-normal text-muted-foreground">
-                          ({classRatings.length})
-                        </span>
-                      </h3>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b">
-                              <th className="text-left font-medium text-muted-foreground py-2 pr-4">Category</th>
-                              <th className="text-left font-medium text-muted-foreground py-2 pr-4">Rating(s)</th>
-                              {cls === 'A' && (
-                                <>
-                                  <th className="text-left font-medium text-muted-foreground py-2 pr-4">Base</th>
-                                  <th className="text-left font-medium text-muted-foreground py-2 pr-4">Line</th>
-                                </>
-                              )}
+                              <th className="text-left text-xs text-muted-foreground uppercase tracking-wide font-normal py-2 pr-4">
+                                {RATING_SECTION_LABELS[cls]} ({classRatings.length})
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
                             {classRatings.map(r => (
                               <tr key={r.id} className="border-b last:border-0">
-                                <td className="py-2 pr-4 text-foreground">{r.category}</td>
-                                <td className="py-2 pr-4 text-muted-foreground">{r.detail || '—'}</td>
-                                {cls === 'A' && (
-                                  <>
-                                    <td className="py-2 pr-4">{r.base_maintenance ? 'Yes' : '—'}</td>
-                                    <td className="py-2 pr-4">{r.line_maintenance ? 'Yes' : '—'}</td>
-                                  </>
-                                )}
+                                <td className="py-2 pr-4 text-foreground">
+                                  {r.detail ? (() => {
+                                    const { text, code } = splitRatingCode(r.detail)
+                                    return <>{text}{code && <span className="text-muted-foreground ml-1">({code})</span>}</>
+                                  })() : '—'}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
