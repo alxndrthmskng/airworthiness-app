@@ -129,12 +129,16 @@ function ExpandedRow({ org }: { org: Approval }) {
               )}
               <div>
                 <span className="text-xs text-muted-foreground uppercase tracking-wide">Approval(s)</span>
-                <p className="text-foreground">
-                  {org.reference_number}
+                <div className="flex flex-wrap gap-2 mt-1">
+                  <span className="inline-flex items-center justify-center px-3 py-1 rounded-lg bg-muted text-foreground text-sm font-medium">
+                    {org.reference_number}
+                  </span>
                   {(org as any).part147_ref && (
-                    <span className="text-muted-foreground">{' / '}{(org as any).part147_ref}</span>
+                    <span className="inline-flex items-center justify-center px-3 py-1 rounded-lg bg-muted text-foreground text-sm font-medium">
+                      {(org as any).part147_ref}
+                    </span>
                   )}
-                </p>
+                </div>
               </div>
               {org.city && (
                 <div>
