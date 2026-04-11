@@ -71,7 +71,7 @@ export function MarketMap({ organisations }: { organisations: MapOrg[] }) {
 
     // Clear existing markers
     map.eachLayer(layer => {
-      if (layer instanceof L.Marker || layer instanceof L.MarkerClusterGroup) {
+      if (layer instanceof L.Marker) {
         map.removeLayer(layer)
       }
     })
