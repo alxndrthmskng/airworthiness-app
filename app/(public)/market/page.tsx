@@ -22,6 +22,7 @@ export default async function MarketPage() {
       a.country_code,
       a.website,
       a.issued_date,
+      a.part147_ref,
       COALESCE(
         json_agg(
           json_build_object(
@@ -34,14 +35,30 @@ export default async function MarketPage() {
           )
         ) FILTER (WHERE r.id IS NOT NULL),
         '[]'
-      ) AS part145_ratings
+      ) AS part145_ratings,
+      COALESCE(
+        (SELECT json_agg(
+          json_build_object(
+            'id', r2.id,
+            'category', r2.category,
+            'licence', r2.licence,
+            'training_code', r2.training_code,
+            'type_name', r2.type_name,
+            'basic_scope', r2.basic_scope
+          )
+        ) FROM part147_ratings r2
+        JOIN part147_approvals p ON p.id = r2.approval_id
+        WHERE p.reference_number = a.part147_ref),
+        '[]'
+      ) AS part147_ratings
     FROM part145_approvals a
     LEFT JOIN part145_ratings r ON r.approval_id = a.id
     GROUP BY a.id
     ORDER BY a.organisation_name
   `)
 
-  const { rows: part147Approvals } = await db.query(`
+  // Part 147-only orgs (not linked to any Part 145)
+  const { rows: part147OnlyApprovals } = await db.query(`
     SELECT
       a.id,
       a.reference_number,
@@ -67,6 +84,9 @@ export default async function MarketPage() {
       ) AS part147_ratings
     FROM part147_approvals a
     LEFT JOIN part147_ratings r ON r.approval_id = a.id
+    WHERE a.reference_number NOT IN (
+      SELECT part147_ref FROM part145_approvals WHERE part147_ref IS NOT NULL
+    )
     GROUP BY a.id
     ORDER BY a.organisation_name
   `)
@@ -92,7 +112,7 @@ export default async function MarketPage() {
           </div>
 
           <div>
-            <MarketTable approvals={approvals} part147Approvals={part147Approvals} />
+            <MarketTable approvals={approvals} part147OnlyApprovals={part147OnlyApprovals} />
           </div>
 
           <p className="mt-6 text-xs text-muted-foreground">

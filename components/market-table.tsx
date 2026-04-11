@@ -128,8 +128,13 @@ function ExpandedRow({ org }: { org: Approval }) {
                 </div>
               )}
               <div>
-                <span className="text-xs text-muted-foreground uppercase tracking-wide">Approval</span>
-                <p className="text-foreground">{org.reference_number}</p>
+                <span className="text-xs text-muted-foreground uppercase tracking-wide">Approval(s)</span>
+                <p className="text-foreground">
+                  {org.reference_number}
+                  {(org as any).part147_ref && (
+                    <span className="text-muted-foreground">{' / '}{(org as any).part147_ref}</span>
+                  )}
+                </p>
               </div>
               {org.city && (
                 <div>
@@ -198,8 +203,8 @@ function ExpandedRow({ org }: { org: Approval }) {
             )}
 
             {/* Part 147 Ratings */}
-            {((org as any)._part147 || []).length > 0 && (() => {
-              const p147 = (org as any)._part147 as Part147Approval['part147_ratings']
+            {(((org as any)._part147 || (org as any).part147_ratings || []).length > 0) && (() => {
+              const p147 = ((org as any)._part147 || (org as any).part147_ratings || []) as Part147Approval['part147_ratings']
               const typeRatings = p147.filter(r => r.category === 'TYPE_TASK')
               const basicRatings = p147.filter(r => r.category === 'BASIC')
 
@@ -348,7 +353,7 @@ type Part147Approval = {
   }[]
 }
 
-export function MarketTable({ approvals, part147Approvals = [] }: { approvals: Approval[]; part147Approvals?: Part147Approval[] }) {
+export function MarketTable({ approvals, part147OnlyApprovals = [] }: { approvals: Approval[]; part147OnlyApprovals?: Part147Approval[] }) {
   const [sortKey, setSortKey] = useState<SortKey>('organisation_name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [expandedId, setExpandedId] = useState<number | null>(null)
@@ -370,11 +375,17 @@ export function MarketTable({ approvals, part147Approvals = [] }: { approvals: A
     // Select data source based on approval type
     let list: any[]
     if (approvalType === 'part147') {
-      list = part147Approvals.map(a => ({
+      // Show Part 147-only orgs + Part 145 orgs that also have Part 147
+      const linked = approvals.filter((a: any) => a.part147_ref).map((a: any) => ({
+        ...a,
+        _part147: a.part147_ratings || [],
+      }))
+      const p147only = part147OnlyApprovals.map(a => ({
         ...a,
         part145_ratings: [],
         _part147: a.part147_ratings,
       }))
+      list = [...linked, ...p147only]
     } else {
       list = [...approvals]
     }
@@ -445,7 +456,7 @@ export function MarketTable({ approvals, part147Approvals = [] }: { approvals: A
       return av.localeCompare(bv) * dir
     })
     return list
-  }, [approvals, part147Approvals, sortKey, sortDir, approvalType, ratingClassFilter, subcategoryFilter, searchQuery])
+  }, [approvals, part147OnlyApprovals, sortKey, sortDir, approvalType, ratingClassFilter, subcategoryFilter, searchQuery])
 
   return (
     <>
